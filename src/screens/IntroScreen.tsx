@@ -1,24 +1,13 @@
-/**
- * IntroScreen.tsx — YourShikshak
- *
- * Layout:
- *   • Dark LinearGradient hero (fixed proportional height, same palette as other screens)
- *   • Two vivid gradient role cards that fill remaining space equally
- *
- * Design system: T tokens from constants/colors.ts
- * Consistent with RegisterScreen / LoginScreen / ParentRegisterScreen
- */
-
 import React, { useRef, useEffect } from "react";
 import {
   View,
   Text,
   Pressable,
   StyleSheet,
-  Dimensions,
   StatusBar,
   Animated,
   Image,
+  useWindowDimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,9 +15,6 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { T } from "../constants/colors";
-
-const { width, height } = Dimensions.get("window");
-const sm = height < 700;
 
 type Nav = StackNavigationProp<RootStackParamList, "Intro">;
 interface Props {
@@ -55,6 +41,7 @@ const RoleCard = ({
   ctaLabel,
   onPress,
   delay,
+  compact,
 }: {
   colors: string[];
   icon: any;
@@ -64,8 +51,9 @@ const RoleCard = ({
   ctaLabel: string;
   onPress: () => void;
   delay: number;
+  compact: boolean;
 }) => {
-  const translateY = useRef(new Animated.Value(32)).current;
+  const translateY = useRef(new Animated.Value(28)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const pressScale = useRef(new Animated.Value(1)).current;
 
@@ -73,13 +61,13 @@ const RoleCard = ({
     Animated.parallel([
       Animated.timing(translateY, {
         toValue: 0,
-        duration: 480,
+        duration: 460,
         delay,
         useNativeDriver: true,
       }),
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 480,
+        duration: 460,
         delay,
         useNativeDriver: true,
       }),
@@ -111,35 +99,45 @@ const RoleCard = ({
           colors={colors as any}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={rc.card}
+          style={[rc.card, compact && rc.cardCompact]}
         >
-          {/* Top row: icon + eyebrow pill */}
+          {/* Top row */}
           <View style={rc.topRow}>
-            <View style={rc.iconBox}>
-              <Ionicons name={icon} size={sm ? 22 : 26} color="#fff" />
+            <View style={[rc.iconBox, compact && rc.iconBoxCompact]}>
+              <Ionicons name={icon} size={compact ? 20 : 24} color="#fff" />
             </View>
             <View style={rc.eyebrowPill}>
               <Text style={rc.eyebrowTxt}>{eyebrow}</Text>
             </View>
           </View>
 
-          {/* Title + subtitle */}
-          <View style={rc.bodyBlock}>
-            <Text style={[rc.title, sm && { fontSize: 19, lineHeight: 24 }]}>
+          {/* Body */}
+          <View style={[rc.bodyBlock, compact && rc.bodyBlockCompact]}>
+            <Text
+              style={[rc.title, compact && rc.titleCompact]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
               {title}
             </Text>
-            <Text style={[rc.subtitle, sm && { fontSize: 11, lineHeight: 16 }]}>
+            <Text
+              style={[rc.subtitle, compact && rc.subtitleCompact]}
+              numberOfLines={2}
+            >
               {subtitle}
             </Text>
           </View>
 
-          {/* Bottom CTA row */}
-          <View style={rc.ctaRow}>
-            <Text style={[rc.ctaLabel, sm && { fontSize: 12 }]}>
+          {/* CTA */}
+          <View style={[rc.ctaRow, compact && rc.ctaRowCompact]}>
+            <Text
+              style={[rc.ctaLabel, compact && rc.ctaLabelCompact]}
+              numberOfLines={1}
+            >
               {ctaLabel}
             </Text>
-            <View style={rc.ctaArrow}>
-              <Ionicons name="arrow-forward" size={14} color="#fff" />
+            <View style={[rc.ctaArrow, compact && rc.ctaArrowCompact]}>
+              <Ionicons name="arrow-forward" size={13} color="#fff" />
             </View>
           </View>
         </LinearGradient>
@@ -152,10 +150,13 @@ const RoleCard = ({
 
 const IntroScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  // compact mode for small phones (< 700px) or very tall notches eating into space
+  const compact = height < 700;
 
   const logoScale = useRef(new Animated.Value(0.82)).current;
   const logoOp = useRef(new Animated.Value(0)).current;
-  const headY = useRef(new Animated.Value(16)).current;
+  const headY = useRef(new Animated.Value(14)).current;
   const headOp = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -164,26 +165,24 @@ const IntroScreen: React.FC<Props> = ({ navigation }) => {
         Animated.spring(logoScale, { toValue: 1, useNativeDriver: true }),
         Animated.timing(logoOp, {
           toValue: 1,
-          duration: 360,
+          duration: 340,
           useNativeDriver: true,
         }),
       ]),
       Animated.parallel([
         Animated.timing(headY, {
           toValue: 0,
-          duration: 320,
+          duration: 300,
           useNativeDriver: true,
         }),
         Animated.timing(headOp, {
           toValue: 1,
-          duration: 320,
+          duration: 300,
           useNativeDriver: true,
         }),
       ]),
     ]).start();
   }, []);
-
-  const headerPadTop = Math.max(insets.top, 16) + 10;
 
   return (
     <View style={s.root}>
@@ -193,14 +192,13 @@ const IntroScreen: React.FC<Props> = ({ navigation }) => {
         translucent
       />
 
-      {/* ── Hero header ───────────────────────────────────────────────────── */}
+      {/* ── Hero header — no fixed height, content-driven ─────────────────── */}
       <LinearGradient
         colors={[T.darkBg, T.darkBgMid, "#162032"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[s.header, { paddingTop: headerPadTop }]}
+        style={[s.header, { paddingTop: Math.max(insets.top, 16) + 8 }]}
       >
-        {/* Glow orbs (decorative) */}
         <View style={s.orbA} pointerEvents="none" />
         <View style={s.orbB} pointerEvents="none" />
 
@@ -217,7 +215,6 @@ const IntroScreen: React.FC<Props> = ({ navigation }) => {
               style={s.logoImg}
             />
           </View>
-
           <View style={s.brandMid}>
             <Text style={s.brandName} numberOfLines={1}>
               YourShikshak
@@ -229,12 +226,10 @@ const IntroScreen: React.FC<Props> = ({ navigation }) => {
               </Text>
             </View>
           </View>
-
           <View style={s.liveChip}>
             <View style={s.liveDot} />
             <Text style={s.liveChipTxt}>10K+ Tutors</Text>
           </View>
-
           <Pressable
             onPress={() => navigation.navigate("Login")}
             style={s.signInBtn}
@@ -247,16 +242,21 @@ const IntroScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Headline */}
         <Animated.View
-          style={{ opacity: headOp, transform: [{ translateY: headY }] }}
+          style={[
+            s.headlineBlock,
+            { opacity: headOp, transform: [{ translateY: headY }] },
+          ]}
         >
-          <Text style={s.heroTitle}>{"Shape your child's\nfuture today"}</Text>
-          <Text style={s.heroSub}>
+          <Text style={[s.heroTitle, compact && s.heroTitleCompact]}>
+            {"Shape your child's\nfuture today"}
+          </Text>
+          <Text style={[s.heroSub, compact && s.heroSubCompact]}>
             Expert home tutors · JEE · NEET · Classes 1–12
           </Text>
         </Animated.View>
 
         {/* Stats strip */}
-        <View style={s.statsStrip}>
+        <View style={[s.statsStrip, compact && s.statsStripCompact]}>
           <Stat val="10K+" lbl="Tutors" />
           <View style={s.statSep} />
           <Stat val="4.8★" lbl="Rating" />
@@ -269,7 +269,7 @@ const IntroScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* ── Cards area ────────────────────────────────────────────────────── */}
       <View
-        style={[s.cardsArea, { paddingBottom: Math.max(insets.bottom, 16) }]}
+        style={[s.cardsArea, { paddingBottom: Math.max(insets.bottom, 12) }]}
       >
         <View style={s.dividerRow}>
           <View style={s.divLine} />
@@ -285,6 +285,7 @@ const IntroScreen: React.FC<Props> = ({ navigation }) => {
           subtitle="Register, get verified & start earning with flexible home tuition"
           ctaLabel="Register as Tutor"
           delay={80}
+          compact={compact}
           onPress={() => navigation.navigate("Register")}
         />
 
@@ -296,6 +297,7 @@ const IntroScreen: React.FC<Props> = ({ navigation }) => {
           subtitle="Find a verified expert tutor for your child within 24 hours"
           ctaLabel="Find a Tutor"
           delay={180}
+          compact={compact}
           onPress={() => navigation.navigate("ParentRegister")}
         />
 
@@ -310,13 +312,11 @@ const IntroScreen: React.FC<Props> = ({ navigation }) => {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: T.darkBg },
 
-  // Header
   header: {
+    // No fixed height — let content size it naturally
     paddingHorizontal: 22,
-    paddingBottom: sm ? 14 : 22,
+    paddingBottom: 20,
     overflow: "hidden",
-    height: sm ? height * 0.38 : height * 0.43,
-    justifyContent: "space-between",
   },
   orbA: {
     position: "absolute",
@@ -337,10 +337,10 @@ const s = StyleSheet.create({
     backgroundColor: `${T.primary}14`,
   },
 
-  // Brand row
   brandRow: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 16,
   },
   logoRing: {
     width: 40,
@@ -350,9 +350,10 @@ const s = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.22)",
     overflow: "hidden",
     marginRight: 10,
+    flexShrink: 0,
   },
   logoImg: { width: 40, height: 40 },
-  brandMid: { flex: 1, marginRight: 10 },
+  brandMid: { flex: 1, marginRight: 8, minWidth: 0 },
   brandName: {
     color: "#fff",
     fontSize: 15,
@@ -369,7 +370,9 @@ const s = StyleSheet.create({
     color: "rgba(255,255,255,0.45)",
     fontSize: 10,
     fontWeight: "500",
+    flexShrink: 1,
   },
+
   liveChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -380,6 +383,7 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
+    flexShrink: 0,
   },
   liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: T.success },
   liveChipTxt: {
@@ -388,80 +392,6 @@ const s = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // Hero text
-  heroTitle: {
-    color: "#fff",
-    fontSize: sm ? 22 : 28,
-    fontWeight: "700",
-    letterSpacing: -0.7,
-    lineHeight: sm ? 28 : 35,
-    marginBottom: 6,
-  },
-  heroSub: {
-    color: "rgba(255,255,255,0.48)",
-    fontSize: sm ? 10 : 12,
-    lineHeight: sm ? 14 : 17,
-  },
-
-  // Stats strip
-  statsStrip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderRadius: T.radiusMd,
-    paddingVertical: sm ? 6 : 10,
-  },
-  statItem: { flex: 1, alignItems: "center" },
-  statVal: {
-    color: "#fff",
-    fontSize: sm ? 13 : 15,
-    fontWeight: "700",
-    letterSpacing: -0.3,
-  },
-  statLbl: {
-    color: "rgba(255,255,255,0.4)",
-    fontSize: sm ? 9 : 10,
-    fontWeight: "500",
-    marginTop: 2,
-  },
-  statSep: {
-    width: 1,
-    height: sm ? 22 : 28,
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-
-  // Cards area
-  cardsArea: {
-    flex: 1,
-    backgroundColor: T.background,
-    paddingHorizontal: 14,
-    paddingTop: sm ? 10 : 16,
-    gap: 0,
-  },
-
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: sm ? 8 : 12,
-  },
-  divLine: { flex: 1, height: 1, backgroundColor: T.border },
-  divTxt: {
-    color: T.mutedFg,
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-
-  footer: {
-    textAlign: "center",
-    color: T.textDisabled,
-    fontSize: 10,
-    letterSpacing: 0.3,
-    marginTop: 6,
-    paddingBottom: 2,
-  },
   signInBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -473,8 +403,73 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.18)",
     marginLeft: 8,
+    flexShrink: 0,
   },
   signInTxt: { color: "#fff", fontSize: 11, fontWeight: "700" },
+
+  headlineBlock: { marginBottom: 16 },
+  heroTitle: {
+    color: "#fff",
+    fontSize: 26,
+    fontWeight: "700",
+    letterSpacing: -0.6,
+    lineHeight: 33,
+    marginBottom: 6,
+  },
+  heroTitleCompact: { fontSize: 21, lineHeight: 27 },
+  heroSub: { color: "rgba(255,255,255,0.48)", fontSize: 12, lineHeight: 17 },
+  heroSubCompact: { fontSize: 11, lineHeight: 15 },
+
+  statsStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: T.radiusMd,
+    paddingVertical: 10,
+  },
+  statsStripCompact: { paddingVertical: 7 },
+  statItem: { flex: 1, alignItems: "center" },
+  statVal: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+  },
+  statLbl: {
+    color: "rgba(255,255,255,0.4)",
+    fontSize: 10,
+    fontWeight: "500",
+    marginTop: 2,
+  },
+  statSep: { width: 1, height: 26, backgroundColor: "rgba(255,255,255,0.1)" },
+
+  cardsArea: {
+    flex: 1,
+    backgroundColor: T.background,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+  divLine: { flex: 1, height: 1, backgroundColor: T.border },
+  divTxt: {
+    color: T.mutedFg,
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  footer: {
+    textAlign: "center",
+    color: T.textDisabled,
+    fontSize: 10,
+    letterSpacing: 0.3,
+    marginTop: 4,
+  },
 });
 
 // ─── Role card styles ─────────────────────────────────────────────────────────
@@ -485,7 +480,7 @@ const rc = StyleSheet.create({
   card: {
     flex: 1,
     borderRadius: 18,
-    padding: sm ? 14 : 18,
+    padding: 18,
     justifyContent: "space-between",
     shadowColor: "#000",
     shadowOpacity: 0.2,
@@ -493,21 +488,23 @@ const rc = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
+  cardCompact: { padding: 14 },
 
-  // Top row
   topRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 0,
   },
   iconBox: {
-    width: sm ? 38 : 48,
-    height: sm ? 38 : 48,
-    borderRadius: sm ? 10 : 13,
+    width: 46,
+    height: 46,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.18)",
   },
+  iconBoxCompact: { width: 36, height: 36, borderRadius: 10 },
   eyebrowPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -523,49 +520,45 @@ const rc = StyleSheet.create({
     letterSpacing: 1.2,
   },
 
-  // Body
-  bodyBlock: {
-    flex: 1,
-    justifyContent: "center",
-    paddingVertical: sm ? 6 : 10,
-  },
+  bodyBlock: { flex: 1, justifyContent: "center", paddingVertical: 10 },
+  bodyBlockCompact: { paddingVertical: 6 },
   title: {
     color: "#fff",
-    fontSize: sm ? 20 : 23,
+    fontSize: 22,
     fontWeight: "700",
     letterSpacing: -0.4,
-    lineHeight: sm ? 25 : 29,
+    lineHeight: 28,
     marginBottom: 4,
   },
-  subtitle: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: sm ? 12 : 13,
-    lineHeight: sm ? 17 : 19,
-  },
+  titleCompact: { fontSize: 18, lineHeight: 23 },
+  subtitle: { color: "rgba(255,255,255,0.72)", fontSize: 13, lineHeight: 19 },
+  subtitleCompact: { fontSize: 11, lineHeight: 16 },
 
-  // CTA row
   ctaRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.18)",
-    paddingTop: sm ? 8 : 12,
+    paddingTop: 12,
   },
+  ctaRowCompact: { paddingTop: 8 },
   ctaLabel: {
     color: "#fff",
-    fontSize: sm ? 13 : 14,
+    fontSize: 14,
     fontWeight: "700",
     letterSpacing: 0.1,
   },
+  ctaLabelCompact: { fontSize: 12 },
   ctaArrow: {
-    width: sm ? 26 : 32,
-    height: sm ? 26 : 32,
-    borderRadius: sm ? 8 : 9,
+    width: 30,
+    height: 30,
+    borderRadius: 9,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.2)",
   },
+  ctaArrowCompact: { width: 26, height: 26, borderRadius: 8 },
 });
 
 export default IntroScreen;
