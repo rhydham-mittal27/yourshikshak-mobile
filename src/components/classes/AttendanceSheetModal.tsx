@@ -9,7 +9,12 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { getClassAttendance, ClassAttendanceRecord, FinalClass } from "../../api/client";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  getClassAttendance,
+  ClassAttendanceRecord,
+  FinalClass,
+} from "../../api/client";
 import { T } from "../../constants/colors";
 
 interface Props {
@@ -19,29 +24,59 @@ interface Props {
   onClose: () => void;
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  PRESENT: T.success,
-  ABSENT: T.error,
-  HOLIDAY: "#F59E0B",
-  CANCELLED: T.mutedFg,
+const STATUS_META: Record<
+  string,
+  { color: string; bg: string; icon: any; label: string }
+> = {
+  PRESENT: {
+    color: T.success,
+    bg: "#ECFDF5",
+    icon: "checkmark-circle",
+    label: "Present",
+  },
+  ABSENT: {
+    color: T.error,
+    bg: "#FEF2F2",
+    icon: "close-circle",
+    label: "Absent",
+  },
+  HOLIDAY: {
+    color: "#F59E0B",
+    bg: "#FFFBEB",
+    icon: "sunny",
+    label: "Holiday",
+  },
+  CANCELLED: {
+    color: "#94A3B8",
+    bg: "#F8FAFC",
+    icon: "ban",
+    label: "Cancelled",
+  },
 };
 
-const STATUS_ICON: Record<string, any> = {
-  PRESENT: "checkmark-circle",
-  ABSENT: "close-circle",
-  HOLIDAY: "sunny-outline",
-  CANCELLED: "ban-outline",
-};
-
-const fmt = (iso: string) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-};
+const fmt = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+  });
 
 const dayName = (iso: string) =>
   new Date(iso).toLocaleDateString("en-IN", { weekday: "short" });
 
-const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose }) => {
+const subjectLabel = (cls: FinalClass) => {
+  if (!cls.subject?.length) return "—";
+  return (Array.isArray(cls.subject) ? cls.subject : [cls.subject])
+    .map((s) => (typeof s === "string" ? s : s?.label || s?.name || ""))
+    .filter(Boolean)
+    .join(", ");
+};
+
+const AttendanceSheetModal: React.FC<Props> = ({
+  visible,
+  cls,
+  cycle,
+  onClose,
+}) => {
   const [records, setRecords] = useState<ClassAttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,142 +97,213 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose })
           const sc = Number(r._sheetCycle);
           return Number.isFinite(sc) ? sc === cycle : true;
         });
-        setRecords(filtered);
+        setRecords(
+          filtered
+            .slice()
+            .sort(
+              (a, b) =>
+                new Date(a.sessionDate).getTime() -
+                new Date(b.sessionDate).getTime(),
+            ),
+        );
       })
       .catch((e) => setError(e?.message || "Failed to load attendance"))
       .finally(() => setLoading(false));
   }, [visible, cls, cycle]);
 
-  const present = records.filter((r) => r.studentAttendanceStatus === "PRESENT").length;
-  const absent = records.filter((r) => r.studentAttendanceStatus === "ABSENT").length;
+  const present = records.filter(
+    (r) => r.studentAttendanceStatus === "PRESENT",
+  ).length;
+  const absent = records.filter(
+    (r) => r.studentAttendanceStatus === "ABSENT",
+  ).length;
+  const rate = records.length
+    ? Math.round((present / records.length) * 100)
+    : 0;
 
-  const subjectLabel = (cls: FinalClass) => {
-    if (!cls.subject?.length) return "—";
-    return (Array.isArray(cls.subject) ? cls.subject : [cls.subject])
-      .map((s) => (typeof s === "string" ? s : s?.label || s?.name || ""))
-      .filter(Boolean)
-      .join(", ");
-  };
+  const stats = [
+    { label: "Present", value: present, color: T.success, bg: "#ECFDF5" },
+    { label: "Absent", value: absent, color: T.error, bg: "#FEF2F2" },
+    { label: "Total", value: records.length, color: T.primary, bg: "#EFF6FF" },
+    {
+      label: "Rate",
+      value: `${rate}%`,
+      color: rate >= 75 ? T.success : rate >= 50 ? "#F59E0B" : T.error,
+      bg: "#F8FAFC",
+    },
+  ];
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={s.overlay}>
         <View style={s.sheet}>
+          {/* Drag handle */}
+          <View style={s.dragHandle} />
+
           {/* Header */}
-          <View style={s.header}>
+          <LinearGradient
+            colors={[T.darkBg, T.darkBgMid]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={s.header}
+          >
             <View style={s.headerLeft}>
-              <Text style={s.headerTitle}>Attendance Sheet</Text>
-              <Text style={s.headerSub}>
-                {cls?.studentName} · Cycle {cycle}
-              </Text>
+              <View style={s.headerIconBg}>
+                <Ionicons name="clipboard" size={16} color="#fff" />
+              </View>
+              <View>
+                <Text style={s.headerTitle}>Attendance Sheet</Text>
+                <Text style={s.headerSub}>
+                  {cls?.studentName}  ·  Cycle {cycle}
+                </Text>
+              </View>
             </View>
-            <Pressable onPress={onClose} style={s.closeBtn} hitSlop={8}>
-              <Ionicons name="close" size={20} color={T.textPrimary} />
+            <Pressable onPress={onClose} style={s.closeBtn} hitSlop={10}>
+              <Ionicons name="close" size={18} color="rgba(255,255,255,0.7)" />
             </Pressable>
-          </View>
+          </LinearGradient>
 
           {/* Class info strip */}
           {cls && (
             <View style={s.infoStrip}>
-              <View style={s.infoItem}>
-                <Ionicons name="school-outline" size={12} color={T.mutedFg} />
-                <Text style={s.infoTxt}>{subjectLabel(cls)}</Text>
-              </View>
-              {cls.grade ? (
-                <View style={s.infoItem}>
-                  <Ionicons name="layers-outline" size={12} color={T.mutedFg} />
-                  <Text style={s.infoTxt}>Grade {cls.grade}</Text>
+              {subjectLabel(cls) !== "—" && (
+                <View style={s.infoChip}>
+                  <Ionicons name="book-outline" size={11} color={T.primary} />
+                  <Text style={s.infoChipTxt}>{subjectLabel(cls)}</Text>
                 </View>
-              ) : null}
-              {cls.board ? (
-                <View style={s.infoItem}>
-                  <Ionicons name="ribbon-outline" size={12} color={T.mutedFg} />
-                  <Text style={s.infoTxt}>{cls.board}</Text>
+              )}
+              {cls.grade && (
+                <View style={s.infoChip}>
+                  <Ionicons name="layers-outline" size={11} color={T.primary} />
+                  <Text style={s.infoChipTxt}>Grade {cls.grade}</Text>
                 </View>
-              ) : null}
+              )}
+              {cls.board && (
+                <View style={s.infoChip}>
+                  <Ionicons name="ribbon-outline" size={11} color={T.primary} />
+                  <Text style={s.infoChipTxt}>{cls.board}</Text>
+                </View>
+              )}
             </View>
           )}
 
           {/* Stats row */}
           {!loading && records.length > 0 && (
             <View style={s.statsRow}>
-              <View style={[s.statBox, { borderColor: `${T.success}30` }]}>
-                <Text style={[s.statNum, { color: T.success }]}>{present}</Text>
-                <Text style={s.statLbl}>Present</Text>
-              </View>
-              <View style={[s.statBox, { borderColor: `${T.error}30` }]}>
-                <Text style={[s.statNum, { color: T.error }]}>{absent}</Text>
-                <Text style={s.statLbl}>Absent</Text>
-              </View>
-              <View style={[s.statBox, { borderColor: `${T.primary}30` }]}>
-                <Text style={[s.statNum, { color: T.primary }]}>{records.length}</Text>
-                <Text style={s.statLbl}>Total</Text>
-              </View>
-              <View style={[s.statBox, { borderColor: `${T.warning}30` }]}>
-                <Text style={[s.statNum, { color: T.warning }]}>
-                  {records.length ? Math.round((present / records.length) * 100) : 0}%
-                </Text>
-                <Text style={s.statLbl}>Rate</Text>
-              </View>
+              {stats.map((st) => (
+                <View
+                  key={st.label}
+                  style={[s.statBox, { backgroundColor: st.bg }]}
+                >
+                  <Text style={[s.statVal, { color: st.color }]}>
+                    {st.value}
+                  </Text>
+                  <Text style={s.statLbl}>{st.label}</Text>
+                </View>
+              ))}
             </View>
           )}
 
           {/* Body */}
           {loading && (
             <View style={s.center}>
-              <ActivityIndicator color={T.primary} />
+              <ActivityIndicator color={T.primary} size="large" />
               <Text style={s.centerTxt}>Loading attendance…</Text>
             </View>
           )}
 
           {!loading && error && (
             <View style={s.center}>
-              <Ionicons name="alert-circle-outline" size={32} color={T.error} />
+              <View style={[s.emptyIconBg, { backgroundColor: "#FEF2F2" }]}>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={28}
+                  color={T.error}
+                />
+              </View>
               <Text style={[s.centerTxt, { color: T.error }]}>{error}</Text>
             </View>
           )}
 
           {!loading && !error && records.length === 0 && (
             <View style={s.center}>
-              <Ionicons name="calendar-outline" size={40} color={T.textDisabled} />
+              <View style={s.emptyIconBg}>
+                <Ionicons name="calendar-outline" size={28} color={T.primary} />
+              </View>
               <Text style={s.centerTxt}>No records for Cycle {cycle}</Text>
-              <Text style={s.centerSub}>Attendance will appear here once sessions are marked.</Text>
+              <Text style={s.centerSub}>
+                Attendance will appear here once sessions are marked.
+              </Text>
             </View>
           )}
 
           {!loading && records.length > 0 && (
-            <ScrollView style={s.list} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={s.tableWrap}
+              showsVerticalScrollIndicator={false}
+            >
               {/* Table header */}
               <View style={s.tableHead}>
-                <Text style={[s.thTxt, { flex: 1.2 }]}>Date</Text>
-                <Text style={[s.thTxt, { flex: 0.8 }]}>Day</Text>
-                <Text style={[s.thTxt, { flex: 1 }]}>Status</Text>
-                <Text style={[s.thTxt, { flex: 0.7 }]}>Hrs</Text>
-                <Text style={[s.thTxt, { flex: 2 }]}>Topic</Text>
+                <Text style={[s.thTxt, { flex: 1.3 }]}>Date</Text>
+                <Text style={[s.thTxt, { flex: 0.7 }]}>Day</Text>
+                <Text style={[s.thTxt, { flex: 1.1 }]}>Status</Text>
+                <Text style={[s.thTxt, { flex: 0.6 }]}>Hrs</Text>
+                <Text style={[s.thTxt, { flex: 1.8 }]}>Topic</Text>
               </View>
 
-              {records
-                .slice()
-                .sort((a, b) => new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime())
-                .map((r, i) => {
-                  const color = STATUS_COLOR[r.studentAttendanceStatus] ?? T.mutedFg;
-                  const icon = STATUS_ICON[r.studentAttendanceStatus] ?? "help-circle-outline";
-                  return (
-                    <View key={r._id || i} style={[s.row, i % 2 === 0 && s.rowAlt]}>
-                      <Text style={[s.tdTxt, { flex: 1.2 }]}>{fmt(r.sessionDate)}</Text>
-                      <Text style={[s.tdTxt, { flex: 0.8, color: T.textSecondary }]}>{dayName(r.sessionDate)}</Text>
-                      <View style={[s.statusCell, { flex: 1 }]}>
-                        <Ionicons name={icon} size={13} color={color} />
-                        <Text style={[s.statusTxt, { color }]}>{r.studentAttendanceStatus}</Text>
+              {records.map((r, i) => {
+                const meta =
+                  STATUS_META[r.studentAttendanceStatus] ??
+                  STATUS_META.CANCELLED;
+                return (
+                  <View
+                    key={r._id || i}
+                    style={[s.row, i % 2 === 0 && s.rowAlt]}
+                  >
+                    <Text style={[s.tdDate, { flex: 1.3 }]}>
+                      {fmt(r.sessionDate)}
+                    </Text>
+                    <Text style={[s.tdMuted, { flex: 0.7 }]}>
+                      {dayName(r.sessionDate)}
+                    </Text>
+                    <View style={[s.statusBadge, { flex: 1.1 }]}>
+                      <View
+                        style={[
+                          s.statusPill,
+                          { backgroundColor: meta.bg },
+                        ]}
+                      >
+                        <Ionicons
+                          name={meta.icon}
+                          size={10}
+                          color={meta.color}
+                        />
+                        <Text
+                          style={[s.statusPillTxt, { color: meta.color }]}
+                        >
+                          {meta.label}
+                        </Text>
                       </View>
-                      <Text style={[s.tdTxt, { flex: 0.7 }]}>{r.durationHours ?? "—"}</Text>
-                      <Text style={[s.tdTxt, { flex: 2, color: T.textSecondary }]} numberOfLines={1}>
-                        {r.topicCovered || "—"}
-                      </Text>
                     </View>
-                  );
-                })}
-              <View style={{ height: 16 }} />
+                    <Text style={[s.tdMuted, { flex: 0.6 }]}>
+                      {r.durationHours ?? "—"}
+                    </Text>
+                    <Text
+                      style={[s.tdTopic, { flex: 1.8 }]}
+                      numberOfLines={1}
+                    >
+                      {r.topicCovered || "—"}
+                    </Text>
+                  </View>
+                );
+              })}
+              <View style={{ height: 20 }} />
             </ScrollView>
           )}
         </View>
@@ -209,42 +315,80 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose })
 const s = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(2,8,23,0.6)",
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: T.paper,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "88%",
-    paddingBottom: 8,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: "90%",
+    overflow: "hidden",
   },
+
+  dragHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#E2E8F0",
+    alignSelf: "center",
+    marginTop: 10,
+    marginBottom: -4,
+    zIndex: 1,
+  },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: T.border,
+    paddingBottom: 18,
   },
-  headerLeft: { flex: 1 },
-  headerTitle: { fontSize: 16, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.3 },
-  headerSub: { fontSize: 12, color: T.mutedFg, marginTop: 2 },
+  headerLeft: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
+  headerIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: -0.3,
+  },
+  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 },
   closeBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: T.muted,
-    alignItems: "center", justifyContent: "center",
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   infoStrip: {
-    flexDirection: "row", flexWrap: "wrap", gap: 8,
-    paddingHorizontal: 20, paddingVertical: 10,
-    backgroundColor: `${T.primary}06`,
-    borderBottomWidth: 1, borderBottomColor: T.border,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "#F8FAFC",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
   },
-  infoItem: { flexDirection: "row", alignItems: "center", gap: 4 },
-  infoTxt: { fontSize: 11, color: T.textSecondary, fontWeight: "600" },
+  infoChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: `${T.primary}0E`,
+    borderRadius: 100,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  infoChipTxt: { fontSize: 11, color: T.primary, fontWeight: "600" },
 
   statsRow: {
     flexDirection: "row",
@@ -252,35 +396,90 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     gap: 8,
     borderBottomWidth: 1,
-    borderBottomColor: T.border,
+    borderBottomColor: "#F1F5F9",
   },
   statBox: {
-    flex: 1, alignItems: "center", paddingVertical: 8,
-    borderRadius: T.radiusMd, borderWidth: 1,
-    backgroundColor: T.background,
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 10,
+    borderRadius: 12,
   },
-  statNum: { fontSize: 16, fontWeight: "800", letterSpacing: -0.5 },
-  statLbl: { fontSize: 9, color: T.mutedFg, fontWeight: "600", marginTop: 2 },
+  statVal: { fontSize: 18, fontWeight: "800", letterSpacing: -0.5 },
+  statLbl: {
+    fontSize: 9,
+    color: "#94A3B8",
+    fontWeight: "600",
+    marginTop: 3,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
 
-  center: { alignItems: "center", paddingVertical: 40, gap: 10 },
-  centerTxt: { fontSize: 14, color: T.textSecondary, fontWeight: "600", textAlign: "center" },
-  centerSub: { fontSize: 12, color: T.textDisabled, textAlign: "center", paddingHorizontal: 24 },
+  center: { alignItems: "center", paddingVertical: 48, gap: 10 },
+  emptyIconBg: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: `${T.primary}10`,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  centerTxt: {
+    fontSize: 14,
+    color: "#475569",
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  centerSub: {
+    fontSize: 12,
+    color: "#94A3B8",
+    textAlign: "center",
+    paddingHorizontal: 32,
+    lineHeight: 18,
+  },
 
-  list: { flex: 1 },
-
+  tableWrap: { flex: 1 },
   tableHead: {
-    flexDirection: "row", paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: `${T.primary}08`,
-    borderBottomWidth: 1, borderBottomColor: T.border,
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "#F8FAFC",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
   },
-  thTxt: { fontSize: 9, fontWeight: "800", color: T.primary, textTransform: "uppercase", letterSpacing: 0.5 },
+  thTxt: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
 
-  row: { flexDirection: "row", paddingHorizontal: 16, paddingVertical: 10, alignItems: "center" },
-  rowAlt: { backgroundColor: `${T.primary}04` },
-  tdTxt: { fontSize: 11, color: T.textPrimary, fontWeight: "500" },
-  statusCell: { flexDirection: "row", alignItems: "center", gap: 3 },
-  statusTxt: { fontSize: 10, fontWeight: "700" },
+  row: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F8FAFC",
+  },
+  rowAlt: { backgroundColor: "#FAFAFA" },
+
+  tdDate: { fontSize: 11, color: "#0F172A", fontWeight: "600" },
+  tdMuted: { fontSize: 11, color: "#94A3B8", fontWeight: "500" },
+  tdTopic: { fontSize: 11, color: "#475569", fontWeight: "500" },
+
+  statusBadge: { justifyContent: "center" },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 100,
+    alignSelf: "flex-start",
+  },
+  statusPillTxt: { fontSize: 9, fontWeight: "700" },
 });
 
 export default AttendanceSheetModal;
