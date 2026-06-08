@@ -460,7 +460,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
       <View
         style={{
           flex: 1,
-          backgroundColor: T.background,
+          backgroundColor: "#F1F5F9",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -471,7 +471,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: T.background }}>
+    <View style={{ flex: 1, backgroundColor: "#F1F5F9" }}>
       <StatusBar
         barStyle="light-content"
         backgroundColor="transparent"
@@ -801,23 +801,26 @@ const styles = StyleSheet.create({
   },
   saveBtnTxt: { color: "#fff", fontWeight: "800", fontSize: 13 },
 
-  scroll: { padding: 16, gap: 12 },
+  scroll: { padding: 14, gap: 10 },
 
   card: {
-    backgroundColor: T.paper,
+    backgroundColor: "#fff",
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: T.border,
-    padding: 16,
-    gap: 6,
+    padding: 14,
+    gap: 4,
+    shadowColor: "#1A2540",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 2,
   },
 
   sectionHead: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 8,
-    marginTop: 2,
+    marginBottom: 6,
+    marginTop: 0,
   },
   sectionIcon: {
     width: 24,
@@ -838,10 +841,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: 8,
+    marginTop: 6,
   },
   fieldLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
     color: T.mutedFg,
     textTransform: "uppercase",
@@ -860,22 +863,22 @@ const styles = StyleSheet.create({
 
   input: {
     borderWidth: 1,
-    borderColor: T.border,
+    borderColor: "#E2E8F0",
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 11,
+    paddingVertical: 9,
     fontSize: 13,
     color: T.textPrimary,
     backgroundColor: "#F8FAFC",
   },
-  inputMulti: { height: 80, paddingTop: 11 },
+  inputMulti: { height: 72, paddingTop: 9 },
 
   readonlyField: {
     borderWidth: 1,
-    borderColor: T.border,
+    borderColor: "#E2E8F0",
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 11,
+    paddingVertical: 9,
     backgroundColor: "#F1F5F9",
     flexDirection: "row",
     alignItems: "center",
@@ -899,10 +902,10 @@ const styles = StyleSheet.create({
   tagInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: T.border,
+    borderColor: "#E2E8F0",
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
     fontSize: 13,
     color: T.textPrimary,
     backgroundColor: "#F8FAFC",
@@ -921,10 +924,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: T.border,
+    borderColor: "#E2E8F0",
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 11,
+    paddingVertical: 9,
     backgroundColor: "#F8FAFC",
   },
   subjectPickerTxt: { fontSize: 13, color: T.mutedFg },
