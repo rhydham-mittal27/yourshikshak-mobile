@@ -431,7 +431,7 @@ const s = StyleSheet.create({
     elevation: 4,
   },
 
-  tabsScroll: { marginBottom: 20, marginHorizontal: -4 },
+  tabsScroll: { marginBottom: 20, marginHorizontal: -4, flexGrow: 0 },
   tabsContent: { gap: 8, paddingHorizontal: 4, alignItems: "flex-start" },
   tab: {
     paddingHorizontal: 18,
