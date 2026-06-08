@@ -97,13 +97,37 @@ const FieldLabel = ({ label, locked }: { label: string; locked?: boolean }) => (
   </View>
 );
 
-const ReadonlyField = ({ value }: { value: string }) => (
-  <View style={styles.readonlyField}>
-    <Text style={styles.readonlyTxt} numberOfLines={1}>
-      {value || "—"}
-    </Text>
-  </View>
-);
+// Locked field — label only, tap to reveal value as tooltip
+const LockedField = ({ label, value }: { label: string; value: string }) => {
+  const [show, setShow] = React.useState(false);
+  const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const reveal = () => {
+    setShow(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setShow(false), 2000);
+  };
+
+  React.useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  return (
+    <Pressable onPress={reveal} style={styles.lockedFieldWrap}>
+      <View style={styles.fieldLabelRow}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        <View style={styles.lockBadge}>
+          <Ionicons name="lock-closed" size={9} color="#7C3AED" />
+          <Text style={styles.lockTxt}>Locked</Text>
+        </View>
+        <Ionicons name="eye-outline" size={12} color="#94A3B8" style={{ marginLeft: 4 }} />
+      </View>
+      {show && (
+        <View style={styles.tooltip}>
+          <Text style={styles.tooltipTxt} numberOfLines={1}>{value || "—"}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+};
 
 const Field = ({
   value,
@@ -537,30 +561,24 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
               accent={T.primary}
             />
 
-            <FieldLabel label="Full Name" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={fullName} />
+              <LockedField label="Full Name" value={fullName} />
             ) : (
-              <Field
-                value={fullName}
-                onChange={setFullName}
-                placeholder="Full name"
-              />
+              <>
+                <FieldLabel label="Full Name" />
+                <Field value={fullName} onChange={setFullName} placeholder="Full name" />
+              </>
             )}
 
-            <FieldLabel label="Email" locked />
-            <ReadonlyField value={email} />
+            <LockedField label="Email" value={email} />
 
-            <FieldLabel label="Phone Number" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={phoneNumber} />
+              <LockedField label="Phone Number" value={phoneNumber} />
             ) : (
-              <Field
-                value={phoneNumber}
-                onChange={setPhoneNumber}
-                placeholder="Phone"
-                keyboardType="phone-pad"
-              />
+              <>
+                <FieldLabel label="Phone Number" />
+                <Field value={phoneNumber} onChange={setPhoneNumber} placeholder="Phone" keyboardType="phone-pad" />
+              </>
             )}
 
             <FieldLabel label="Alternate Phone" />
@@ -571,16 +589,13 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
               keyboardType="phone-pad"
             />
 
-            <FieldLabel label="Gender" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={gender} />
+              <LockedField label="Gender" value={gender} />
             ) : (
-              <SingleSelect
-                options={GENDERS}
-                value={gender}
-                onChange={setGender}
-                color="#7C3AED"
-              />
+              <>
+                <FieldLabel label="Gender" />
+                <SingleSelect options={GENDERS} value={gender} onChange={setGender} color="#7C3AED" />
+              </>
             )}
           </View>
 
@@ -592,27 +607,22 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
               accent="#7C3AED"
             />
 
-            <FieldLabel label="Highest Qualification" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={qualification} />
+              <LockedField label="Highest Qualification" value={qualification} />
             ) : (
-              <Field
-                value={qualification}
-                onChange={setQualification}
-                placeholder="e.g. B.Ed, M.Sc"
-              />
+              <>
+                <FieldLabel label="Highest Qualification" />
+                <Field value={qualification} onChange={setQualification} placeholder="e.g. B.Ed, M.Sc" />
+              </>
             )}
 
-            <FieldLabel label="Experience" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={experience} />
+              <LockedField label="Experience" value={experience} />
             ) : (
-              <SingleSelect
-                options={EXP_OPTIONS}
-                value={experience}
-                onChange={setExperience}
-                color="#7C3AED"
-              />
+              <>
+                <FieldLabel label="Experience" />
+                <SingleSelect options={EXP_OPTIONS} value={experience} onChange={setExperience} color="#7C3AED" />
+              </>
             )}
 
             <FieldLabel label="Subjects" />
@@ -698,28 +708,22 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
               color="#E11D48"
             />
 
-            <FieldLabel label="Permanent Address" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={permanentAddress} />
+              <LockedField label="Permanent Address" value={permanentAddress} />
             ) : (
-              <Field
-                value={permanentAddress}
-                onChange={setPermanentAddress}
-                placeholder="Permanent address"
-                multiline
-              />
+              <>
+                <FieldLabel label="Permanent Address" />
+                <Field value={permanentAddress} onChange={setPermanentAddress} placeholder="Permanent address" multiline />
+              </>
             )}
 
-            <FieldLabel label="Residential Address" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={residentialAddress} />
+              <LockedField label="Residential Address" value={residentialAddress} />
             ) : (
-              <Field
-                value={residentialAddress}
-                onChange={setResidentialAddress}
-                placeholder="Residential address"
-                multiline
-              />
+              <>
+                <FieldLabel label="Residential Address" />
+                <Field value={residentialAddress} onChange={setResidentialAddress} placeholder="Residential address" multiline />
+              </>
             )}
           </View>
 
@@ -873,17 +877,16 @@ const styles = StyleSheet.create({
   },
   inputMulti: { height: 72, paddingTop: 9 },
 
-  readonlyField: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
+  lockedFieldWrap: { marginTop: 6 },
+  tooltip: {
+    marginTop: 4,
+    backgroundColor: "#1E293B",
+    borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 9,
-    backgroundColor: "#F1F5F9",
-    flexDirection: "row",
-    alignItems: "center",
+    paddingVertical: 7,
+    alignSelf: "flex-start",
   },
-  readonlyTxt: { fontSize: 13, color: T.mutedFg, flex: 1 },
+  tooltipTxt: { fontSize: 12, color: "#fff", fontWeight: "500" },
 
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   pill: {
