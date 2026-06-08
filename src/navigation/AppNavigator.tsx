@@ -17,6 +17,7 @@ import NotificationsScreen from "../screens/NotificationsScreen";
 import ClassOpportunitiesScreen from "../screens/ClassOpportunitiesScreen";
 import MyDemosScreen from "../screens/MyDemosScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
+import MyClassesScreen from "../screens/MyClassesScreen";
 import { ModalProvider } from "../context/ModalContext";
 import { setAuthToken, AUTH_STORAGE_KEY, expressInterest } from "../api/client";
 import { registerForPushNotifications } from "../services/pushNotifications";
@@ -33,6 +34,7 @@ export type RootStackParamList = {
   ClassOpportunities: undefined;
   MyDemos: { highlightId?: string } | undefined;
   EditProfile: undefined;
+  MyClasses: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -144,6 +146,7 @@ const AppNavigator = () => {
           />
           <Stack.Screen name="MyDemos" component={MyDemosScreen} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen name="MyClasses" component={MyClassesScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </ModalProvider>

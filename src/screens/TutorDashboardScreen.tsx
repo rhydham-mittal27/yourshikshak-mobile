@@ -1628,6 +1628,21 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
 
         <View style={sb.divider} />
 
+        {/* My Classes */}
+        <Pressable
+          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
+          onPress={() => {
+            closeSidebar();
+            navigation.navigate("MyClasses");
+          }}
+        >
+          <View style={[sb.navIconBg, { backgroundColor: `${T.success}18` }]}>
+            <Ionicons name="book-outline" size={18} color={T.success} />
+          </View>
+          <Text style={sb.navLabel}>My Classes</Text>
+          <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
+        </Pressable>
+
         {/* Class Opportunities */}
         <Pressable
           style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}

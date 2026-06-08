@@ -722,6 +722,47 @@ export interface EditProfileData {
   verificationStatus: string;
 }
 
+// ─── My Classes ──────────────────────────────────────────────────────────────
+
+export interface FinalClass {
+  _id: string;
+  id: string;
+  studentName: string;
+  className?: string;
+  grade?: string;
+  board?: string;
+  subject: Array<string | { label?: string; name?: string; value?: string }>;
+  mode: "ONLINE" | "OFFLINE" | "HYBRID";
+  status: string;
+  completedSessions: number;
+  totalSessions?: number;
+  sheetCount?: number;
+  schedule?: { timeSlot?: string; daysOfWeek?: string[] };
+  coordinator?: { name?: string; phone?: string };
+  classLead?: { classesPerMonth?: number; classDurationHours?: number };
+}
+
+export interface ClassAttendanceRecord {
+  _id: string;
+  sessionDate: string;
+  studentAttendanceStatus: string;
+  durationHours?: number;
+  topicCovered?: string;
+  submittedAt?: string;
+  createdAt?: string;
+  _sheetCycle?: number;
+}
+
+export const getMyClasses = async (
+  status = "ACTIVE",
+): Promise<{ data: FinalClass[]; pagination?: any }> =>
+  apiClient.get(`/final-classes/tutor/my-classes?status=${status}`) as any;
+
+export const getClassAttendance = async (
+  classId: string,
+): Promise<{ data: ClassAttendanceRecord[] }> =>
+  apiClient.get(`/attendance/class/${classId}`) as any;
+
 export const getMyProfileForEdit = async (): Promise<{
   data: EditProfileData;
 }> => apiClient.get("/tutors/my-profile/for-edit") as any;
