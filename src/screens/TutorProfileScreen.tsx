@@ -2169,14 +2169,11 @@ const s = StyleSheet.create({
   },
   stripSep: { width: 1, height: 32, backgroundColor: "rgba(255,255,255,0.08)" },
 
-  // white card
+  // slate card body — white stat cards pop against this
   card: {
-    backgroundColor: T.paper,
+    backgroundColor: "#F1F5F9",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: T.border,
     marginTop: -28,
     padding: 16,
     paddingTop: 8,
@@ -2196,7 +2193,7 @@ const s = StyleSheet.create({
   },
 
   // stats row (4 mini cards)
-  statsRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+  statsRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
 
   // bio
   bioBox: {
@@ -2394,12 +2391,10 @@ const sh = StyleSheet.create({
 const tb = StyleSheet.create({
   bar: {
     flexDirection: "row",
-    backgroundColor: T.muted,
+    backgroundColor: "#E2E8F0",
     borderRadius: 12,
     padding: 4,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: T.border,
+    marginBottom: 16,
   },
   tab: {
     flex: 1,
@@ -2411,10 +2406,10 @@ const tb = StyleSheet.create({
     borderRadius: 9,
   },
   tabActive: {
-    backgroundColor: T.paper,
-    shadowColor: T.primary,
+    backgroundColor: "#fff",
+    shadowColor: "#1A2540",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
   },
@@ -2426,14 +2421,17 @@ const tb = StyleSheet.create({
 const ms = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: T.paper,
+    backgroundColor: "#fff",
     borderRadius: T.radiusMd,
-    borderWidth: 1,
-    borderColor: T.border,
-    borderTopWidth: 2,
+    borderTopWidth: 3,
     padding: 10,
     alignItems: "center",
     gap: 4,
+    shadowColor: "#1A2540",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 2,
   },
   iconBox: {
     width: 30,
