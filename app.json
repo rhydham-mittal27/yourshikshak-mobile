@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "YourShikshak",
+    "slug": "yourshikshak",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#0052ff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "in.yourshikshak.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0052ff",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "googleServicesFile": "./google-services.json",
+      "package": "in.yourshikshak.app",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "androidStatusBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#00000000",
+      "translucent": true
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2D68C4",
+          "sounds": []
+        }
+      ],
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "17f0b370-21d2-4f42-96c3-3c11696e8088"
+      }
+    }
+  }
+}
