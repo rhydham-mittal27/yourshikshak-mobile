@@ -20,7 +20,8 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import {
   getMyProfileForEdit,
   updateMyProfile,
-  getSubjects,
+  getOptions,
+  Option,
   EditProfileData,
 } from "../api/client";
 import { useModal } from "../context/ModalContext";
@@ -282,170 +283,119 @@ const TagInput = ({
   );
 };
 
-// Cascaded Subject picker: Board → Grade → Subjects
-const SubjectPickerModal = ({
+// Curriculum Picker Modal — same pattern as RegisterScreen
+const CurriculumPickerModal = ({
   visible,
-  subjects,
+  boards,
+  grades,
+  subjectOpts,
+  activeBoardId,
+  setActiveBoardId,
   selected,
   onToggle,
   onClose,
 }: {
   visible: boolean;
-  subjects: any[];
+  boards: Option[];
+  grades: Option[];
+  subjectOpts: Option[];
+  activeBoardId: string;
+  setActiveBoardId: (id: string) => void;
   selected: string[];
   onToggle: (id: string) => void;
   onClose: () => void;
-}) => {
-  const [board, setBoard] = useState<string | null>(null);
-  const [grade, setGrade] = useState<string | null>(null);
-
-  // Reset steps when modal opens
-  React.useEffect(() => {
-    if (visible) { setBoard(null); setGrade(null); }
-  }, [visible]);
-
-  // Derive unique boards and grades from subject metadata
-  const boards = React.useMemo(() => {
-    const cats = subjects.map((s) => s.category).filter(Boolean);
-    return [...new Set(cats)].sort();
-  }, [subjects]);
-
-  const grades = React.useMemo(() => {
-    if (!board) return [];
-    const subs = subjects.filter((s) => s.category === board);
-    const subcats = subs.map((s) => s.subcategory).filter(Boolean);
-    return [...new Set(subcats)].sort((a, b) => {
-      const num = (s: string) => parseInt(s.replace(/\D/g, ""), 10) || 0;
-      return num(a) - num(b);
-    });
-  }, [subjects, board]);
-
-  const filteredSubjects = React.useMemo(() => {
-    if (!board) return [];
-    return subjects.filter(
-      (s) => s.category === board && (!grade || s.subcategory === grade),
-    );
-  }, [subjects, board, grade]);
-
-  const step = !board ? 0 : !grade && grades.length > 0 ? 1 : 2;
-
-  const STEP_LABELS = ["Board", "Grade", "Subjects"];
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={sp.backdrop}>
-        <View style={sp.sheet}>
-          <View style={sp.handle} />
-
-          {/* Header */}
-          <View style={sp.header}>
-            <View style={sp.breadcrumb}>
-              {STEP_LABELS.map((lbl, i) => (
-                <React.Fragment key={lbl}>
-                  <Text style={[sp.crumb, i <= step && sp.crumbActive]}>{lbl}</Text>
-                  {i < 2 && <Ionicons name="chevron-forward" size={10} color={i < step ? T.primary : "#CBD5E1"} />}
-                </React.Fragment>
-              ))}
-            </View>
-            <Pressable onPress={onClose} hitSlop={10} style={sp.closeBtn}>
-              <Ionicons name="close" size={16} color="#64748B" />
-            </Pressable>
-          </View>
-
-          {/* Step 0: Board */}
-          {step === 0 && (
-            <View style={sp.body}>
-              <Text style={sp.stepTitle}>Select a Board</Text>
-              {boards.length === 0 ? (
-                <Text style={sp.emptyTxt}>No boards available</Text>
-              ) : (
-                <View style={sp.gridRow}>
-                  {boards.map((b) => (
-                    <Pressable key={b} onPress={() => setBoard(b)} style={sp.gridCard}>
-                      <View style={sp.gridIconBg}>
-                        <Ionicons name="ribbon-outline" size={20} color={T.primary} />
-                      </View>
-                      <Text style={sp.gridLabel}>{b}</Text>
-                      <Ionicons name="chevron-forward" size={12} color="#94A3B8" />
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-              {/* fallback: show all if no categories */}
-              {boards.length === 0 && (
-                <Pressable onPress={() => { setBoard("ALL"); setGrade("ALL"); }} style={sp.fallbackBtn}>
-                  <Text style={sp.fallbackTxt}>Browse all subjects</Text>
-                </Pressable>
-              )}
-            </View>
-          )}
-
-          {/* Step 1: Grade */}
-          {step === 1 && (
-            <View style={sp.body}>
-              <View style={sp.backRow}>
-                <Pressable onPress={() => setBoard(null)} style={sp.backBtn} hitSlop={8}>
-                  <Ionicons name="arrow-back" size={14} color={T.primary} />
-                  <Text style={sp.backTxt}>Back</Text>
-                </Pressable>
-                <Text style={sp.stepTitle}>{board} — Select Grade</Text>
-              </View>
-              <View style={sp.gradeGrid}>
-                {grades.map((g) => (
-                  <Pressable key={g} onPress={() => setGrade(g)}
-                    style={[sp.gradePill, selected.some((id) => subjects.find((s) => s._id === id && s.subcategory === g)) && sp.gradePillActive]}>
-                    <Text style={sp.gradePillTxt}>{g}</Text>
-                  </Pressable>
-                ))}
-                <Pressable onPress={() => setGrade("__all__")} style={[sp.gradePill, { borderColor: "#F59E0B30", backgroundColor: "#FFFBEB" }]}>
-                  <Text style={[sp.gradePillTxt, { color: "#F59E0B" }]}>All Grades</Text>
-                </Pressable>
-              </View>
-            </View>
-          )}
-
-          {/* Step 2: Subjects */}
-          {step === 2 && (
-            <>
-              <View style={sp.body}>
-                <View style={sp.backRow}>
-                  <Pressable onPress={() => setGrade(null)} style={sp.backBtn} hitSlop={8}>
-                    <Ionicons name="arrow-back" size={14} color={T.primary} />
-                    <Text style={sp.backTxt}>Back</Text>
-                  </Pressable>
-                  <Text style={sp.stepTitle} numberOfLines={1}>
-                    {board}{grade && grade !== "__all__" ? ` · ${grade}` : ""}
-                  </Text>
-                </View>
-              </View>
-              <FlatList
-                data={filteredSubjects}
-                keyExtractor={(s) => s._id}
-                renderItem={({ item }) => {
-                  const on = selected.includes(item._id);
-                  return (
-                    <Pressable onPress={() => onToggle(item._id)}
-                      style={[sp.item, on && sp.itemActive]}>
-                      <View style={[sp.itemCheck, on && sp.itemCheckOn]}>
-                        {on && <Ionicons name="checkmark" size={11} color="#fff" />}
-                      </View>
-                      <Text style={[sp.itemTxt, on && { color: T.primary, fontWeight: "700" }]}>{item.name}</Text>
-                      {item.subcategory && grade === "__all__" && (
-                        <Text style={sp.itemGrade}>{item.subcategory}</Text>
-                      )}
-                    </Pressable>
-                  );
-                }}
-                contentContainerStyle={{ paddingBottom: 32 }}
-                showsVerticalScrollIndicator={false}
-              />
-            </>
-          )}
-        </View>
+}) => (
+  <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <View style={cp.root}>
+      {/* Header */}
+      <View style={cp.header}>
+        <Pressable onPress={onClose} hitSlop={10}>
+          <Ionicons name="close" size={22} color={T.textPrimary} />
+        </Pressable>
+        <Text style={cp.headerTitle}>Subjects ({selected.length} selected)</Text>
+        <Pressable onPress={onClose}>
+          <Text style={cp.doneBtn}>Done</Text>
+        </Pressable>
       </View>
-    </Modal>
-  );
-};
+
+      {/* Board tabs */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={cp.boardBar}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 8, alignItems: "center" }}
+      >
+        {boards.map((board) => (
+          <Pressable
+            key={board._id}
+            onPress={() => setActiveBoardId(board._id)}
+            style={[cp.boardTab, activeBoardId === board._id && cp.boardTabActive]}
+          >
+            <Text style={[cp.boardTabTxt, activeBoardId === board._id && cp.boardTabTxtActive]}>
+              {board.label}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {/* Grades + subjects */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
+        {grades
+          .filter((g) => {
+            const pid = typeof g.parent === "object" ? (g.parent as any)?._id : g.parent;
+            return pid === activeBoardId;
+          })
+          .map((grade) => {
+            const gradeSubs = subjectOpts.filter((s) => {
+              const pid = typeof s.parent === "object" ? (s.parent as any)?._id : s.parent;
+              return pid === grade._id;
+            });
+            if (gradeSubs.length === 0) return null;
+            const allSelected = gradeSubs.every((s) => selected.includes(s._id));
+            const someSelected = gradeSubs.some((s) => selected.includes(s._id));
+            const selectedCount = gradeSubs.filter((s) => selected.includes(s._id)).length;
+            return (
+              <View key={grade._id} style={{ marginBottom: 20 }}>
+                <Pressable
+                  onPress={() => {
+                    const ids = gradeSubs.map((s) => s._id);
+                    ids.forEach((id) => {
+                      const isOn = selected.includes(id);
+                      if (allSelected ? isOn : !isOn) onToggle(id);
+                    });
+                  }}
+                  style={cp.gradeHeader}
+                >
+                  <View style={[cp.gradeCheck, (allSelected || someSelected) && { backgroundColor: T.primary, borderColor: T.primary }]}>
+                    {allSelected && <Ionicons name="checkmark" size={12} color="#fff" />}
+                    {!allSelected && someSelected && (
+                      <View style={{ width: 8, height: 2, backgroundColor: "#fff", borderRadius: 1 }} />
+                    )}
+                  </View>
+                  <Text style={cp.gradeLabel}>{grade.label}</Text>
+                  <Text style={cp.gradeCount}>{selectedCount}/{gradeSubs.length}</Text>
+                </Pressable>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                  {gradeSubs.map((sub) => {
+                    const on = selected.includes(sub._id);
+                    return (
+                      <Pressable
+                        key={sub._id}
+                        onPress={() => onToggle(sub._id)}
+                        style={[cp.subChip, on && cp.subChipSelected]}
+                      >
+                        <Text style={[cp.subChipTxt, on && cp.subChipTxtSelected]}>{sub.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })}
+      </ScrollView>
+    </View>
+  </Modal>
+);
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -455,7 +405,10 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState<EditProfileData | null>(null);
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const [boards, setBoards] = useState<Option[]>([]);
+  const [grades, setGrades] = useState<Option[]>([]);
+  const [subjectOpts, setSubjectOpts] = useState<Option[]>([]);
+  const [activeBoardId, setActiveBoardId] = useState<string>("");
   const [subjectModal, setSubjectModal] = useState(false);
 
   // form state
@@ -481,9 +434,11 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [profileRes, subjectsRes] = await Promise.all([
+      const [profileRes, boardsRes, gradesRes, subsRes] = await Promise.all([
         getMyProfileForEdit(),
-        getSubjects(),
+        getOptions("BOARD"),
+        getOptions("GRADE"),
+        getOptions("SUBJECT"),
       ]);
       const p = profileRes.data;
       setData(p);
@@ -502,7 +457,11 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
       setPreferredAreas(p.preferredAreas);
       setLanguagesKnown(p.languagesKnown);
       setSkills(p.skills);
-      setSubjects(subjectsRes.data ?? []);
+      const b = boardsRes?.data ?? [];
+      setBoards(b);
+      if (b.length > 0) setActiveBoardId(b[0]._id);
+      setGrades(gradesRes?.data ?? []);
+      setSubjectOpts(subsRes?.data ?? []);
       // subjects from profile are populated objects; extract IDs
       const ids = (p.subjects ?? [])
         .map((s: any) => (typeof s === "string" ? s : s._id))
@@ -727,7 +686,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
             {selectedSubjects.length > 0 && (
               <View style={styles.pillRow}>
                 {selectedSubjects.map((id) => {
-                  const sub = subjects.find((s) => s._id === id);
+                  const sub = subjectOpts.find((s) => s._id === id);
                   return sub ? (
                     <Pressable
                       key={id}
@@ -741,7 +700,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
                       ]}
                     >
                       <Text style={[styles.pillTxt, { color: T.primary }]}>
-                        {sub.name}
+                        {sub.label}
                       </Text>
                       <Ionicons
                         name="close"
@@ -854,9 +813,13 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <SubjectPickerModal
+      <CurriculumPickerModal
         visible={subjectModal}
-        subjects={subjects}
+        boards={boards}
+        grades={grades}
+        subjectOpts={subjectOpts}
+        activeBoardId={activeBoardId}
+        setActiveBoardId={setActiveBoardId}
         selected={selectedSubjects}
         onToggle={toggleSubject}
         onClose={() => setSubjectModal(false)}
@@ -1023,164 +986,64 @@ const styles = StyleSheet.create({
   subjectPickerTxt: { fontSize: 13, color: T.mutedFg },
 });
 
-const sp = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: T.paper,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    height: "82%",
-    overflow: "hidden",
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#E2E8F0",
-    alignSelf: "center",
-    marginTop: 12,
-  },
+const cp = StyleSheet.create({
+  root: { flex: 1, backgroundColor: T.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 8,
+    paddingTop: Platform.OS === "ios" ? 56 : 40,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: T.border,
   },
-  breadcrumb: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+  headerTitle: { fontSize: 15, fontWeight: "700", color: T.textPrimary },
+  doneBtn: { fontSize: 15, fontWeight: "700", color: T.primary },
+  boardBar: {
+    maxHeight: 52,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
   },
-  crumb: { fontSize: 12, color: "#94A3B8", fontWeight: "500" },
-  crumbActive: { color: T.primary, fontWeight: "700" },
-  closeBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  body: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  stepTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: T.textPrimary,
-    marginBottom: 14,
-    flex: 1,
-  },
-  emptyTxt: { fontSize: 13, color: T.mutedFg, textAlign: "center", marginTop: 32 },
-  // Board grid
-  gridRow: { gap: 10 },
-  gridCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
+  boardTab: {
     paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: T.paper,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: T.border,
   },
-  gridIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: `${T.primary}15`,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  gridLabel: { flex: 1, fontSize: 14, fontWeight: "600", color: T.textPrimary },
-  fallbackBtn: {
-    marginTop: 16,
-    alignSelf: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: `${T.primary}15`,
-    borderRadius: 20,
-  },
-  fallbackTxt: { fontSize: 13, color: T.primary, fontWeight: "600" },
-  // Back row
-  backRow: {
+  boardTabActive: { backgroundColor: T.primary, borderColor: T.primary },
+  boardTabTxt: { fontSize: 13, fontWeight: "600", color: T.textSecondary },
+  boardTabTxtActive: { color: "#fff" },
+  gradeHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 14,
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    backgroundColor: `${T.primary}12`,
-    borderRadius: 8,
-  },
-  backTxt: { fontSize: 12, color: T.primary, fontWeight: "600" },
-  // Grade pills
-  gradeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: 10,
-  },
-  gradePill: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
-  },
-  gradePillActive: {
-    borderColor: T.primary,
-    backgroundColor: `${T.primary}12`,
-  },
-  gradePillTxt: { fontSize: 13, fontWeight: "600", color: "#475569" },
-  // Subject list items
-  item: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: T.border,
   },
-  itemActive: { backgroundColor: `${T.primary}07` },
-  itemCheck: {
+  gradeCheck: {
     width: 20,
     height: 20,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: "#CBD5E1",
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: T.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
   },
-  itemCheckOn: { backgroundColor: T.primary, borderColor: T.primary },
-  itemTxt: { flex: 1, fontSize: 13, color: T.textPrimary },
-  itemGrade: {
-    fontSize: 11,
-    color: T.mutedFg,
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+  gradeLabel: { flex: 1, fontSize: 14, fontWeight: "700", color: T.textPrimary },
+  gradeCount: { fontSize: 12, color: T.textSecondary, fontWeight: "600" },
+  subChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: T.border,
+    backgroundColor: T.paper,
   },
-  // Legacy (unused but kept to avoid style-not-found warnings)
-  title: { fontSize: 15, fontWeight: "800", color: T.textPrimary },
-  searchRow: { flexDirection: "row" },
-  searchInput: { flex: 1, fontSize: 13, color: T.textPrimary },
+  subChipSelected: { backgroundColor: T.primary, borderColor: T.primary },
+  subChipTxt: { fontSize: 13, color: T.textSecondary, fontWeight: "500" },
+  subChipTxtSelected: { color: "#fff", fontWeight: "700" },
 });
