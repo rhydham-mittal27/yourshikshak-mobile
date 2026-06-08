@@ -234,24 +234,25 @@ export default function MyClassesScreen({ navigation }: Props) {
             style={s.tabsScroll}
             contentContainerStyle={s.tabsContent}
           >
-            {STATUSES.map((st) => (
-              <Pressable
-                key={st}
-                onPress={() => setStatusFilter(st)}
-                style={[s.tab, statusFilter === st && s.tabActive]}
-              >
-                <Text style={[s.tabTxt, statusFilter === st && s.tabTxtActive]}>
-                  {STATUS_LABEL[st]}
-                </Text>
-              </Pressable>
-            ))}
+            {STATUSES.map((st) => {
+              const isActive = statusFilter === st;
+              return (
+                <Pressable
+                  key={st}
+                  onPress={() => setStatusFilter(st)}
+                  style={[s.tab, isActive && s.tabActive]}
+                >
+                  <Text style={[s.tabTxt, isActive && s.tabTxtActive]}>
+                    {STATUS_LABEL[st]}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </ScrollView>
 
           {/* Section header */}
           <View style={s.sectionHead}>
-            <View
-              style={[s.sectionIconBg, { backgroundColor: `${T.primary}15` }]}
-            >
+            <View style={s.sectionIconBg}>
               <Ionicons name="school-outline" size={14} color={T.primary} />
             </View>
             <Text style={s.sectionHeadTxt}>
@@ -330,7 +331,7 @@ export default function MyClassesScreen({ navigation }: Props) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: T.background },
+  root: { flex: 1, backgroundColor: "#F1F5F9" },
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1 },
 
@@ -417,15 +418,12 @@ const s = StyleSheet.create({
 
   card: {
     flexGrow: 1,
-    backgroundColor: T.paper,
+    backgroundColor: "#F1F5F9",
     borderTopLeftRadius: T.radiusXxl,
     borderTopRightRadius: T.radiusXxl,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: T.border,
     marginTop: -24,
     padding: 20,
-    paddingTop: 20,
+    paddingTop: 22,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.06,
@@ -433,54 +431,56 @@ const s = StyleSheet.create({
     elevation: 4,
   },
 
-  tabsScroll: { marginBottom: 18, marginHorizontal: -4 },
+  tabsScroll: { marginBottom: 20, marginHorizontal: -4 },
   tabsContent: { gap: 8, paddingHorizontal: 4 },
   tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
     borderRadius: T.radiusFull,
-    backgroundColor: T.muted,
+    backgroundColor: "#F1F5F9",
     borderWidth: 1,
-    borderColor: T.border,
+    borderColor: "#E2E8F0",
   },
   tabActive: {
     backgroundColor: T.primary,
     borderColor: T.primary,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  tabTxt: { fontSize: 12, fontWeight: "600", color: T.textSecondary },
+  tabTxt: { fontSize: 12, fontWeight: "600", color: "#64748B" },
   tabTxtActive: { color: "#fff", fontWeight: "700" },
 
   sectionHead: {
     flexDirection: "row",
     alignItems: "center",
-    borderLeftWidth: 3,
-    borderLeftColor: T.primary,
-    paddingLeft: 10,
     marginBottom: 16,
+    gap: 8,
   },
   sectionIconBg: {
-    width: 26,
-    height: 26,
-    borderRadius: T.radiusSm,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: `${T.primary}12`,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 8,
   },
   sectionHeadTxt: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: "700",
-    color: T.textPrimary,
-    letterSpacing: -0.2,
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.3,
   },
   sectionBadge: {
     backgroundColor: T.primary,
     borderRadius: T.radiusFull,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    marginLeft: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
   },
-  sectionBadgeTxt: { color: "#fff", fontSize: 10, fontWeight: "700" },
+  sectionBadgeTxt: { color: "#fff", fontSize: 11, fontWeight: "700" },
 
   center: { alignItems: "center", paddingVertical: 40, gap: 10 },
   centerTxt: { fontSize: 14, color: T.textSecondary, fontWeight: "600" },
