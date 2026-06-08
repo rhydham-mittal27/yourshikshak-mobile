@@ -282,7 +282,7 @@ const TagInput = ({
   );
 };
 
-// Subject picker modal
+// Cascaded Subject picker: Board → Grade → Subjects
 const SubjectPickerModal = ({
   visible,
   subjects,
@@ -296,64 +296,151 @@ const SubjectPickerModal = ({
   onToggle: (id: string) => void;
   onClose: () => void;
 }) => {
-  const [q, setQ] = useState("");
-  const filtered = subjects.filter((s) =>
-    s.name.toLowerCase().includes(q.toLowerCase()),
-  );
+  const [board, setBoard] = useState<string | null>(null);
+  const [grade, setGrade] = useState<string | null>(null);
+
+  // Reset steps when modal opens
+  React.useEffect(() => {
+    if (visible) { setBoard(null); setGrade(null); }
+  }, [visible]);
+
+  // Derive unique boards and grades from subject metadata
+  const boards = React.useMemo(() => {
+    const cats = subjects.map((s) => s.category).filter(Boolean);
+    return [...new Set(cats)].sort();
+  }, [subjects]);
+
+  const grades = React.useMemo(() => {
+    if (!board) return [];
+    const subs = subjects.filter((s) => s.category === board);
+    const subcats = subs.map((s) => s.subcategory).filter(Boolean);
+    return [...new Set(subcats)].sort((a, b) => {
+      const num = (s: string) => parseInt(s.replace(/\D/g, ""), 10) || 0;
+      return num(a) - num(b);
+    });
+  }, [subjects, board]);
+
+  const filteredSubjects = React.useMemo(() => {
+    if (!board) return [];
+    return subjects.filter(
+      (s) => s.category === board && (!grade || s.subcategory === grade),
+    );
+  }, [subjects, board, grade]);
+
+  const step = !board ? 0 : !grade && grades.length > 0 ? 1 : 2;
+
+  const STEP_LABELS = ["Board", "Grade", "Subjects"];
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={sp.backdrop}>
         <View style={sp.sheet}>
           <View style={sp.handle} />
+
+          {/* Header */}
           <View style={sp.header}>
-            <Text style={sp.title}>Select Subjects</Text>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <Ionicons name="close" size={18} color={T.mutedFg} />
+            <View style={sp.breadcrumb}>
+              {STEP_LABELS.map((lbl, i) => (
+                <React.Fragment key={lbl}>
+                  <Text style={[sp.crumb, i <= step && sp.crumbActive]}>{lbl}</Text>
+                  {i < 2 && <Ionicons name="chevron-forward" size={10} color={i < step ? T.primary : "#CBD5E1"} />}
+                </React.Fragment>
+              ))}
+            </View>
+            <Pressable onPress={onClose} hitSlop={10} style={sp.closeBtn}>
+              <Ionicons name="close" size={16} color="#64748B" />
             </Pressable>
           </View>
-          <View style={sp.searchRow}>
-            <Ionicons name="search-outline" size={15} color={T.mutedFg} />
-            <TextInput
-              value={q}
-              onChangeText={setQ}
-              placeholder="Search subjects…"
-              placeholderTextColor={T.mutedFg}
-              style={sp.searchInput}
-            />
-          </View>
-          <FlatList
-            data={filtered}
-            keyExtractor={(s) => s._id}
-            renderItem={({ item }) => {
-              const on = selected.includes(item._id);
-              return (
-                <Pressable onPress={() => onToggle(item._id)} style={sp.item}>
-                  <Text
-                    style={[
-                      sp.itemTxt,
-                      on && { color: T.primary, fontWeight: "700" },
-                    ]}
-                  >
-                    {item.name}
-                  </Text>
-                  {on && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={18}
-                      color={T.primary}
-                    />
-                  )}
+
+          {/* Step 0: Board */}
+          {step === 0 && (
+            <View style={sp.body}>
+              <Text style={sp.stepTitle}>Select a Board</Text>
+              {boards.length === 0 ? (
+                <Text style={sp.emptyTxt}>No boards available</Text>
+              ) : (
+                <View style={sp.gridRow}>
+                  {boards.map((b) => (
+                    <Pressable key={b} onPress={() => setBoard(b)} style={sp.gridCard}>
+                      <View style={sp.gridIconBg}>
+                        <Ionicons name="ribbon-outline" size={20} color={T.primary} />
+                      </View>
+                      <Text style={sp.gridLabel}>{b}</Text>
+                      <Ionicons name="chevron-forward" size={12} color="#94A3B8" />
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+              {/* fallback: show all if no categories */}
+              {boards.length === 0 && (
+                <Pressable onPress={() => { setBoard("ALL"); setGrade("ALL"); }} style={sp.fallbackBtn}>
+                  <Text style={sp.fallbackTxt}>Browse all subjects</Text>
                 </Pressable>
-              );
-            }}
-            contentContainerStyle={{ paddingBottom: 32 }}
-            showsVerticalScrollIndicator={false}
-          />
+              )}
+            </View>
+          )}
+
+          {/* Step 1: Grade */}
+          {step === 1 && (
+            <View style={sp.body}>
+              <View style={sp.backRow}>
+                <Pressable onPress={() => setBoard(null)} style={sp.backBtn} hitSlop={8}>
+                  <Ionicons name="arrow-back" size={14} color={T.primary} />
+                  <Text style={sp.backTxt}>Back</Text>
+                </Pressable>
+                <Text style={sp.stepTitle}>{board} — Select Grade</Text>
+              </View>
+              <View style={sp.gradeGrid}>
+                {grades.map((g) => (
+                  <Pressable key={g} onPress={() => setGrade(g)}
+                    style={[sp.gradePill, selected.some((id) => subjects.find((s) => s._id === id && s.subcategory === g)) && sp.gradePillActive]}>
+                    <Text style={sp.gradePillTxt}>{g}</Text>
+                  </Pressable>
+                ))}
+                <Pressable onPress={() => setGrade("__all__")} style={[sp.gradePill, { borderColor: "#F59E0B30", backgroundColor: "#FFFBEB" }]}>
+                  <Text style={[sp.gradePillTxt, { color: "#F59E0B" }]}>All Grades</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+
+          {/* Step 2: Subjects */}
+          {step === 2 && (
+            <>
+              <View style={sp.body}>
+                <View style={sp.backRow}>
+                  <Pressable onPress={() => setGrade(null)} style={sp.backBtn} hitSlop={8}>
+                    <Ionicons name="arrow-back" size={14} color={T.primary} />
+                    <Text style={sp.backTxt}>Back</Text>
+                  </Pressable>
+                  <Text style={sp.stepTitle} numberOfLines={1}>
+                    {board}{grade && grade !== "__all__" ? ` · ${grade}` : ""}
+                  </Text>
+                </View>
+              </View>
+              <FlatList
+                data={filteredSubjects}
+                keyExtractor={(s) => s._id}
+                renderItem={({ item }) => {
+                  const on = selected.includes(item._id);
+                  return (
+                    <Pressable onPress={() => onToggle(item._id)}
+                      style={[sp.item, on && sp.itemActive]}>
+                      <View style={[sp.itemCheck, on && sp.itemCheckOn]}>
+                        {on && <Ionicons name="checkmark" size={11} color="#fff" />}
+                      </View>
+                      <Text style={[sp.itemTxt, on && { color: T.primary, fontWeight: "700" }]}>{item.name}</Text>
+                      {item.subcategory && grade === "__all__" && (
+                        <Text style={sp.itemGrade}>{item.subcategory}</Text>
+                      )}
+                    </Pressable>
+                  );
+                }}
+                contentContainerStyle={{ paddingBottom: 32 }}
+                showsVerticalScrollIndicator={false}
+              />
+            </>
+          )}
         </View>
       </View>
     </Modal>
@@ -939,21 +1026,21 @@ const styles = StyleSheet.create({
 const sp = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     justifyContent: "flex-end",
   },
   sheet: {
     backgroundColor: T.paper,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    height: "80%",
+    height: "82%",
     overflow: "hidden",
   },
   handle: {
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: T.border,
+    backgroundColor: "#E2E8F0",
     alignSelf: "center",
     marginTop: 12,
   },
@@ -962,29 +1049,138 @@ const sp = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
-  title: { fontSize: 15, fontWeight: "800", color: T.textPrimary },
-  searchRow: {
+  breadcrumb: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  crumb: { fontSize: 12, color: "#94A3B8", fontWeight: "500" },
+  crumbActive: { color: T.primary, fontWeight: "700" },
+  closeBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  body: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  stepTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: T.textPrimary,
+    marginBottom: 14,
+    flex: 1,
+  },
+  emptyTxt: { fontSize: 13, color: T.mutedFg, textAlign: "center", marginTop: 32 },
+  // Board grid
+  gridRow: { gap: 10 },
+  gridCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  gridIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: `${T.primary}15`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  gridLabel: { flex: 1, fontSize: 14, fontWeight: "600", color: T.textPrimary },
+  fallbackBtn: {
+    marginTop: 16,
+    alignSelf: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: `${T.primary}15`,
+    borderRadius: 20,
+  },
+  fallbackTxt: { fontSize: 13, color: T.primary, fontWeight: "600" },
+  // Back row
+  backRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: "#F1F5F9",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    marginBottom: 14,
   },
-  searchInput: { flex: 1, fontSize: 13, color: T.textPrimary },
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: `${T.primary}12`,
+    borderRadius: 8,
+  },
+  backTxt: { fontSize: 12, color: T.primary, fontWeight: "600" },
+  // Grade pills
+  gradeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  gradePill: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+  },
+  gradePillActive: {
+    borderColor: T.primary,
+    backgroundColor: `${T.primary}12`,
+  },
+  gradePillTxt: { fontSize: 13, fontWeight: "600", color: "#475569" },
+  // Subject list items
   item: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: T.border,
+    borderBottomColor: "#F1F5F9",
   },
-  itemTxt: { fontSize: 13, color: T.textPrimary },
+  itemActive: { backgroundColor: `${T.primary}07` },
+  itemCheck: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: "#CBD5E1",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+  itemCheckOn: { backgroundColor: T.primary, borderColor: T.primary },
+  itemTxt: { flex: 1, fontSize: 13, color: T.textPrimary },
+  itemGrade: {
+    fontSize: 11,
+    color: T.mutedFg,
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  // Legacy (unused but kept to avoid style-not-found warnings)
+  title: { fontSize: 15, fontWeight: "800", color: T.textPrimary },
+  searchRow: { flexDirection: "row" },
+  searchInput: { flex: 1, fontSize: 13, color: T.textPrimary },
 });
