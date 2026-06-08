@@ -20,7 +20,8 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import {
   getMyProfileForEdit,
   updateMyProfile,
-  getSubjects,
+  getOptions,
+  Option,
   EditProfileData,
 } from "../api/client";
 import { useModal } from "../context/ModalContext";
@@ -97,13 +98,37 @@ const FieldLabel = ({ label, locked }: { label: string; locked?: boolean }) => (
   </View>
 );
 
-const ReadonlyField = ({ value }: { value: string }) => (
-  <View style={styles.readonlyField}>
-    <Text style={styles.readonlyTxt} numberOfLines={1}>
-      {value || "—"}
-    </Text>
-  </View>
-);
+// Locked field — label only, tap to reveal value as tooltip
+const LockedField = ({ label, value }: { label: string; value: string }) => {
+  const [show, setShow] = React.useState(false);
+  const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const reveal = () => {
+    setShow(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setShow(false), 2000);
+  };
+
+  React.useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  return (
+    <Pressable onPress={reveal} style={styles.lockedFieldWrap}>
+      <View style={styles.fieldLabelRow}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        <View style={styles.lockBadge}>
+          <Ionicons name="lock-closed" size={9} color="#7C3AED" />
+          <Text style={styles.lockTxt}>Locked</Text>
+        </View>
+        <Ionicons name="eye-outline" size={12} color="#94A3B8" style={{ marginLeft: 4 }} />
+      </View>
+      {show && (
+        <View style={styles.tooltip}>
+          <Text style={styles.tooltipTxt} numberOfLines={1}>{value || "—"}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+};
 
 const Field = ({
   value,
@@ -258,83 +283,197 @@ const TagInput = ({
   );
 };
 
-// Subject picker modal
-const SubjectPickerModal = ({
+// Curriculum Picker Modal — same pattern as RegisterScreen
+const CurriculumPickerModal = ({
   visible,
-  subjects,
+  boards,
+  grades,
+  subjectOpts,
+  activeBoardId,
+  setActiveBoardId,
   selected,
   onToggle,
   onClose,
 }: {
   visible: boolean;
-  subjects: any[];
+  boards: Option[];
+  grades: Option[];
+  subjectOpts: Option[];
+  activeBoardId: string;
+  setActiveBoardId: (id: string) => void;
   selected: string[];
   onToggle: (id: string) => void;
   onClose: () => void;
-}) => {
-  const [q, setQ] = useState("");
-  const filtered = subjects.filter((s) =>
-    s.name.toLowerCase().includes(q.toLowerCase()),
-  );
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
-      <View style={sp.backdrop}>
-        <View style={sp.sheet}>
-          <View style={sp.handle} />
-          <View style={sp.header}>
-            <Text style={sp.title}>Select Subjects</Text>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <Ionicons name="close" size={18} color={T.mutedFg} />
-            </Pressable>
-          </View>
-          <View style={sp.searchRow}>
-            <Ionicons name="search-outline" size={15} color={T.mutedFg} />
-            <TextInput
-              value={q}
-              onChangeText={setQ}
-              placeholder="Search subjects…"
-              placeholderTextColor={T.mutedFg}
-              style={sp.searchInput}
-            />
-          </View>
-          <FlatList
-            data={filtered}
-            keyExtractor={(s) => s._id}
-            renderItem={({ item }) => {
-              const on = selected.includes(item._id);
-              return (
-                <Pressable onPress={() => onToggle(item._id)} style={sp.item}>
-                  <Text
-                    style={[
-                      sp.itemTxt,
-                      on && { color: T.primary, fontWeight: "700" },
-                    ]}
-                  >
-                    {item.name}
-                  </Text>
-                  {on && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={18}
-                      color={T.primary}
-                    />
-                  )}
-                </Pressable>
-              );
-            }}
-            contentContainerStyle={{ paddingBottom: 32 }}
-            showsVerticalScrollIndicator={false}
-          />
-        </View>
+}) => (
+  <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <View style={cp.root}>
+      {/* Header */}
+      <View style={cp.header}>
+        <Pressable onPress={onClose} hitSlop={10}>
+          <Ionicons name="close" size={22} color={T.textPrimary} />
+        </Pressable>
+        <Text style={cp.headerTitle}>Subjects ({selected.length} selected)</Text>
+        <Pressable onPress={onClose}>
+          <Text style={cp.doneBtn}>Done</Text>
+        </Pressable>
       </View>
-    </Modal>
+
+      {/* Board tabs */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={cp.boardBar}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 8, alignItems: "center" }}
+      >
+        {boards.map((board) => (
+          <Pressable
+            key={board._id}
+            onPress={() => setActiveBoardId(board._id)}
+            style={[cp.boardTab, activeBoardId === board._id && cp.boardTabActive]}
+          >
+            <Text style={[cp.boardTabTxt, activeBoardId === board._id && cp.boardTabTxtActive]}>
+              {board.label}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {/* Grades + subjects */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
+        {grades
+          .filter((g) => {
+            const pid = typeof g.parent === "object" ? (g.parent as any)?._id : g.parent;
+            return pid === activeBoardId;
+          })
+          .map((grade) => {
+            const gradeSubs = subjectOpts.filter((s) => {
+              const pid = typeof s.parent === "object" ? (s.parent as any)?._id : s.parent;
+              return pid === grade._id;
+            });
+            if (gradeSubs.length === 0) return null;
+            const allSelected = gradeSubs.every((s) => selected.includes(s._id));
+            const someSelected = gradeSubs.some((s) => selected.includes(s._id));
+            const selectedCount = gradeSubs.filter((s) => selected.includes(s._id)).length;
+            return (
+              <View key={grade._id} style={{ marginBottom: 20 }}>
+                <Pressable
+                  onPress={() => {
+                    const ids = gradeSubs.map((s) => s._id);
+                    ids.forEach((id) => {
+                      const isOn = selected.includes(id);
+                      if (allSelected ? isOn : !isOn) onToggle(id);
+                    });
+                  }}
+                  style={cp.gradeHeader}
+                >
+                  <View style={[cp.gradeCheck, (allSelected || someSelected) && { backgroundColor: T.primary, borderColor: T.primary }]}>
+                    {allSelected && <Ionicons name="checkmark" size={12} color="#fff" />}
+                    {!allSelected && someSelected && (
+                      <View style={{ width: 8, height: 2, backgroundColor: "#fff", borderRadius: 1 }} />
+                    )}
+                  </View>
+                  <Text style={cp.gradeLabel}>{grade.label}</Text>
+                  <Text style={cp.gradeCount}>{selectedCount}/{gradeSubs.length}</Text>
+                </Pressable>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                  {gradeSubs.map((sub) => {
+                    const on = selected.includes(sub._id);
+                    return (
+                      <Pressable
+                        key={sub._id}
+                        onPress={() => onToggle(sub._id)}
+                        style={[cp.subChip, on && cp.subChipSelected]}
+                      >
+                        <Text style={[cp.subChipTxt, on && cp.subChipTxtSelected]}>{sub.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })}
+      </ScrollView>
+    </View>
+  </Modal>
+);
+
+// ─── FSelect — single-value dropdown ─────────────────────────────────────────
+const FSelect = ({
+  label,
+  options,
+  value,
+  onPick,
+}: {
+  label: string;
+  options: string[];
+  value: string;
+  onPick: (v: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <View>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        style={[sel.box, open && sel.boxOpen]}
+      >
+        <Text style={[sel.val, !value && sel.placeholder]}>
+          {value || "Select…"}
+        </Text>
+        <Ionicons name={open ? "chevron-up" : "chevron-down"} size={14} color="#94A3B8" />
+      </Pressable>
+      {open && (
+        <View style={sel.dropdown}>
+          <ScrollView nestedScrollEnabled style={{ maxHeight: 180 }} showsVerticalScrollIndicator={false}>
+            {options.map((opt) => (
+              <Pressable
+                key={opt}
+                style={[sel.item, value === opt && sel.itemActive]}
+                onPress={() => { onPick(opt); setOpen(false); }}
+              >
+                <Text style={[sel.itemTxt, value === opt && sel.itemTxtActive]}>{opt}</Text>
+                {value === opt && <Ionicons name="checkmark-circle" size={14} color={T.primary} />}
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
   );
 };
+
+// ─── ChipSelect — multi-value chip toggle ─────────────────────────────────────
+const ChipSelect = ({
+  label,
+  options,
+  selected,
+  onToggle,
+  accent = T.primary,
+}: {
+  label: string;
+  options: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+  accent?: string;
+}) => (
+  <View>
+    {label ? <Text style={styles.fieldLabel}>{label}</Text> : null}
+    <View style={sel.chipRow}>
+      {options.map((opt) => {
+        const on = selected.includes(opt);
+        return (
+          <Pressable
+            key={opt}
+            onPress={() => onToggle(opt)}
+            style={[sel.chip, on && { backgroundColor: `${accent}15`, borderColor: `${accent}50` }]}
+          >
+            <Text style={[sel.chipTxt, on && { color: accent, fontWeight: "700" }]}>{opt}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  </View>
+);
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -344,8 +483,13 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState<EditProfileData | null>(null);
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const [boards, setBoards] = useState<Option[]>([]);
+  const [grades, setGrades] = useState<Option[]>([]);
+  const [subjectOpts, setSubjectOpts] = useState<Option[]>([]);
+  const [activeBoardId, setActiveBoardId] = useState<string>("");
   const [subjectModal, setSubjectModal] = useState(false);
+  const [cityOpts, setCityOpts] = useState<string[]>([]);
+  const [areaOpts, setAreaOpts] = useState<string[]>([]);
 
   // form state
   const [fullName, setFullName] = useState("");
@@ -370,9 +514,12 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [profileRes, subjectsRes] = await Promise.all([
+      const [profileRes, boardsRes, gradesRes, subsRes, citiesRes] = await Promise.all([
         getMyProfileForEdit(),
-        getSubjects(),
+        getOptions("BOARD"),
+        getOptions("GRADE"),
+        getOptions("SUBJECT"),
+        getOptions("CITY"),
       ]);
       const p = profileRes.data;
       setData(p);
@@ -391,7 +538,13 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
       setPreferredAreas(p.preferredAreas);
       setLanguagesKnown(p.languagesKnown);
       setSkills(p.skills);
-      setSubjects(subjectsRes.data ?? []);
+      const b = boardsRes?.data ?? [];
+      setBoards(b);
+      if (b.length > 0) setActiveBoardId(b[0]._id);
+      setGrades(gradesRes?.data ?? []);
+      setSubjectOpts(subsRes?.data ?? []);
+      setCityOpts((citiesRes?.data ?? []).map((o: Option) => o.label));
+      if (p.city) loadAreas(p.city);
       // subjects from profile are populated objects; extract IDs
       const ids = (p.subjects ?? [])
         .map((s: any) => (typeof s === "string" ? s : s._id))
@@ -418,6 +571,16 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
     setPreferredAreas((prev) =>
       prev.includes(area) ? prev.filter((x) => x !== area) : [...prev, area],
     );
+
+  const loadAreas = async (c: string) => {
+    try {
+      const type = `AREA_${c.toUpperCase().replace(/\s+/g, "_")}`;
+      const res = await getOptions(type);
+      setAreaOpts((res?.data ?? []).map((o: Option) => o.label));
+    } catch {
+      setAreaOpts([]);
+    }
+  };
 
   const save = async () => {
     if (!fullName.trim()) {
@@ -460,7 +623,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
       <View
         style={{
           flex: 1,
-          backgroundColor: T.background,
+          backgroundColor: "#F1F5F9",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -471,7 +634,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: T.background }}>
+    <View style={{ flex: 1, backgroundColor: "#F1F5F9" }}>
       <StatusBar
         barStyle="light-content"
         backgroundColor="transparent"
@@ -537,30 +700,24 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
               accent={T.primary}
             />
 
-            <FieldLabel label="Full Name" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={fullName} />
+              <LockedField label="Full Name" value={fullName} />
             ) : (
-              <Field
-                value={fullName}
-                onChange={setFullName}
-                placeholder="Full name"
-              />
+              <>
+                <FieldLabel label="Full Name" />
+                <Field value={fullName} onChange={setFullName} placeholder="Full name" />
+              </>
             )}
 
-            <FieldLabel label="Email" locked />
-            <ReadonlyField value={email} />
+            <LockedField label="Email" value={email} />
 
-            <FieldLabel label="Phone Number" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={phoneNumber} />
+              <LockedField label="Phone Number" value={phoneNumber} />
             ) : (
-              <Field
-                value={phoneNumber}
-                onChange={setPhoneNumber}
-                placeholder="Phone"
-                keyboardType="phone-pad"
-              />
+              <>
+                <FieldLabel label="Phone Number" />
+                <Field value={phoneNumber} onChange={setPhoneNumber} placeholder="Phone" keyboardType="phone-pad" />
+              </>
             )}
 
             <FieldLabel label="Alternate Phone" />
@@ -571,16 +728,13 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
               keyboardType="phone-pad"
             />
 
-            <FieldLabel label="Gender" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={gender} />
+              <LockedField label="Gender" value={gender} />
             ) : (
-              <SingleSelect
-                options={GENDERS}
-                value={gender}
-                onChange={setGender}
-                color="#7C3AED"
-              />
+              <>
+                <FieldLabel label="Gender" />
+                <SingleSelect options={GENDERS} value={gender} onChange={setGender} color="#7C3AED" />
+              </>
             )}
           </View>
 
@@ -592,27 +746,22 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
               accent="#7C3AED"
             />
 
-            <FieldLabel label="Highest Qualification" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={qualification} />
+              <LockedField label="Highest Qualification" value={qualification} />
             ) : (
-              <Field
-                value={qualification}
-                onChange={setQualification}
-                placeholder="e.g. B.Ed, M.Sc"
-              />
+              <>
+                <FieldLabel label="Highest Qualification" />
+                <Field value={qualification} onChange={setQualification} placeholder="e.g. B.Ed, M.Sc" />
+              </>
             )}
 
-            <FieldLabel label="Experience" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={experience} />
+              <LockedField label="Experience" value={experience} />
             ) : (
-              <SingleSelect
-                options={EXP_OPTIONS}
-                value={experience}
-                onChange={setExperience}
-                color="#7C3AED"
-              />
+              <>
+                <FieldLabel label="Experience" />
+                <SingleSelect options={EXP_OPTIONS} value={experience} onChange={setExperience} color="#7C3AED" />
+              </>
             )}
 
             <FieldLabel label="Subjects" />
@@ -630,7 +779,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
             {selectedSubjects.length > 0 && (
               <View style={styles.pillRow}>
                 {selectedSubjects.map((id) => {
-                  const sub = subjects.find((s) => s._id === id);
+                  const sub = subjectOpts.find((s) => s._id === id);
                   return sub ? (
                     <Pressable
                       key={id}
@@ -644,7 +793,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
                       ]}
                     >
                       <Text style={[styles.pillTxt, { color: T.primary }]}>
-                        {sub.name}
+                        {sub.label}
                       </Text>
                       <Ionicons
                         name="close"
@@ -684,42 +833,39 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
               accent="#E11D48"
             />
 
-            <FieldLabel label="City" />
-            <Field value={city} onChange={setCity} placeholder="Your city" />
-
-            <FieldLabel label="Preferred Areas" />
-            <TagInput
-              tags={preferredAreas}
-              onAdd={(v) => setPreferredAreas((p) => [...p, v])}
-              onRemove={(v) =>
-                setPreferredAreas((p) => p.filter((x) => x !== v))
-              }
-              placeholder="Add area and press enter"
-              color="#E11D48"
+            <FSelect
+              label="City"
+              options={cityOpts.length > 0 ? cityOpts : ["Mumbai", "Delhi", "Bangalore", "Pune", "Hyderabad", "Chennai"]}
+              value={city}
+              onPick={(v) => { setCity(v); setPreferredAreas([]); loadAreas(v); }}
             />
 
-            <FieldLabel label="Permanent Address" locked={isVerified} />
-            {isVerified ? (
-              <ReadonlyField value={permanentAddress} />
-            ) : (
-              <Field
-                value={permanentAddress}
-                onChange={setPermanentAddress}
-                placeholder="Permanent address"
-                multiline
+            {city ? (
+              <ChipSelect
+                label="Preferred Areas"
+                options={areaOpts.length > 0 ? areaOpts : [`${city} North`, `${city} South`, `${city} East`, `${city} West`, `${city} Central`]}
+                selected={preferredAreas}
+                onToggle={toggleArea}
+                accent="#E11D48"
               />
+            ) : null}
+
+            {isVerified ? (
+              <LockedField label="Permanent Address" value={permanentAddress} />
+            ) : (
+              <>
+                <FieldLabel label="Permanent Address" />
+                <Field value={permanentAddress} onChange={setPermanentAddress} placeholder="Permanent address" multiline />
+              </>
             )}
 
-            <FieldLabel label="Residential Address" locked={isVerified} />
             {isVerified ? (
-              <ReadonlyField value={residentialAddress} />
+              <LockedField label="Residential Address" value={residentialAddress} />
             ) : (
-              <Field
-                value={residentialAddress}
-                onChange={setResidentialAddress}
-                placeholder="Residential address"
-                multiline
-              />
+              <>
+                <FieldLabel label="Residential Address" />
+                <Field value={residentialAddress} onChange={setResidentialAddress} placeholder="Residential address" multiline />
+              </>
             )}
           </View>
 
@@ -763,9 +909,13 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <SubjectPickerModal
+      <CurriculumPickerModal
         visible={subjectModal}
-        subjects={subjects}
+        boards={boards}
+        grades={grades}
+        subjectOpts={subjectOpts}
+        activeBoardId={activeBoardId}
+        setActiveBoardId={setActiveBoardId}
         selected={selectedSubjects}
         onToggle={toggleSubject}
         onClose={() => setSubjectModal(false)}
@@ -775,6 +925,60 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
 };
 
 export default EditProfileScreen;
+
+// ─── Select / ChipSelect Styles ───────────────────────────────────────────────
+const sel = StyleSheet.create({
+  box: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#fff",
+    marginTop: 4,
+  },
+  boxOpen: { borderColor: T.primary, borderWidth: 1.5 },
+  val: { fontSize: 13, color: T.textPrimary, flex: 1 },
+  placeholder: { color: "#94A3B8" },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    marginTop: 2,
+    overflow: "hidden",
+    shadowColor: "#1A2540",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  itemActive: { backgroundColor: `${T.primary}08` },
+  itemTxt: { fontSize: 13, color: T.textPrimary },
+  itemTxtActive: { color: T.primary, fontWeight: "700" },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+  },
+  chipTxt: { fontSize: 12, color: "#64748B", fontWeight: "500" },
+});
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -801,23 +1005,26 @@ const styles = StyleSheet.create({
   },
   saveBtnTxt: { color: "#fff", fontWeight: "800", fontSize: 13 },
 
-  scroll: { padding: 16, gap: 12 },
+  scroll: { padding: 14, gap: 10 },
 
   card: {
-    backgroundColor: T.paper,
+    backgroundColor: "#fff",
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: T.border,
-    padding: 16,
-    gap: 6,
+    padding: 14,
+    gap: 4,
+    shadowColor: "#1A2540",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 2,
   },
 
   sectionHead: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 8,
-    marginTop: 2,
+    marginBottom: 6,
+    marginTop: 0,
   },
   sectionIcon: {
     width: 24,
@@ -838,10 +1045,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: 8,
+    marginTop: 6,
   },
   fieldLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
     color: T.mutedFg,
     textTransform: "uppercase",
@@ -860,27 +1067,26 @@ const styles = StyleSheet.create({
 
   input: {
     borderWidth: 1,
-    borderColor: T.border,
+    borderColor: "#E2E8F0",
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 11,
+    paddingVertical: 9,
     fontSize: 13,
     color: T.textPrimary,
     backgroundColor: "#F8FAFC",
   },
-  inputMulti: { height: 80, paddingTop: 11 },
+  inputMulti: { height: 72, paddingTop: 9 },
 
-  readonlyField: {
-    borderWidth: 1,
-    borderColor: T.border,
-    borderRadius: 10,
+  lockedFieldWrap: { marginTop: 6 },
+  tooltip: {
+    marginTop: 4,
+    backgroundColor: "#1E293B",
+    borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 11,
-    backgroundColor: "#F1F5F9",
-    flexDirection: "row",
-    alignItems: "center",
+    paddingVertical: 7,
+    alignSelf: "flex-start",
   },
-  readonlyTxt: { fontSize: 13, color: T.mutedFg, flex: 1 },
+  tooltipTxt: { fontSize: 12, color: "#fff", fontWeight: "500" },
 
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   pill: {
@@ -899,10 +1105,10 @@ const styles = StyleSheet.create({
   tagInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: T.border,
+    borderColor: "#E2E8F0",
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
     fontSize: 13,
     color: T.textPrimary,
     backgroundColor: "#F8FAFC",
@@ -921,64 +1127,73 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: T.border,
+    borderColor: "#E2E8F0",
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 11,
+    paddingVertical: 9,
     backgroundColor: "#F8FAFC",
   },
   subjectPickerTxt: { fontSize: 13, color: T.mutedFg },
 });
 
-const sp = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: T.paper,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    height: "80%",
-    overflow: "hidden",
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: T.border,
-    alignSelf: "center",
-    marginTop: 12,
-  },
+const cp = StyleSheet.create({
+  root: { flex: 1, backgroundColor: T.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  title: { fontSize: 15, fontWeight: "800", color: T.textPrimary },
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: "#F1F5F9",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  searchInput: { flex: 1, fontSize: 13, color: T.textPrimary },
-  item: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingTop: Platform.OS === "ios" ? 56 : 40,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
   },
-  itemTxt: { fontSize: 13, color: T.textPrimary },
+  headerTitle: { fontSize: 15, fontWeight: "700", color: T.textPrimary },
+  doneBtn: { fontSize: 15, fontWeight: "700", color: T.primary },
+  boardBar: {
+    maxHeight: 52,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  boardTab: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: T.paper,
+    borderWidth: 1,
+    borderColor: T.border,
+  },
+  boardTabActive: { backgroundColor: T.primary, borderColor: T.primary },
+  boardTabTxt: { fontSize: 13, fontWeight: "600", color: T.textSecondary },
+  boardTabTxtActive: { color: "#fff" },
+  gradeHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  gradeCheck: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: T.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  gradeLabel: { flex: 1, fontSize: 14, fontWeight: "700", color: T.textPrimary },
+  gradeCount: { fontSize: 12, color: T.textSecondary, fontWeight: "600" },
+  subChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: T.border,
+    backgroundColor: T.paper,
+  },
+  subChipSelected: { backgroundColor: T.primary, borderColor: T.primary },
+  subChipTxt: { fontSize: 13, color: T.textSecondary, fontWeight: "500" },
+  subChipTxtSelected: { color: "#fff", fontWeight: "700" },
 });
