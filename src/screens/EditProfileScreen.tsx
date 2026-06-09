@@ -79,10 +79,10 @@ const SectionHeader = ({
   accent?: string;
 }) => (
   <View style={styles.sectionHead}>
-    <View style={[styles.sectionIcon, { backgroundColor: `${accent}12` }]}>
-      <Ionicons name={icon} size={13} color={accent} />
+    <View style={[styles.sectionIcon, { backgroundColor: `${accent}18` }]}>
+      <Ionicons name={icon} size={14} color={accent} />
     </View>
-    <Text style={styles.sectionTitle}>{title}</Text>
+    <Text style={[styles.sectionTitle, { color: accent }]}>{title}</Text>
   </View>
 );
 
@@ -98,34 +98,35 @@ const FieldLabel = ({ label, locked }: { label: string; locked?: boolean }) => (
   </View>
 );
 
-// Locked field — label only, tap to reveal value as tooltip
+// Locked field — masked row, tap to toggle reveal
 const LockedField = ({ label, value }: { label: string; value: string }) => {
   const [show, setShow] = React.useState(false);
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reveal = () => {
-    setShow(true);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setShow(false), 2000);
+    setShow((s) => {
+      const next = !s;
+      if (next) {
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => setShow(false), 2500);
+      }
+      return next;
+    });
   };
 
   React.useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   return (
-    <Pressable onPress={reveal} style={styles.lockedFieldWrap}>
-      <View style={styles.fieldLabelRow}>
-        <Text style={styles.fieldLabel}>{label}</Text>
-        <View style={styles.lockBadge}>
-          <Ionicons name="lock-closed" size={9} color="#7C3AED" />
-          <Text style={styles.lockTxt}>Locked</Text>
-        </View>
-        <Ionicons name="eye-outline" size={12} color="#94A3B8" style={{ marginLeft: 4 }} />
+    <Pressable onPress={reveal} style={styles.lockedRow} hitSlop={4}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.lockedLabel}>{label}</Text>
+        <Text style={styles.lockedValue} numberOfLines={1}>
+          {show ? (value || "—") : "•  •  •  •  •  •"}
+        </Text>
       </View>
-      {show && (
-        <View style={styles.tooltip}>
-          <Text style={styles.tooltipTxt} numberOfLines={1}>{value || "—"}</Text>
-        </View>
-      )}
+      <View style={styles.lockedEye}>
+        <Ionicons name={show ? "eye" : "eye-off-outline"} size={13} color="#7C3AED" />
+      </View>
     </Pressable>
   );
 };
@@ -646,37 +647,45 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
         colors={[T.darkBg, T.darkBgMid, "#162032"]}
         style={[styles.hero, { paddingTop: Math.max(insets.top, 16) + 8 }]}
       >
+        {/* Top bar */}
         <View style={styles.topBar}>
-          <Pressable
-            onPress={() => navigation.goBack()}
-            style={styles.backBtn}
-            hitSlop={12}
-          >
+          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
             <Ionicons name="chevron-back" size={20} color="#fff" />
           </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.heroTitle}>Edit Profile</Text>
-            {isVerified && (
-              <Text style={styles.heroSub}>
-                Some fields are locked after verification
-              </Text>
-            )}
-          </View>
+          <Text style={styles.heroTitle}>Edit Profile</Text>
           <Pressable
             onPress={save}
             disabled={saving}
-            style={({ pressed }) => [
-              styles.saveBtn,
-              pressed && { opacity: 0.8 },
-              saving && { opacity: 0.6 },
-            ]}
+            style={({ pressed }) => [styles.saveBtn, pressed && { opacity: 0.75 }, saving && { opacity: 0.5 }]}
           >
             {saving ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color="#7C3AED" />
             ) : (
               <Text style={styles.saveBtnTxt}>Save</Text>
             )}
           </Pressable>
+        </View>
+
+        {/* Avatar + identity row */}
+        <View style={styles.heroBody}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarTxt}>
+              {fullName
+                ? fullName.trim().split(/\s+/).map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
+                : "?"}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.heroName} numberOfLines={1}>{fullName || "Your Profile"}</Text>
+            {isVerified ? (
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="shield-checkmark" size={10} color="#10B981" />
+                <Text style={styles.verifiedTxt}>Verified Tutor</Text>
+              </View>
+            ) : (
+              <Text style={styles.heroSub}>Complete your profile to get more students</Text>
+            )}
+          </View>
         </View>
       </LinearGradient>
 
@@ -693,12 +702,8 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           keyboardShouldPersistTaps="handled"
         >
           {/* ── Personal Info ── */}
-          <View style={styles.card}>
-            <SectionHeader
-              icon="person-outline"
-              title="Personal Info"
-              accent={T.primary}
-            />
+          <View style={[styles.card, { borderLeftColor: T.primary }]}>
+            <SectionHeader icon="person-outline" title="Personal Info" accent={T.primary} />
 
             {isVerified ? (
               <LockedField label="Full Name" value={fullName} />
@@ -739,12 +744,8 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           </View>
 
           {/* ── Qualifications ── */}
-          <View style={styles.card}>
-            <SectionHeader
-              icon="school-outline"
-              title="Qualifications & Experience"
-              accent="#7C3AED"
-            />
+          <View style={[styles.card, { borderLeftColor: "#7C3AED" }]}>
+            <SectionHeader icon="school-outline" title="Qualifications & Experience" accent="#7C3AED" />
 
             {isVerified ? (
               <LockedField label="Highest Qualification" value={qualification} />
@@ -765,16 +766,20 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
             )}
 
             <FieldLabel label="Subjects" />
-            <Pressable
-              onPress={() => setSubjectModal(true)}
-              style={styles.subjectPickerBtn}
-            >
-              <Text style={styles.subjectPickerTxt}>
-                {selectedSubjects.length === 0
-                  ? "Tap to select subjects"
-                  : `${selectedSubjects.length} subject${selectedSubjects.length > 1 ? "s" : ""} selected`}
-              </Text>
-              <Ionicons name="chevron-down" size={15} color={T.mutedFg} />
+            <Pressable onPress={() => setSubjectModal(true)} style={styles.subjectPickerBtn}>
+              <View style={styles.subjectPickerLeft}>
+                <Ionicons name="book-outline" size={14} color="#7C3AED" />
+                <Text style={styles.subjectPickerTxt}>
+                  {selectedSubjects.length === 0 ? "Choose subjects you teach" : `${selectedSubjects.length} subject${selectedSubjects.length > 1 ? "s" : ""} selected`}
+                </Text>
+              </View>
+              {selectedSubjects.length > 0 ? (
+                <View style={styles.subjectCount}>
+                  <Text style={styles.subjectCountTxt}>{selectedSubjects.length}</Text>
+                </View>
+              ) : (
+                <Ionicons name="chevron-forward" size={14} color="#7C3AED" />
+              )}
             </Pressable>
             {selectedSubjects.length > 0 && (
               <View style={styles.pillRow}>
@@ -809,12 +814,8 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           </View>
 
           {/* ── Teaching ── */}
-          <View style={styles.card}>
-            <SectionHeader
-              icon="tv-outline"
-              title="Teaching Preferences"
-              accent="#F59E0B"
-            />
+          <View style={[styles.card, { borderLeftColor: "#F59E0B" }]}>
+            <SectionHeader icon="tv-outline" title="Teaching Preferences" accent="#F59E0B" />
 
             <FieldLabel label="Teaching Mode" />
             <SingleSelect
@@ -826,12 +827,8 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           </View>
 
           {/* ── Location ── */}
-          <View style={styles.card}>
-            <SectionHeader
-              icon="location-outline"
-              title="Location"
-              accent="#E11D48"
-            />
+          <View style={[styles.card, { borderLeftColor: "#E11D48" }]}>
+            <SectionHeader icon="location-outline" title="Location" accent="#E11D48" />
 
             <FSelect
               label="City"
@@ -870,12 +867,8 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           </View>
 
           {/* ── Bio & Skills ── */}
-          <View style={styles.card}>
-            <SectionHeader
-              icon="flash-outline"
-              title="Bio & Skills"
-              accent="#10B981"
-            />
+          <View style={[styles.card, { borderLeftColor: "#10B981" }]}>
+            <SectionHeader icon="flash-outline" title="Bio & Skills" accent="#10B981" />
 
             <FieldLabel label="Bio" />
             <Field
@@ -932,127 +925,160 @@ const sel = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#E2E8F0",
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    backgroundColor: "#FAFBFC",
     marginTop: 4,
   },
-  boxOpen: { borderColor: T.primary, borderWidth: 1.5 },
-  val: { fontSize: 13, color: T.textPrimary, flex: 1 },
-  placeholder: { color: "#94A3B8" },
+  boxOpen: { borderColor: T.primary, borderWidth: 1.5, backgroundColor: "#fff" },
+  val: { fontSize: 13, color: T.textPrimary, flex: 1, fontWeight: "500" },
+  placeholder: { color: "#94A3B8", fontWeight: "400" },
   dropdown: {
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: "#fff",
-    marginTop: 2,
+    marginTop: 4,
     overflow: "hidden",
     shadowColor: "#1A2540",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
   },
   item: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: "#F8FAFC",
   },
   itemActive: { backgroundColor: `${T.primary}08` },
-  itemTxt: { fontSize: 13, color: T.textPrimary },
+  itemTxt: { fontSize: 13, color: T.textPrimary, fontWeight: "500" },
   itemTxtActive: { color: T.primary, fontWeight: "700" },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#E2E8F0",
     backgroundColor: "#F8FAFC",
   },
-  chipTxt: { fontSize: 12, color: "#64748B", fontWeight: "500" },
+  chipTxt: { fontSize: 12, color: "#64748B", fontWeight: "600" },
 });
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  hero: { paddingHorizontal: 20, paddingBottom: 20 },
-  topBar: { flexDirection: "row", alignItems: "center", gap: 12 },
+  // ── Hero ───────────────────────────────────────────────────────────────────
+  hero: { paddingHorizontal: 20, paddingBottom: 22 },
+  topBar: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20 },
   backBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 18,
     backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },
-  heroTitle: { fontSize: 18, fontWeight: "800", color: "#fff" },
-  heroSub: { fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 1 },
+  heroTitle: { flex: 1, fontSize: 17, fontWeight: "700", color: "#fff", letterSpacing: -0.3 },
   saveBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: "#7C3AED",
-    minWidth: 60,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    minWidth: 64,
     alignItems: "center",
+    shadowColor: "#7C3AED",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  saveBtnTxt: { color: "#fff", fontWeight: "800", fontSize: 13 },
+  saveBtnTxt: { color: "#7C3AED", fontWeight: "800", fontSize: 13 },
 
+  // Hero avatar row
+  heroBody: { flexDirection: "row", alignItems: "center", gap: 14 },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(124,58,237,0.35)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarTxt: { fontSize: 18, fontWeight: "800", color: "#fff", letterSpacing: -0.5 },
+  heroName: { fontSize: 16, fontWeight: "700", color: "#fff", letterSpacing: -0.3 },
+  heroSub: { fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 3 },
+  verifiedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+    backgroundColor: "rgba(16,185,129,0.15)",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignSelf: "flex-start",
+  },
+  verifiedTxt: { fontSize: 10, fontWeight: "700", color: "#10B981" },
+
+  // ── Scroll & Cards ─────────────────────────────────────────────────────────
   scroll: { padding: 14, gap: 10 },
-
   card: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 14,
-    gap: 4,
+    padding: 16,
+    gap: 6,
+    borderLeftWidth: 4,
+    borderLeftColor: T.primary,
     shadowColor: "#1A2540",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
-    shadowRadius: 8,
+    shadowRadius: 10,
     elevation: 2,
   },
 
+  // ── Section header ─────────────────────────────────────────────────────────
   sectionHead: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 6,
-    marginTop: 0,
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
   sectionIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: "800",
-    color: T.textPrimary,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
 
-  fieldLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 6,
-  },
+  // ── Field label ────────────────────────────────────────────────────────────
+  fieldLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
   fieldLabel: {
     fontSize: 10,
     fontWeight: "700",
-    color: T.mutedFg,
+    color: "#94A3B8",
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
   lockBadge: {
     flexDirection: "row",
@@ -1065,75 +1091,117 @@ const styles = StyleSheet.create({
   },
   lockTxt: { fontSize: 9, color: "#7C3AED", fontWeight: "700" },
 
+  // ── Inputs ─────────────────────────────────────────────────────────────────
   input: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#E2E8F0",
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
     fontSize: 13,
     color: T.textPrimary,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FAFBFC",
   },
-  inputMulti: { height: 72, paddingTop: 9 },
+  inputMulti: { height: 76, paddingTop: 10 },
 
-  lockedFieldWrap: { marginTop: 6 },
-  tooltip: {
-    marginTop: 4,
-    backgroundColor: "#1E293B",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    alignSelf: "flex-start",
+  // ── Locked field row ───────────────────────────────────────────────────────
+  lockedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F7FF",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#EDE9FE",
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+    marginTop: 2,
   },
-  tooltipTxt: { fontSize: 12, color: "#fff", fontWeight: "500" },
+  lockedLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#7C3AED",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 3,
+  },
+  lockedValue: { fontSize: 13, color: "#4C1D95", fontWeight: "600", letterSpacing: 1 },
+  lockedEye: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(124,58,237,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
 
-  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
+  // ── Pills ──────────────────────────────────────────────────────────────────
+  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 4 },
   pill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 11,
-    paddingVertical: 6,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: T.border,
-    backgroundColor: T.muted,
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
   },
-  pillTxt: { fontSize: 12, fontWeight: "600", color: T.textPrimary },
+  pillTxt: { fontSize: 12, fontWeight: "600", color: "#64748B" },
 
+  // ── Tag input ──────────────────────────────────────────────────────────────
   tagInputRow: { flexDirection: "row", gap: 8 },
   tagInput: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#E2E8F0",
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
     fontSize: 13,
     color: T.textPrimary,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FAFBFC",
   },
   tagAddBtn: {
-    width: 42,
+    width: 44,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: T.border,
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FAFBFC",
   },
 
+  // ── Subject picker ─────────────────────────────────────────────────────────
   subjectPickerBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderWidth: 1.5,
+    borderColor: "#DDD6FE",
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    backgroundColor: "#F8FAFC",
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    backgroundColor: "#F5F3FF",
+    marginTop: 2,
   },
-  subjectPickerTxt: { fontSize: 13, color: T.mutedFg },
+  subjectPickerLeft: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
+  subjectPickerTxt: { fontSize: 13, color: "#7C3AED", fontWeight: "600", flex: 1 },
+  subjectCount: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#7C3AED",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+  },
+  subjectCountTxt: { fontSize: 11, color: "#fff", fontWeight: "800" },
+
+  // Legacy stubs (keep to avoid style-not-found crashes)
+  lockedFieldWrap: {},
+  tooltip: {},
+  tooltipTxt: {},
 });
 
 const cp = StyleSheet.create({
