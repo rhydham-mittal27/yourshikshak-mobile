@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Modal,
   View,
@@ -9,16 +9,10 @@ import {
   ActivityIndicator,
   TextInput,
   Dimensions,
+  Animated,
+  PanResponder,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  runOnJS,
-} from "react-native-reanimated";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import {
   getClassAttendance,
   submitAttendance,
@@ -28,10 +22,9 @@ import {
 import { T } from "../../constants/colors";
 
 const { height: SCREEN_H } = Dimensions.get("window");
-const SNAP_COLLAPSED = SCREEN_H * 0.55;
-const SNAP_EXPANDED  = SCREEN_H * 0.92;
+const SNAP_COLLAPSED  = SCREEN_H * 0.55;
+const SNAP_EXPANDED   = SCREEN_H * 0.92;
 const CLOSE_THRESHOLD = SCREEN_H * 0.3;
-const SPRING = { damping: 22, stiffness: 280, mass: 0.8 };
 
 interface Props {
   visible: boolean;
@@ -91,32 +84,40 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
 
   const classDay = isTodayClassDay(cls);
 
-  // ── Gesture / animation ──────────────────────────────────────────────────
-  const sheetH = useSharedValue(0);
-  const startH = useSharedValue(0);
+  // ── Animation ─────────────────────────────────────────────────────────────
+  const sheetH  = useRef(new Animated.Value(0)).current;
+  const startH  = useRef(SNAP_COLLAPSED);
 
-  const open  = () => { sheetH.value = withSpring(SNAP_COLLAPSED, SPRING); };
-  const close = () => { sheetH.value = withTiming(0, { duration: 220 }, () => runOnJS(onClose)()); };
+  const open = () =>
+    Animated.spring(sheetH, { toValue: SNAP_COLLAPSED, useNativeDriver: false, damping: 22, stiffness: 280, mass: 0.8 }).start();
 
-  useEffect(() => { if (visible) open(); }, [visible]);
+  const close = () =>
+    Animated.timing(sheetH, { toValue: 0, duration: 220, useNativeDriver: false }).start(onClose);
 
-  const panGesture = Gesture.Pan()
-    .onBegin(() => { startH.value = sheetH.value; })
-    .onUpdate((e) => {
-      const next = startH.value - e.translationY;
-      sheetH.value = Math.max(80, Math.min(SNAP_EXPANDED, next));
+  useEffect(() => { if (visible) { sheetH.setValue(0); open(); } }, [visible]);
+
+  // ── PanResponder ──────────────────────────────────────────────────────────
+  const pan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 5,
+      onPanResponderGrant: () => { (sheetH as any)._value !== undefined && (startH.current = (sheetH as any)._value); },
+      onPanResponderMove: (_, g) => {
+        const next = startH.current - g.dy;
+        sheetH.setValue(Math.max(80, Math.min(SNAP_EXPANDED, next)));
+      },
+      onPanResponderRelease: (_, g) => {
+        const cur = (sheetH as any)._value as number;
+        if (cur < CLOSE_THRESHOLD || g.vy > 0.8) {
+          close();
+        } else if (g.vy < -0.6 || cur > SCREEN_H * 0.78) {
+          Animated.spring(sheetH, { toValue: SNAP_EXPANDED, useNativeDriver: false, damping: 22, stiffness: 280 }).start();
+        } else {
+          Animated.spring(sheetH, { toValue: SNAP_COLLAPSED, useNativeDriver: false, damping: 22, stiffness: 280 }).start();
+        }
+      },
     })
-    .onEnd((e) => {
-      if (sheetH.value < CLOSE_THRESHOLD || e.velocityY > 800) {
-        runOnJS(close)();
-      } else if (e.velocityY < -600 || sheetH.value > SCREEN_H * 0.78) {
-        sheetH.value = withSpring(SNAP_EXPANDED, SPRING);
-      } else {
-        sheetH.value = withSpring(SNAP_COLLAPSED, SPRING);
-      }
-    });
-
-  const sheetStyle = useAnimatedStyle(() => ({ height: sheetH.value }));
+  ).current;
 
   // ── Data loading ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -171,8 +172,7 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
         <Pressable style={s.overlay} onPress={close} />
 
         {/* Gesture-driven sheet */}
-        <GestureDetector gesture={panGesture}>
-          <Animated.View style={[s.sheet, sheetStyle]}>
+        <Animated.View style={[s.sheet, { height: sheetH }]} {...pan.panHandlers}>
             {/* Drag handle */}
             <View style={s.dragHandle} />
 
@@ -358,7 +358,6 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
               </>
             )}
           </Animated.View>
-        </GestureDetector>
       </View>
     </Modal>
   );
