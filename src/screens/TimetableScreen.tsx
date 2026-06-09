@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  Dimensions,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -22,7 +23,8 @@ interface Props { navigation: Nav }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_LABELS  = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 const JS_DAY_TO_API: Record<number, string> = {
   0: "SUNDAY", 1: "MONDAY", 2: "TUESDAY", 3: "WEDNESDAY",
   4: "THURSDAY", 5: "FRIDAY", 6: "SATURDAY",
@@ -45,6 +47,13 @@ function addDays(d: Date, n: number): Date {
   return date;
 }
 
+function addMonths(d: Date, n: number): Date {
+  const date = new Date(d);
+  date.setMonth(date.getMonth() + n);
+  date.setDate(1);
+  return date;
+}
+
 function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
@@ -53,6 +62,19 @@ function isSameDay(a: Date, b: Date) {
 
 function toKey(d: Date) {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+/** All calendar cells for a month grid (includes leading/trailing padding days) */
+function monthGridDays(year: number, month: number): (Date | null)[] {
+  const first = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leadingBlanks = first.getDay(); // 0=Sun
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < leadingBlanks; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  // Pad to full rows
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
 }
 
 function classesForDay(classes: FinalClass[], day: Date): FinalClass[] {
@@ -84,10 +106,11 @@ function subjectLabel(cls: FinalClass): string {
 const MODE_COLOR: Record<string, string> = {
   ONLINE: T.success, OFFLINE: T.primary, HYBRID: T.warning,
 };
-
 const STATUS_COLOR: Record<string, string> = {
   ACTIVE: T.success, COMPLETED: T.mutedFg, PAUSED: T.warning, CANCELLED: T.error,
 };
+
+type ViewMode = "week" | "month";
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -95,7 +118,9 @@ export default function TimetableScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
+  const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
+  const [monthDate, setMonthDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDay, setSelectedDay] = useState(today);
   const [classes, setClasses] = useState<FinalClass[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,18 +133,12 @@ export default function TimetableScreen({ navigation }: Props) {
   const load = useCallback(async (userId?: string) => {
     setError(null);
     try {
-      // Fetch all statuses so completed/paused classes also show
       const [active, completed, paused] = await Promise.all([
         getMyClasses("ACTIVE", userId),
         getMyClasses("COMPLETED", userId),
         getMyClasses("PAUSED", userId),
       ]);
-      const all = [
-        ...(active.data ?? []),
-        ...(completed.data ?? []),
-        ...(paused.data ?? []),
-      ];
-      setClasses(all);
+      setClasses([...(active.data ?? []), ...(completed.data ?? []), ...(paused.data ?? [])]);
     } catch (e: any) {
       setError(e?.message ?? "Failed to load classes");
     }
@@ -144,30 +163,55 @@ export default function TimetableScreen({ navigation }: Props) {
     setRefreshing(false);
   }, [load]);
 
-  const goWeek = (dir: -1 | 1) => {
-    const newStart = addDays(weekStart, dir * 7);
-    const newSelected = addDays(newStart, selectedDay.getDay());
-    setWeekStart(newStart);
-    setSelectedDay(newSelected);
+  const goBack = () => {
+    if (viewMode === "week") {
+      const newStart = addDays(weekStart, -7);
+      setWeekStart(newStart);
+      setSelectedDay(addDays(newStart, selectedDay.getDay()));
+    } else {
+      setMonthDate((d) => addMonths(d, -1));
+    }
+  };
+
+  const goForward = () => {
+    if (viewMode === "week") {
+      const newStart = addDays(weekStart, 7);
+      setWeekStart(newStart);
+      setSelectedDay(addDays(newStart, selectedDay.getDay()));
+    } else {
+      setMonthDate((d) => addMonths(d, 1));
+    }
+  };
+
+  const selectDay = (day: Date) => {
+    setSelectedDay(day);
+    if (viewMode === "week") setWeekStart(startOfWeek(day));
   };
 
   const daySessions = classesForDay(classes, selectedDay)
     .sort((a, b) => parseTime(a.schedule?.timeSlot) - parseTime(b.schedule?.timeSlot));
 
-  // Dot map: days in week that have any class
-  const dotMap: Record<string, boolean> = {};
-  weekDays.forEach((d) => {
-    if (classesForDay(classes, d).length > 0) dotMap[toKey(d)] = true;
-  });
+  // Dot map for week
+  const weekDotMap: Record<string, boolean> = {};
+  weekDays.forEach((d) => { if (classesForDay(classes, d).length > 0) weekDotMap[toKey(d)] = true; });
 
-  const monthLabel = (() => {
-    const first = weekDays[0], last = weekDays[6];
-    if (first.getMonth() === last.getMonth())
-      return `${MONTH_NAMES[first.getMonth()]} ${first.getFullYear()}`;
-    if (first.getFullYear() === last.getFullYear())
-      return `${MONTH_NAMES[first.getMonth()].slice(0,3)} – ${MONTH_NAMES[last.getMonth()].slice(0,3)} ${first.getFullYear()}`;
-    return `${MONTH_NAMES[first.getMonth()].slice(0,3)} ${first.getFullYear()} – ${MONTH_NAMES[last.getMonth()].slice(0,3)} ${last.getFullYear()}`;
-  })();
+  // Count map for month grid cells
+  const countForDay = (d: Date) => classesForDay(classes, d).length;
+
+  const navLabel = viewMode === "week"
+    ? (() => {
+        const first = weekDays[0], last = weekDays[6];
+        if (first.getMonth() === last.getMonth())
+          return `${MONTH_NAMES[first.getMonth()]} ${first.getFullYear()}`;
+        if (first.getFullYear() === last.getFullYear())
+          return `${MONTH_NAMES[first.getMonth()].slice(0,3)} – ${MONTH_NAMES[last.getMonth()].slice(0,3)} ${first.getFullYear()}`;
+        return `${MONTH_NAMES[first.getMonth()].slice(0,3)} ${first.getFullYear()} – ${MONTH_NAMES[last.getMonth()].slice(0,3)} ${last.getFullYear()}`;
+      })()
+    : `${MONTH_NAMES[monthDate.getMonth()]} ${monthDate.getFullYear()}`;
+
+  const dayHeaderLabel = isSameDay(selectedDay, today)
+    ? "Today"
+    : `${DAY_LABELS[selectedDay.getDay()]}, ${selectedDay.getDate()} ${MONTH_NAMES[selectedDay.getMonth()].slice(0,3)}`;
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -178,52 +222,58 @@ export default function TimetableScreen({ navigation }: Props) {
         </Pressable>
         <View style={{ flex: 1, alignItems: "center" }}>
           <Text style={s.headerTitle}>Timetable</Text>
-          <Text style={s.headerSub}>{monthLabel}</Text>
+          <Text style={s.headerSub}>{navLabel}</Text>
         </View>
-        <View style={{ width: 38 }} />
+        {/* View toggle */}
+        <View style={s.viewToggle}>
+          <Pressable
+            style={[s.toggleBtn, viewMode === "week" && s.toggleBtnActive]}
+            onPress={() => setViewMode("week")}
+          >
+            <Ionicons name="list-outline" size={15} color={viewMode === "week" ? "#fff" : "rgba(255,255,255,0.4)"} />
+          </Pressable>
+          <Pressable
+            style={[s.toggleBtn, viewMode === "month" && s.toggleBtnActive]}
+            onPress={() => setViewMode("month")}
+          >
+            <Ionicons name="calendar-outline" size={15} color={viewMode === "month" ? "#fff" : "rgba(255,255,255,0.4)"} />
+          </Pressable>
+        </View>
       </View>
 
-      {/* ── Week Strip ─────────────────────────────────────────────────── */}
-      <View style={s.weekStrip}>
-        <Pressable onPress={() => goWeek(-1)} hitSlop={8} style={s.weekArrow}>
-          <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.4)" />
+      {/* ── Navigator bar ──────────────────────────────────────────────── */}
+      <View style={s.navBar}>
+        <Pressable onPress={goBack} hitSlop={10} style={s.navArrow}>
+          <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.5)" />
         </Pressable>
-        <View style={s.dayRow}>
-          {weekDays.map((day) => {
-            const key = toKey(day);
-            const isSelected = isSameDay(day, selectedDay);
-            const isToday = isSameDay(day, today);
-            return (
-              <Pressable
-                key={key}
-                style={[s.dayPill, isSelected && s.dayPillActive]}
-                onPress={() => setSelectedDay(day)}
-              >
-                <Text style={[s.dayLabel, isSelected && s.dayLabelActive]}>
-                  {DAY_LABELS[day.getDay()]}
-                </Text>
-                <Text style={[s.dayNum, isSelected && s.dayNumActive, isToday && !isSelected && s.dayNumToday]}>
-                  {day.getDate()}
-                </Text>
-                {dotMap[key]
-                  ? <View style={[s.dot, isSelected && s.dotActive]} />
-                  : <View style={s.dotPlaceholder} />}
-              </Pressable>
-            );
-          })}
-        </View>
-        <Pressable onPress={() => goWeek(1)} hitSlop={8} style={s.weekArrow}>
-          <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
+        <Text style={s.navBarLabel}>{navLabel}</Text>
+        <Pressable onPress={goForward} hitSlop={10} style={s.navArrow}>
+          <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.5)" />
         </Pressable>
       </View>
+
+      {/* ── Calendar ───────────────────────────────────────────────────── */}
+      {viewMode === "week" ? (
+        <WeekStrip
+          weekDays={weekDays}
+          selectedDay={selectedDay}
+          today={today}
+          dotMap={weekDotMap}
+          onSelect={selectDay}
+        />
+      ) : (
+        <MonthGrid
+          monthDate={monthDate}
+          selectedDay={selectedDay}
+          today={today}
+          countForDay={countForDay}
+          onSelect={selectDay}
+        />
+      )}
 
       {/* ── Day label ──────────────────────────────────────────────────── */}
       <View style={s.dayHeader}>
-        <Text style={s.dayHeaderText}>
-          {isSameDay(selectedDay, today)
-            ? "Today"
-            : `${DAY_LABELS[selectedDay.getDay()]}, ${selectedDay.getDate()} ${MONTH_NAMES[selectedDay.getMonth()].slice(0,3)}`}
-        </Text>
+        <Text style={s.dayHeaderText}>{dayHeaderLabel}</Text>
         {daySessions.length > 0 && (
           <View style={s.countBadge}>
             <Text style={s.countBadgeTxt}>
@@ -235,9 +285,7 @@ export default function TimetableScreen({ navigation }: Props) {
 
       {/* ── Content ────────────────────────────────────────────────────── */}
       {loading ? (
-        <View style={s.center}>
-          <ActivityIndicator color={T.primary} size="large" />
-        </View>
+        <View style={s.center}><ActivityIndicator color={T.primary} size="large" /></View>
       ) : error ? (
         <View style={s.center}>
           <Ionicons name="alert-circle-outline" size={40} color={T.error} />
@@ -263,11 +311,9 @@ export default function TimetableScreen({ navigation }: Props) {
             daySessions.map((cls) => (
               <Pressable
                 key={cls._id}
-                onPress={() =>
-                  navigation.navigate("MyClasses", {
-                    highlightClassId: String((cls as any)._id || cls.id),
-                  })
-                }
+                onPress={() => navigation.navigate("MyClasses", {
+                  highlightClassId: String((cls as any)._id || cls.id),
+                })}
                 style={({ pressed }) => pressed && { opacity: 0.75 }}
               >
                 <ClassCard cls={cls} />
@@ -276,6 +322,101 @@ export default function TimetableScreen({ navigation }: Props) {
           )}
         </Animated.ScrollView>
       )}
+    </View>
+  );
+}
+
+// ─── Week Strip ───────────────────────────────────────────────────────────────
+
+function WeekStrip({ weekDays, selectedDay, today, dotMap, onSelect }: {
+  weekDays: Date[];
+  selectedDay: Date;
+  today: Date;
+  dotMap: Record<string, boolean>;
+  onSelect: (d: Date) => void;
+}) {
+  return (
+    <View style={ws.strip}>
+      {weekDays.map((day) => {
+        const key = toKey(day);
+        const isSelected = isSameDay(day, selectedDay);
+        const isToday = isSameDay(day, today);
+        return (
+          <Pressable key={key} style={[ws.pill, isSelected && ws.pillActive]} onPress={() => onSelect(day)}>
+            <Text style={[ws.label, isSelected && ws.labelActive]}>{DAY_LABELS[day.getDay()]}</Text>
+            <Text style={[ws.num, isSelected && ws.numActive, isToday && !isSelected && ws.numToday]}>
+              {day.getDate()}
+            </Text>
+            {dotMap[key]
+              ? <View style={[ws.dot, isSelected && ws.dotActive]} />
+              : <View style={ws.dotPlaceholder} />}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// ─── Month Grid ───────────────────────────────────────────────────────────────
+
+const CELL_SIZE = (Dimensions.get("window").width - 32) / 7;
+
+function MonthGrid({ monthDate, selectedDay, today, countForDay, onSelect }: {
+  monthDate: Date;
+  selectedDay: Date;
+  today: Date;
+  countForDay: (d: Date) => number;
+  onSelect: (d: Date) => void;
+}) {
+  const cells = monthGridDays(monthDate.getFullYear(), monthDate.getMonth());
+
+  return (
+    <View style={mg.wrap}>
+      {/* Day-of-week header */}
+      <View style={mg.headerRow}>
+        {DAY_LETTERS.map((l, i) => (
+          <Text key={i} style={[mg.headerCell, (i === 0 || i === 6) && mg.headerWeekend]}>{l}</Text>
+        ))}
+      </View>
+
+      {/* Grid */}
+      <View style={mg.grid}>
+        {cells.map((day, idx) => {
+          if (!day) return <View key={`blank-${idx}`} style={mg.cell} />;
+          const isSelected = isSameDay(day, selectedDay);
+          const isToday = isSameDay(day, today);
+          const count = countForDay(day);
+          const isCurrentMonth = day.getMonth() === monthDate.getMonth();
+
+          return (
+            <Pressable key={toKey(day)} style={mg.cell} onPress={() => onSelect(day)}>
+              <View style={[
+                mg.dayCircle,
+                isSelected && mg.dayCircleSelected,
+                isToday && !isSelected && mg.dayCircleToday,
+              ]}>
+                <Text style={[
+                  mg.dayNum,
+                  isSelected && mg.dayNumSelected,
+                  isToday && !isSelected && mg.dayNumToday,
+                  !isCurrentMonth && mg.dayNumFaded,
+                ]}>
+                  {day.getDate()}
+                </Text>
+              </View>
+              {/* Dot row: up to 3 dots for multiple classes */}
+              <View style={mg.dots}>
+                {count > 0 && Array.from({ length: Math.min(count, 3) }).map((_, di) => (
+                  <View
+                    key={di}
+                    style={[mg.dot, isSelected && mg.dotSelected]}
+                  />
+                ))}
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -291,13 +432,10 @@ function ClassCard({ cls }: { cls: FinalClass }) {
 
   return (
     <View style={cc.card}>
-      {/* Left time bar */}
       <View style={cc.timeCol}>
         <Text style={cc.startTime}>{startTime}</Text>
         <View style={[cc.bar, { backgroundColor: modeColor + "50" }]} />
       </View>
-
-      {/* Body */}
       <View style={cc.body}>
         <View style={cc.topRow}>
           <Text style={cc.subject} numberOfLines={1}>{subject}</Text>
@@ -305,28 +443,24 @@ function ClassCard({ cls }: { cls: FinalClass }) {
             <Text style={[cc.modeTxt, { color: modeColor }]}>{cls.mode}</Text>
           </View>
         </View>
-
         {cls.studentName ? (
           <View style={cc.metaRow}>
             <Ionicons name="person-outline" size={12} color={T.mutedFg} />
             <Text style={cc.metaTxt} numberOfLines={1}>{cls.studentName}</Text>
           </View>
         ) : null}
-
         {timeSlot ? (
           <View style={cc.metaRow}>
             <Ionicons name="time-outline" size={12} color={T.mutedFg} />
             <Text style={cc.metaTxt}>{timeSlot}</Text>
           </View>
         ) : null}
-
         {(cls.grade || cls.board) ? (
           <View style={cc.metaRow}>
             <Ionicons name="school-outline" size={12} color={T.mutedFg} />
             <Text style={cc.metaTxt}>{[cls.grade, cls.board].filter(Boolean).join(" · ")}</Text>
           </View>
         ) : null}
-
         <View style={cc.footer}>
           <Text style={[cc.statusTxt, { color: statusColor }]}>{cls.status}</Text>
           {cls.completedSessions > 0 && (
@@ -343,27 +477,21 @@ function ClassCard({ cls }: { cls: FinalClass }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: T.darkBg },
 
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" },
-  headerTitle: { color: "#fff", fontSize: 17, fontWeight: "700", letterSpacing: -0.3 },
-  headerSub: { color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 1 },
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" },
+  headerTitle: { color: "#fff", fontSize: 16, fontWeight: "700", letterSpacing: -0.3 },
+  headerSub: { color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 1 },
 
-  weekStrip: { flexDirection: "row", alignItems: "center", paddingHorizontal: 4, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.07)" },
-  weekArrow: { width: 32, alignItems: "center" },
-  dayRow: { flex: 1, flexDirection: "row", justifyContent: "space-between" },
-  dayPill: { flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 12, marginHorizontal: 2 },
-  dayPillActive: { backgroundColor: T.primary },
-  dayLabel: { fontSize: 10, fontWeight: "600", color: "rgba(255,255,255,0.35)", marginBottom: 4, letterSpacing: 0.3 },
-  dayLabelActive: { color: "rgba(255,255,255,0.9)" },
-  dayNum: { fontSize: 15, fontWeight: "700", color: "rgba(255,255,255,0.7)" },
-  dayNumActive: { color: "#fff" },
-  dayNumToday: { color: T.primary },
-  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: T.primary, marginTop: 4 },
-  dotActive: { backgroundColor: "#fff" },
-  dotPlaceholder: { width: 5, height: 5, marginTop: 4 },
+  viewToggle: { flexDirection: "row", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 2, gap: 2 },
+  toggleBtn: { width: 32, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  toggleBtnActive: { backgroundColor: T.primary },
 
-  dayHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, gap: 8 },
-  dayHeaderText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  navBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.07)" },
+  navArrow: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+  navBarLabel: { color: "#fff", fontSize: 14, fontWeight: "700" },
+
+  dayHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 14, paddingBottom: 8, gap: 8 },
+  dayHeaderText: { color: "#fff", fontSize: 15, fontWeight: "700" },
   countBadge: { backgroundColor: `${T.primary}22`, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
   countBadgeTxt: { color: T.primary, fontSize: 11, fontWeight: "600" },
 
@@ -372,11 +500,44 @@ const s = StyleSheet.create({
   retryBtn: { backgroundColor: T.primary, borderRadius: 20, paddingHorizontal: 24, paddingVertical: 10 },
   retryTxt: { color: "#fff", fontWeight: "700", fontSize: 14 },
 
-  emptyBox: { alignItems: "center", paddingTop: 60, gap: 8 },
-  emptyTitle: { color: "rgba(255,255,255,0.45)", fontSize: 16, fontWeight: "600", marginTop: 8 },
+  emptyBox: { alignItems: "center", paddingTop: 48, gap: 8 },
+  emptyTitle: { color: "rgba(255,255,255,0.45)", fontSize: 15, fontWeight: "600", marginTop: 8 },
   emptySubtitle: { color: "rgba(255,255,255,0.22)", fontSize: 13 },
 
   list: { paddingHorizontal: 16, paddingTop: 8 },
+});
+
+const ws = StyleSheet.create({
+  strip: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 8, paddingBottom: 10 },
+  pill: { flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 12, marginHorizontal: 2 },
+  pillActive: { backgroundColor: T.primary },
+  label: { fontSize: 10, fontWeight: "600", color: "rgba(255,255,255,0.35)", marginBottom: 4, letterSpacing: 0.3 },
+  labelActive: { color: "rgba(255,255,255,0.9)" },
+  num: { fontSize: 15, fontWeight: "700", color: "rgba(255,255,255,0.7)" },
+  numActive: { color: "#fff" },
+  numToday: { color: T.primary },
+  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: T.primary, marginTop: 4 },
+  dotActive: { backgroundColor: "#fff" },
+  dotPlaceholder: { width: 5, height: 5, marginTop: 4 },
+});
+
+const mg = StyleSheet.create({
+  wrap: { paddingHorizontal: 16, paddingBottom: 8 },
+  headerRow: { flexDirection: "row", marginBottom: 4 },
+  headerCell: { width: CELL_SIZE, textAlign: "center", fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.35)", letterSpacing: 0.5 },
+  headerWeekend: { color: `${T.primary}99` },
+  grid: { flexDirection: "row", flexWrap: "wrap" },
+  cell: { width: CELL_SIZE, alignItems: "center", paddingVertical: 4 },
+  dayCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  dayCircleSelected: { backgroundColor: T.primary },
+  dayCircleToday: { borderWidth: 1.5, borderColor: T.primary },
+  dayNum: { fontSize: 13, fontWeight: "600", color: "rgba(255,255,255,0.75)" },
+  dayNumSelected: { color: "#fff", fontWeight: "700" },
+  dayNumToday: { color: T.primary, fontWeight: "700" },
+  dayNumFaded: { color: "rgba(255,255,255,0.2)" },
+  dots: { flexDirection: "row", gap: 2, height: 6, marginTop: 2 },
+  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: T.primary },
+  dotSelected: { backgroundColor: "#fff" },
 });
 
 const cc = StyleSheet.create({
