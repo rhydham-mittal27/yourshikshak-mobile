@@ -4,10 +4,9 @@ import {
   Animated,
   Dimensions,
   Modal,
-  Platform,
+  PanResponder,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -16,7 +15,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { ClassSessionItem, FinalClass, getTutorSessions, rescheduleSession } from "../api/client";
@@ -26,6 +24,18 @@ type Nav = StackNavigationProp<RootStackParamList, "Timetable">;
 interface Props { navigation: Nav }
 
 const { width: SCREEN_W } = Dimensions.get("window");
+
+// ─── Design tokens (light theme) ─────────────────────────────────────────────
+const C = {
+  bg:          "#F8FAFC",
+  headerBg:    "#FFFFFF",
+  cardBg:      "#FFFFFF",
+  border:      "#E8EDF5",
+  textPrimary: "#0F172A",
+  textSecond:  "#64748B",
+  textMuted:   "#94A3B8",
+  accent:      T.primary,
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -89,17 +99,12 @@ function formatDate(d: Date): string {
 }
 
 const MODE_COLOR: Record<string, string> = {
-  ONLINE: "#10B981", OFFLINE: "#2D68C4", HYBRID: "#F59E0B",
+  ONLINE: "#10B981", OFFLINE: T.primary, HYBRID: "#F59E0B",
 };
-const MODE_GRADIENT: Record<string, [string, string]> = {
-  ONLINE:  ["#0f3d2e", "#0f172a"],
-  OFFLINE: ["#0f2450", "#0f172a"],
-  HYBRID:  ["#3d2a0a", "#0f172a"],
-};
-const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
-  PLANNED:   { color: "#64748B", label: "Scheduled" },
-  COMPLETED: { color: "#10B981", label: "Completed" },
-  CANCELLED: { color: "#EF4444", label: "Cancelled" },
+const STATUS_CONFIG: Record<string, { color: string; label: string; bg: string }> = {
+  PLANNED:   { color: "#64748B", label: "Scheduled", bg: "#F1F5F9" },
+  COMPLETED: { color: "#10B981", label: "Completed",  bg: "#ECFDF5" },
+  CANCELLED: { color: "#EF4444", label: "Cancelled",  bg: "#FEF2F2" },
 };
 
 type ViewMode = "week" | "month";
@@ -118,17 +123,15 @@ export default function TimetableScreen({ navigation }: Props) {
   const [sessionCache, setSessionCache] = useState<Record<string, ClassSessionItem[]>>({});
   const fetchingRef = useRef<Set<string>>(new Set());
 
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError]         = useState<string | null>(null);
+  const [error, setError]           = useState<string | null>(null);
   const fadeAnim  = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(12)).current;
+  const slideAnim = useRef(new Animated.Value(14)).current;
 
-  // Reschedule modal
   const [rescheduleTarget, setRescheduleTarget] = useState<ClassSessionItem | null>(null);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
   const allSessions = Object.values(sessionCache).flat();
 
   const sessionsByDay = React.useMemo(() => {
@@ -178,8 +181,8 @@ export default function TimetableScreen({ navigation }: Props) {
       }));
       setLoading(false);
       Animated.parallel([
-        Animated.timing(fadeAnim,  { toValue: 1, duration: 320, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: 0, duration: 320, useNativeDriver: true }),
+        Animated.timing(fadeAnim,  { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
       ]).start();
     })();
   }, []);
@@ -208,20 +211,14 @@ export default function TimetableScreen({ navigation }: Props) {
   const goBack = () => {
     if (viewMode === "week") {
       const s = addDays(weekStart, -7);
-      setWeekStart(s);
-      setSelectedDay(addDays(s, selectedDay.getDay()));
-    } else {
-      setMonthDate((d) => addMonths(d, -1));
-    }
+      setWeekStart(s); setSelectedDay(addDays(s, selectedDay.getDay()));
+    } else { setMonthDate((d) => addMonths(d, -1)); }
   };
   const goForward = () => {
     if (viewMode === "week") {
       const s = addDays(weekStart, 7);
-      setWeekStart(s);
-      setSelectedDay(addDays(s, selectedDay.getDay()));
-    } else {
-      setMonthDate((d) => addMonths(d, 1));
-    }
+      setWeekStart(s); setSelectedDay(addDays(s, selectedDay.getDay()));
+    } else { setMonthDate((d) => addMonths(d, 1)); }
   };
 
   const daySessions = sessionsForDay(selectedDay);
@@ -238,44 +235,35 @@ export default function TimetableScreen({ navigation }: Props) {
       })()
     : `${MONTH_NAMES[monthDate.getMonth()]} ${monthDate.getFullYear()}`;
 
-  const isToday = isSameDay(selectedDay, today);
+  const isToday  = isSameDay(selectedDay, today);
   const dayLabel = isToday
     ? "Today"
     : `${DAY_LABELS[selectedDay.getDay()]}, ${formatDate(selectedDay)}`;
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
+    <View style={s.root}>
 
-      {/* ── Hero header ─────────────────────────────────────────────────── */}
-      <LinearGradient
-        colors={["#162040", "#0f172a"]}
-        style={s.hero}
-      >
+      {/* ── Hero header (branded gradient) ──────────────────────────────── */}
+      <LinearGradient colors={["#1E4A8C", "#2D68C4", "#4A7FD4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, { paddingTop: insets.top }]}>
         {/* Top row: back + title + toggle */}
-        <View style={s.headerRow}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={s.backBtn}>
-            <View style={s.backBtnInner}>
-              <Ionicons name="chevron-back" size={20} color="rgba(255,255,255,0.9)" />
+        <View style={s.header}>
+          <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={s.backWrap}>
+            <View style={s.backBtn}>
+              <Ionicons name="chevron-back" size={20} color="#fff" />
             </View>
           </Pressable>
 
           <View style={s.titleWrap}>
-            <Text style={s.heroTitle}>Schedule</Text>
-            <Text style={s.heroSub}>{navLabel}</Text>
+            <Text style={s.title}>Schedule</Text>
+            <Text style={s.titleSub}>{navLabel}</Text>
           </View>
 
           <View style={s.viewToggle}>
-            <Pressable
-              style={[s.toggleBtn, viewMode === "week" && s.toggleActive]}
-              onPress={() => setViewMode("week")}
-            >
-              <Ionicons name="list-outline" size={16} color={viewMode === "week" ? "#fff" : "rgba(255,255,255,0.35)"} />
+            <Pressable style={[s.toggleBtn, viewMode === "week" && s.toggleActive]} onPress={() => setViewMode("week")}>
+              <Ionicons name="list-outline" size={16} color={viewMode === "week" ? T.primary : "rgba(255,255,255,0.6)"} />
             </Pressable>
-            <Pressable
-              style={[s.toggleBtn, viewMode === "month" && s.toggleActive]}
-              onPress={() => setViewMode("month")}
-            >
-              <Ionicons name="calendar-outline" size={16} color={viewMode === "month" ? "#fff" : "rgba(255,255,255,0.35)"} />
+            <Pressable style={[s.toggleBtn, viewMode === "month" && s.toggleActive]} onPress={() => setViewMode("month")}>
+              <Ionicons name="calendar-outline" size={16} color={viewMode === "month" ? T.primary : "rgba(255,255,255,0.6)"} />
             </Pressable>
           </View>
         </View>
@@ -283,43 +271,35 @@ export default function TimetableScreen({ navigation }: Props) {
         {/* Month navigator */}
         <View style={s.navRow}>
           <Pressable onPress={goBack} hitSlop={12} style={s.navBtn}>
-            <Ionicons name="chevron-back" size={16} color="rgba(255,255,255,0.45)" />
+            <Ionicons name="chevron-back" size={17} color="rgba(255,255,255,0.8)" />
           </Pressable>
           <Text style={s.navLabel}>{navLabel}</Text>
           <Pressable onPress={goForward} hitSlop={12} style={s.navBtn}>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.45)" />
+            <Ionicons name="chevron-forward" size={17} color="rgba(255,255,255,0.8)" />
           </Pressable>
         </View>
 
-        {/* Calendar (week strip or month grid) */}
+        {/* Calendar */}
+        <View style={s.calendarCard}>
         {viewMode === "week" ? (
-          <WeekStrip
-            weekDays={weekDays}
-            selectedDay={selectedDay}
-            today={today}
-            dotMap={weekDotMap}
-            onSelect={selectDay}
-          />
+          <WeekStrip weekDays={weekDays} selectedDay={selectedDay} today={today} dotMap={weekDotMap} onSelect={selectDay} />
         ) : (
-          <MonthGrid
-            monthDate={monthDate}
-            selectedDay={selectedDay}
-            today={today}
-            countForDay={countForDay}
-            onSelect={selectDay}
-          />
+          <MonthGrid monthDate={monthDate} selectedDay={selectedDay} today={today} countForDay={countForDay} onSelect={selectDay} />
         )}
+      </View>
       </LinearGradient>
 
       {/* ── Day bar ─────────────────────────────────────────────────────── */}
       <View style={s.dayBar}>
         <View style={s.dayBarLeft}>
-          {isToday && <View style={s.todayDot} />}
-          <Text style={s.dayBarLabel}>{dayLabel}</Text>
+          {isToday && <LinearGradient colors={[C.accent, T.primaryLight]} style={s.todayPill}>
+            <Text style={s.todayPillTxt}>TODAY</Text>
+          </LinearGradient>}
+          <Text style={s.dayLabel}>{isToday ? formatDate(selectedDay) : dayLabel}</Text>
         </View>
         {daySessions.length > 0 && (
           <View style={s.countChip}>
-            <Text style={s.countChipTxt}>{daySessions.length}</Text>
+            <Text style={s.countChipTxt}>{daySessions.length} class{daySessions.length > 1 ? "es" : ""}</Text>
           </View>
         )}
       </View>
@@ -327,18 +307,18 @@ export default function TimetableScreen({ navigation }: Props) {
       {/* ── Session list ────────────────────────────────────────────────── */}
       {loading ? (
         <View style={s.center}>
-          <ActivityIndicator color={T.primary} size="large" />
+          <ActivityIndicator color={C.accent} size="large" />
           <Text style={s.loadingTxt}>Loading sessions…</Text>
         </View>
       ) : error ? (
         <View style={s.center}>
           <View style={s.errorIcon}>
-            <Ionicons name="alert-circle-outline" size={32} color={T.error} />
+            <Ionicons name="alert-circle-outline" size={30} color={T.error} />
           </View>
           <Text style={s.errorTitle}>Something went wrong</Text>
           <Text style={s.errorSub}>{error}</Text>
           <Pressable style={s.retryBtn} onPress={onRefresh}>
-            <Ionicons name="refresh-outline" size={15} color="#fff" />
+            <Ionicons name="refresh-outline" size={14} color="#fff" />
             <Text style={s.retryTxt}>Try again</Text>
           </Pressable>
         </View>
@@ -347,35 +327,20 @@ export default function TimetableScreen({ navigation }: Props) {
           style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
           contentContainerStyle={[s.list, { paddingBottom: insets.bottom + 32 }]}
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={T.primary}
-              colors={[T.primary]}
-            />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} colors={[C.accent]} />}
         >
           {daySessions.length === 0 ? (
             <EmptyState isToday={isToday} />
           ) : (
-            <>
-              {daySessions.map((session, index) => (
-                <Pressable
-                  key={session._id}
-                  onPress={() => navigation.navigate("MyClasses", {
-                    highlightClassId: String(session.finalClass?._id ?? ""),
-                  })}
-                  style={({ pressed }) => ({ opacity: pressed ? 0.82 : 1 })}
-                >
-                  <SessionCard
-                    session={session}
-                    index={index}
-                    onReschedule={() => setRescheduleTarget(session)}
-                  />
-                </Pressable>
-              ))}
-            </>
+            daySessions.map((session, index) => (
+              <Pressable
+                key={session._id}
+                onPress={() => navigation.navigate("MyClasses", { highlightClassId: String(session.finalClass?._id ?? "") })}
+                style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+              >
+                <SessionCard session={session} index={index} onReschedule={() => setRescheduleTarget(session)} />
+              </Pressable>
+            ))
           )}
         </Animated.ScrollView>
       )}
@@ -385,14 +350,11 @@ export default function TimetableScreen({ navigation }: Props) {
         <RescheduleModal
           session={rescheduleTarget}
           onClose={() => setRescheduleTarget(null)}
-          onSuccess={(updatedSession) => {
-            // Patch the session in cache so timetable updates immediately
+          onSuccess={(updated) => {
             setSessionCache((prev) => {
               const next = { ...prev };
-              for (const key of Object.keys(next)) {
-                next[key] = next[key].map((s) =>
-                  s._id === updatedSession._id ? { ...s, ...updatedSession } : s
-                );
+              for (const k of Object.keys(next)) {
+                next[k] = next[k].map((s) => s._id === updated._id ? { ...s, ...updated } : s);
               }
               return next;
             });
@@ -407,43 +369,32 @@ export default function TimetableScreen({ navigation }: Props) {
 // ─── Week Strip ───────────────────────────────────────────────────────────────
 
 function WeekStrip({ weekDays, selectedDay, today, dotMap, onSelect }: {
-  weekDays: Date[];
-  selectedDay: Date;
-  today: Date;
-  dotMap: Record<string, number>;
-  onSelect: (d: Date) => void;
+  weekDays: Date[]; selectedDay: Date; today: Date;
+  dotMap: Record<string, number>; onSelect: (d: Date) => void;
 }) {
   return (
     <View style={ws.row}>
       {weekDays.map((day) => {
         const key = toKey(day);
-        const isSelected = isSameDay(day, selectedDay);
-        const isToday    = isSameDay(day, today);
-        const count      = dotMap[key] ?? 0;
-
+        const isSel   = isSameDay(day, selectedDay);
+        const isToday = isSameDay(day, today);
+        const count   = dotMap[key] ?? 0;
         return (
           <Pressable key={key} onPress={() => onSelect(day)} style={ws.cell}>
-            <Text style={[ws.dayLbl, isSelected && ws.dayLblActive, isToday && !isSelected && ws.dayLblToday]}>
+            <Text style={[ws.dayLbl, isSel && ws.dayLblSel, isToday && !isSel && ws.dayLblToday]}>
               {DAY_SHORT[day.getDay()]}
             </Text>
-
-            <View style={[
-              ws.numWrap,
-              isSelected && ws.numWrapSelected,
-              isToday && !isSelected && ws.numWrapToday,
-            ]}>
-              <Text style={[ws.num, isSelected && ws.numSelected, isToday && !isSelected && ws.numToday]}>
+            <View style={[ws.numWrap, isSel && ws.numWrapSel, isToday && !isSel && ws.numWrapToday]}>
+              <Text style={[ws.num, isSel && ws.numSel, isToday && !isSel && ws.numToday]}>
                 {day.getDate()}
               </Text>
             </View>
-
             <View style={ws.dotsRow}>
               {count > 0
                 ? Array.from({ length: Math.min(count, 3) }).map((_, i) => (
-                    <View key={i} style={[ws.dot, isSelected ? ws.dotSelected : ws.dotNormal]} />
+                    <View key={i} style={[ws.dot, isSel ? ws.dotSel : ws.dotNorm]} />
                   ))
-                : <View style={ws.dotEmpty} />
-              }
+                : <View style={ws.dotEmpty} />}
             </View>
           </Pressable>
         );
@@ -457,40 +408,28 @@ function WeekStrip({ weekDays, selectedDay, today, dotMap, onSelect }: {
 const CELL_W = (SCREEN_W - 32) / 7;
 
 function MonthGrid({ monthDate, selectedDay, today, countForDay, onSelect }: {
-  monthDate: Date;
-  selectedDay: Date;
-  today: Date;
-  countForDay: (d: Date) => number;
-  onSelect: (d: Date) => void;
+  monthDate: Date; selectedDay: Date; today: Date;
+  countForDay: (d: Date) => number; onSelect: (d: Date) => void;
 }) {
   const cells = monthGridDays(monthDate.getFullYear(), monthDate.getMonth());
-
   return (
     <View style={mg.wrap}>
-      {/* Day-of-week header */}
       <View style={mg.header}>
         {DAY_LETTERS.map((l, i) => (
           <Text key={i} style={[mg.hCell, (i === 0 || i === 6) && mg.hWeekend]}>{l}</Text>
         ))}
       </View>
-
       <View style={mg.grid}>
         {cells.map((day, idx) => {
           if (!day) return <View key={`b${idx}`} style={mg.cell} />;
-          const isSel   = isSameDay(day, selectedDay);
-          const isT     = isSameDay(day, today);
-          const count   = countForDay(day);
-          const isCur   = day.getMonth() === monthDate.getMonth();
-
+          const isSel = isSameDay(day, selectedDay);
+          const isT   = isSameDay(day, today);
+          const count = countForDay(day);
+          const isCur = day.getMonth() === monthDate.getMonth();
           return (
             <Pressable key={toKey(day)} style={mg.cell} onPress={() => onSelect(day)}>
-              <View style={[mg.circle, isSel && mg.circleSelected, isT && !isSel && mg.circleToday]}>
-                <Text style={[
-                  mg.num,
-                  isSel && mg.numSelected,
-                  isT && !isSel && mg.numToday,
-                  !isCur && mg.numFaded,
-                ]}>
+              <View style={[mg.circle, isSel && mg.circleSel, isT && !isSel && mg.circleToday]}>
+                <Text style={[mg.num, isSel && mg.numSel, isT && !isSel && mg.numToday, !isCur && mg.numFaded]}>
                   {day.getDate()}
                 </Text>
               </View>
@@ -509,124 +448,200 @@ function MonthGrid({ monthDate, selectedDay, today, countForDay, onSelect }: {
 
 // ─── Session Card ─────────────────────────────────────────────────────────────
 
-function SessionCard({
-  session,
-  index,
-  onReschedule,
-}: {
-  session: ClassSessionItem;
-  index: number;
-  onReschedule: () => void;
+function SessionCard({ session, index, onReschedule }: {
+  session: ClassSessionItem; index: number; onReschedule: () => void;
 }) {
-  const cls        = session.finalClass;
-  const subject    = subjectLabel(cls);
-  const mode       = cls?.mode ?? "OFFLINE";
-  const modeColor  = MODE_COLOR[mode] ?? T.primary;
-  const gradColors = MODE_GRADIENT[mode] ?? MODE_GRADIENT.OFFLINE;
-  const statusConf = STATUS_CONFIG[session.status] ?? STATUS_CONFIG.PLANNED;
-  const startTime  = session.timeSlot?.split("(")[0]?.trim() ?? "—";
-  const duration   = session.timeSlot?.match(/\(([^)]+)\)/)?.[1];
+  const cls         = session.finalClass;
+  const subject     = subjectLabel(cls);
+  const mode        = cls?.mode ?? "OFFLINE";
+  const modeColor   = MODE_COLOR[mode] ?? T.primary;
+  const statusConf  = STATUS_CONFIG[session.status] ?? STATUS_CONFIG.PLANNED;
+  const startTime   = session.timeSlot?.split("(")[0]?.trim() ?? "—";
+  const duration    = session.timeSlot?.match(/\(([^)]+)\)/)?.[1];
   const canReschedule = session.status === "PLANNED";
 
   return (
     <View style={cc.card}>
-      {/* Left accent */}
+      {/* Color accent bar */}
       <View style={[cc.accent, { backgroundColor: modeColor }]} />
 
-      <LinearGradient
-        colors={[gradColors[0] + "cc", gradColors[1]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={cc.inner}
-      >
-        {/* Session number chip (top-right) */}
-        <View style={[cc.sessionChip, { backgroundColor: modeColor + "22", borderColor: modeColor + "44" }]}>
+      <View style={cc.body}>
+        {/* Session chip */}
+        <View style={[cc.sessionChip, { backgroundColor: modeColor + "18", borderColor: modeColor + "30" }]}>
           <Text style={[cc.sessionChipTxt, { color: modeColor }]}>#{session.sessionNumber}</Text>
         </View>
 
-        {/* Subject + mode badge */}
+        {/* Subject + mode */}
         <View style={cc.topRow}>
           <Text style={cc.subject} numberOfLines={1}>{subject}</Text>
-          <View style={[cc.modeBadge, { backgroundColor: modeColor + "20", borderColor: modeColor + "40" }]}>
+          <View style={[cc.modeBadge, { backgroundColor: modeColor + "15", borderColor: modeColor + "30" }]}>
             <View style={[cc.modeDot, { backgroundColor: modeColor }]} />
             <Text style={[cc.modeTxt, { color: modeColor }]}>{mode}</Text>
           </View>
         </View>
 
-        {/* Time block */}
-        <View style={cc.timeBlock}>
-          <Ionicons name="time-outline" size={13} color={modeColor} />
+        {/* Time */}
+        <View style={cc.timeRow}>
+          <View style={[cc.timeIconWrap, { backgroundColor: modeColor + "12" }]}>
+            <Ionicons name="time-outline" size={13} color={modeColor} />
+          </View>
           <Text style={[cc.timeTxt, { color: modeColor }]}>{startTime}</Text>
-          {duration && <Text style={cc.durationTxt}>· {duration}</Text>}
+          {duration && <Text style={cc.durationTxt}>{duration}</Text>}
         </View>
 
-        {/* Divider */}
-        <View style={[cc.divider, { backgroundColor: "rgba(255,255,255,0.06)" }]} />
+        <View style={cc.divider} />
 
-        {/* Meta rows */}
-        <View style={cc.metaGrid}>
+        {/* Meta */}
+        <View style={cc.meta}>
           {cls?.studentName ? (
-            <View style={cc.metaItem}>
-              <Ionicons name="person-circle-outline" size={14} color="rgba(255,255,255,0.35)" />
+            <View style={cc.metaRow}>
+              <Ionicons name="person-outline" size={13} color={C.textMuted} />
               <Text style={cc.metaTxt} numberOfLines={1}>{cls.studentName}</Text>
             </View>
           ) : null}
           {(cls?.grade || cls?.board) ? (
-            <View style={cc.metaItem}>
-              <Ionicons name="ribbon-outline" size={14} color="rgba(255,255,255,0.35)" />
+            <View style={cc.metaRow}>
+              <Ionicons name="school-outline" size={13} color={C.textMuted} />
               <Text style={cc.metaTxt}>{[cls?.grade, cls?.board].filter(Boolean).join(" · ")}</Text>
             </View>
           ) : null}
         </View>
 
-        {/* Bottom row: status + reschedule button */}
-        <View style={cc.statusRow}>
-          <View style={cc.statusLeft}>
+        {/* Footer */}
+        <View style={cc.footer}>
+          <View style={[cc.statusBadge, { backgroundColor: statusConf.bg }]}>
             <View style={[cc.statusDot, { backgroundColor: statusConf.color }]} />
             <Text style={[cc.statusTxt, { color: statusConf.color }]}>{statusConf.label}</Text>
           </View>
           {canReschedule && (
             <Pressable
               onPress={(e) => { e.stopPropagation?.(); onReschedule(); }}
-              style={({ pressed }) => [cc.rescheduleBtn, pressed && { opacity: 0.7 }]}
+              style={({ pressed }) => [cc.rescheduleBtn, { borderColor: modeColor + "50" }, pressed && { opacity: 0.65 }]}
             >
               <Ionicons name="calendar-outline" size={12} color={modeColor} />
               <Text style={[cc.rescheduleTxt, { color: modeColor }]}>Reschedule</Text>
             </Pressable>
           )}
         </View>
-      </LinearGradient>
+      </View>
+    </View>
+  );
+}
+
+// ─── Modal Calendar ───────────────────────────────────────────────────────────
+
+const CAL_CELL = (SCREEN_W - 64) / 7;
+
+function ModalCalendar({ selected, calMonth, modeColor, onSelect, onMonthChange }: {
+  selected: Date; calMonth: Date; modeColor: string;
+  onSelect: (d: Date) => void; onMonthChange: (d: Date) => void;
+}) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const cells = monthGridDays(calMonth.getFullYear(), calMonth.getMonth());
+  const prevMonth = () => onMonthChange(addMonths(calMonth, -1));
+  const nextMonth = () => onMonthChange(addMonths(calMonth, 1));
+
+  return (
+    <View style={cal.wrap}>
+      {/* Month nav */}
+      <View style={cal.navRow}>
+        <Pressable onPress={prevMonth} style={cal.navBtn} hitSlop={10}>
+          <Ionicons name="chevron-back" size={16} color={C.textSecond} />
+        </Pressable>
+        <Text style={cal.navTitle}>
+          {MONTH_NAMES[calMonth.getMonth()]} {calMonth.getFullYear()}
+        </Text>
+        <Pressable onPress={nextMonth} style={cal.navBtn} hitSlop={10}>
+          <Ionicons name="chevron-forward" size={16} color={C.textSecond} />
+        </Pressable>
+      </View>
+
+      {/* Day-of-week header */}
+      <View style={cal.headerRow}>
+        {DAY_LETTERS.map((l, i) => (
+          <Text key={i} style={[cal.headerCell, (i === 0 || i === 6) && cal.headerWeekend]}>{l}</Text>
+        ))}
+      </View>
+
+      {/* Day grid */}
+      <View style={cal.grid}>
+        {cells.map((day, idx) => {
+          if (!day) return <View key={`e${idx}`} style={cal.cell} />;
+          const isSel  = isSameDay(day, selected);
+          const isT    = isSameDay(day, today);
+          const isPast = day < today;
+          const isCur  = day.getMonth() === calMonth.getMonth();
+          return (
+            <Pressable
+              key={toKey(day)}
+              style={cal.cell}
+              onPress={() => { if (isCur) onSelect(new Date(day)); }}
+              disabled={!isCur}
+            >
+              <View style={[
+                cal.circle,
+                isSel && [cal.circleSel, { backgroundColor: modeColor }],
+                isT && !isSel && [cal.circleToday, { borderColor: modeColor }],
+              ]}>
+                <Text style={[
+                  cal.num,
+                  isSel && cal.numSel,
+                  isT && !isSel && [cal.numToday, { color: modeColor }],
+                  !isCur && cal.numFaded,
+                  isPast && isCur && !isSel && cal.numPast,
+                ]}>
+                  {day.getDate()}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 // ─── Reschedule Modal ─────────────────────────────────────────────────────────
 
-function RescheduleModal({
-  session,
-  onClose,
-  onSuccess,
-}: {
+function RescheduleModal({ session, onClose, onSuccess }: {
   session: ClassSessionItem;
   onClose: () => void;
   onSuccess: (updated: ClassSessionItem) => void;
 }) {
-  const insets = useSafeAreaInsets();
-  const [date, setDate]         = useState(new Date(session.sessionDate));
-  const [showPicker, setShowPicker] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  const insets   = useSafeAreaInsets();
+  const translateY = useRef(new Animated.Value(0)).current;
 
-  const subject = subjectLabel(session.finalClass);
-  const mode    = session.finalClass?.mode ?? "OFFLINE";
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => g.dy > 4,
+      onPanResponderMove: (_, g) => {
+        if (g.dy > 0) translateY.setValue(g.dy);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > 80 || g.vy > 0.5) {
+          Animated.timing(translateY, { toValue: 600, duration: 220, useNativeDriver: true }).start(onClose);
+        } else {
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
+        }
+      },
+    })
+  ).current;
+
+  const [date, setDate]       = useState(new Date(session.sessionDate));
+  const [calMonth, setCalMonth] = useState(new Date(session.sessionDate));
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+
+  const subject   = subjectLabel(session.finalClass);
+  const mode      = session.finalClass?.mode ?? "OFFLINE";
   const modeColor = MODE_COLOR[mode] ?? T.primary;
 
   const fmt = (d: Date) =>
     d.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "long", year: "numeric" });
 
   const handleConfirm = async () => {
-    setSubmitting(true);
-    setError(null);
+    setSubmitting(true); setError(null);
     try {
       const res: any = await rescheduleSession(session._id, date.toISOString());
       onSuccess({ ...session, sessionDate: res.data?.sessionDate ?? date.toISOString() });
@@ -640,52 +655,49 @@ function RescheduleModal({
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
       <Pressable style={rm.backdrop} onPress={onClose}>
-        <Pressable style={[rm.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]} onPress={() => {}}>
-          {/* Handle */}
+        <Animated.View
+          style={[rm.sheet, { paddingBottom: Math.max(insets.bottom, 24), transform: [{ translateY }] }]}
+          {...panResponder.panHandlers}
+        >
           <View style={rm.handle} />
 
           {/* Header */}
           <View style={rm.header}>
-            <LinearGradient
-              colors={[modeColor + "25", modeColor + "08"]}
-              style={rm.iconWrap}
-            >
+            <View style={[rm.iconWrap, { backgroundColor: modeColor + "15" }]}>
               <Ionicons name="calendar-outline" size={20} color={modeColor} />
-            </LinearGradient>
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={rm.title}>Reschedule Session</Text>
               <Text style={rm.sub} numberOfLines={1}>{subject} · {session.finalClass?.studentName ?? ""}</Text>
             </View>
             <Pressable onPress={onClose} hitSlop={10} style={rm.closeBtn}>
-              <Ionicons name="close" size={18} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="close" size={17} color={C.textMuted} />
             </Pressable>
           </View>
 
-          {/* Current date info */}
-          <View style={rm.currentRow}>
-            <Text style={rm.currentLabel}>Current date</Text>
-            <Text style={rm.currentDate}>{fmt(new Date(session.sessionDate))}</Text>
+          {/* Current → New date row */}
+          <View style={rm.dateTransferRow}>
+            <View style={rm.dateTransferBox}>
+              <Text style={rm.dateTransferLabel}>FROM</Text>
+              <Text style={rm.dateTransferVal} numberOfLines={1}>{fmt(new Date(session.sessionDate))}</Text>
+            </View>
+            <View style={[rm.dateTransferArrow, { backgroundColor: modeColor + "18" }]}>
+              <Ionicons name="arrow-forward" size={14} color={modeColor} />
+            </View>
+            <View style={[rm.dateTransferBox, rm.dateTransferBoxTo, { borderColor: modeColor + "50", backgroundColor: modeColor + "08" }]}>
+              <Text style={[rm.dateTransferLabel, { color: modeColor }]}>TO</Text>
+              <Text style={[rm.dateTransferVal, { color: modeColor, fontWeight: "800" }]} numberOfLines={1}>{fmt(date)}</Text>
+            </View>
           </View>
 
-          {/* New date picker */}
-          <Text style={rm.sectionLabel}>New date</Text>
-          <Pressable style={[rm.dateBtn, { borderColor: modeColor + "60" }]} onPress={() => setShowPicker(true)}>
-            <Ionicons name="calendar" size={17} color={modeColor} />
-            <Text style={rm.dateTxt}>{fmt(date)}</Text>
-            <Ionicons name="chevron-down" size={15} color="rgba(255,255,255,0.3)" />
-          </Pressable>
-
-          {showPicker && (
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display={Platform.OS === "ios" ? "inline" : "default"}
-              onChange={(_, selected) => {
-                setShowPicker(Platform.OS === "ios");
-                if (selected) setDate(selected);
-              }}
-            />
-          )}
+          {/* Inline custom calendar */}
+          <ModalCalendar
+            selected={date}
+            calMonth={calMonth}
+            modeColor={modeColor}
+            onSelect={(d) => setDate(d)}
+            onMonthChange={(d) => setCalMonth(d)}
+          />
 
           {error ? <Text style={rm.errTxt}>{error}</Text> : null}
 
@@ -708,7 +720,7 @@ function RescheduleModal({
               }
             </Pressable>
           </View>
-        </Pressable>
+        </Animated.View>
       </Pressable>
     </Modal>
   );
@@ -719,17 +731,12 @@ function RescheduleModal({
 function EmptyState({ isToday }: { isToday: boolean }) {
   return (
     <View style={es.wrap}>
-      <LinearGradient
-        colors={["rgba(45,104,196,0.12)", "rgba(45,104,196,0.04)"]}
-        style={es.iconCircle}
-      >
-        <Ionicons name="calendar-outline" size={36} color="rgba(45,104,196,0.5)" />
-      </LinearGradient>
+      <View style={es.iconCircle}>
+        <Ionicons name="calendar-outline" size={36} color={T.primary + "60"} />
+      </View>
       <Text style={es.title}>{isToday ? "Nothing today" : "No classes"}</Text>
       <Text style={es.sub}>
-        {isToday
-          ? "You have a free day — time to recharge!"
-          : "No sessions scheduled for this day."}
+        {isToday ? "You have a free day — enjoy the break!" : "No sessions scheduled for this day."}
       </Text>
     </View>
   );
@@ -738,252 +745,304 @@ function EmptyState({ isToday }: { isToday: boolean }) {
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0b1120" },
+  root: { flex: 1, backgroundColor: C.bg },
 
-  // Hero
-  hero: { paddingHorizontal: 0, paddingBottom: 4 },
+  // Hero gradient wrapper
+  hero: {
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    paddingBottom: 4,
+    // Cast shadow so the white content below feels like it's "under" the hero
+    shadowColor: "#1E4A8C",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 10,
+  },
 
-  headerRow: {
+  // Header (sits inside gradient)
+  header: {
     flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10,
+    paddingHorizontal: 16, paddingVertical: 12,
+    gap: 0,
   },
+  backWrap: { width: 74, alignItems: "flex-start", justifyContent: "center" },
   backBtn: {
-    width: 74, height: 36, borderRadius: 18,
-    alignItems: "flex-start", justifyContent: "center",
-    paddingLeft: 0,
-  },
-  backBtnInner: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.07)",
+    width: 36, height: 36, borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
     alignItems: "center", justifyContent: "center",
   },
   titleWrap: { flex: 1, alignItems: "center" },
-  heroTitle: { color: "#fff", fontSize: 17, fontWeight: "700", letterSpacing: -0.4 },
-  heroSub:   { color: "rgba(255,255,255,0.38)", fontSize: 11, marginTop: 1, letterSpacing: 0.2 },
+  title:     { color: "#fff", fontSize: 16, fontWeight: "700", letterSpacing: -0.3 },
+  titleSub:  { color: "rgba(255,255,255,0.65)", fontSize: 11, marginTop: 1 },
 
   viewToggle: {
-    flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderRadius: 11, padding: 3, gap: 2,
+    width: 74, flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
+    padding: 3, gap: 2, justifyContent: "flex-end",
   },
-  toggleBtn: { width: 34, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center" },
-  toggleActive: { backgroundColor: T.primary },
+  toggleBtn:    { width: 30, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  toggleActive: { backgroundColor: "#fff" },
 
+  // Month navigator (inside gradient)
   navRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 20, paddingBottom: 12,
+    paddingHorizontal: 20, paddingVertical: 8,
   },
   navBtn:   { width: 30, height: 30, alignItems: "center", justifyContent: "center" },
-  navLabel: { color: "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: "700", letterSpacing: 0.3 },
+  navLabel: { color: "#fff", fontSize: 13, fontWeight: "700" },
+
+  // Calendar card (inside gradient — transparent background)
+  calendarCard: {
+    paddingTop: 8, paddingBottom: 12,
+  },
 
   // Day bar
   dayBar: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 20, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.05)",
   },
-  dayBarLeft:  { flexDirection: "row", alignItems: "center", gap: 8 },
-  dayBarLabel: { color: "#fff", fontSize: 15, fontWeight: "700" },
-  todayDot: {
-    width: 7, height: 7, borderRadius: 4,
-    backgroundColor: T.primary,
+  dayBarLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  todayPill:  { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
+  todayPillTxt: { color: "#fff", fontSize: 9, fontWeight: "800", letterSpacing: 1 },
+  dayLabel:   { color: C.textPrimary, fontSize: 14, fontWeight: "700" },
+  countChip:  {
+    backgroundColor: C.accent + "14", borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: C.accent + "25",
   },
-  countChip: {
-    minWidth: 26, height: 26, borderRadius: 13,
-    backgroundColor: T.primary,
-    alignItems: "center", justifyContent: "center",
-    paddingHorizontal: 8,
-  },
-  countChipTxt: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  countChipTxt: { color: C.accent, fontSize: 11, fontWeight: "700" },
 
   // States
   center:     { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
-  loadingTxt: { color: "rgba(255,255,255,0.3)", fontSize: 13, marginTop: 4 },
-
-  errorIcon:  { width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(239,68,68,0.1)", alignItems: "center", justifyContent: "center" },
-  errorTitle: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  errorSub:   { color: "rgba(255,255,255,0.4)", fontSize: 13, textAlign: "center", paddingHorizontal: 32 },
-  retryBtn:   { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: T.primary, borderRadius: 20, paddingHorizontal: 20, paddingVertical: 10, marginTop: 4 },
+  loadingTxt: { color: C.textMuted, fontSize: 13, marginTop: 4 },
+  errorIcon:  { width: 60, height: 60, borderRadius: 30, backgroundColor: "#FEF2F2", alignItems: "center", justifyContent: "center" },
+  errorTitle: { color: C.textPrimary, fontSize: 15, fontWeight: "700" },
+  errorSub:   { color: C.textSecond, fontSize: 13, textAlign: "center", paddingHorizontal: 32 },
+  retryBtn:   { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.accent, borderRadius: 20, paddingHorizontal: 20, paddingVertical: 10, marginTop: 4 },
   retryTxt:   { color: "#fff", fontWeight: "700", fontSize: 13 },
 
-  list: { paddingHorizontal: 16, paddingTop: 12 },
+  list: { paddingHorizontal: 16, paddingTop: 8 },
 });
 
 const ws = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-  },
+  row: { flexDirection: "row", paddingHorizontal: 8, paddingBottom: 8 },
   cell: { flex: 1, alignItems: "center", gap: 4 },
 
-  dayLbl: {
-    fontSize: 9, fontWeight: "700", letterSpacing: 0.8,
-    color: "rgba(255,255,255,0.28)", marginBottom: 2,
-  },
-  dayLblActive: { color: "rgba(255,255,255,0.9)" },
-  dayLblToday:  { color: T.primaryLight },
+  dayLbl:      { fontSize: 9, fontWeight: "700", letterSpacing: 0.8, color: "rgba(255,255,255,0.55)", marginBottom: 2 },
+  dayLblSel:   { color: "#fff" },
+  dayLblToday: { color: "#fff" },
 
-  numWrap: {
-    width: 34, height: 34, borderRadius: 17,
-    alignItems: "center", justifyContent: "center",
-  },
-  numWrapSelected: { backgroundColor: T.primary },
-  numWrapToday:    { borderWidth: 1.5, borderColor: T.primary },
+  numWrap:       { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  numWrapSel:    { backgroundColor: "#fff" },
+  numWrapToday:  { borderWidth: 1.5, borderColor: "rgba(255,255,255,0.7)" },
 
-  num:         { fontSize: 15, fontWeight: "700", color: "rgba(255,255,255,0.6)" },
-  numSelected: { color: "#fff" },
-  numToday:    { color: T.primary, fontWeight: "800" },
+  num:      { fontSize: 15, fontWeight: "700", color: "rgba(255,255,255,0.85)" },
+  numSel:   { color: T.primary, fontWeight: "800" },
+  numToday: { color: "#fff", fontWeight: "800" },
 
-  dotsRow:    { flexDirection: "row", gap: 3, height: 6 },
-  dot:        { width: 4, height: 4, borderRadius: 2 },
-  dotNormal:  { backgroundColor: T.primary + "90" },
-  dotSelected:{ backgroundColor: "#fff" },
-  dotEmpty:   { width: 4, height: 4 },
+  dotsRow:  { flexDirection: "row", gap: 3, height: 6 },
+  dot:      { width: 4, height: 4, borderRadius: 2 },
+  dotNorm:  { backgroundColor: "rgba(255,255,255,0.5)" },
+  dotSel:   { backgroundColor: T.primary },
+  dotEmpty: { width: 4, height: 4 },
 });
 
 const mg = StyleSheet.create({
-  wrap: { paddingHorizontal: 16, paddingBottom: 8 },
-  header: { flexDirection: "row", marginBottom: 6 },
-  hCell:    { width: CELL_W, textAlign: "center", fontSize: 10, fontWeight: "700", color: "rgba(255,255,255,0.28)", letterSpacing: 0.8 },
-  hWeekend: { color: T.primary + "90" },
+  wrap:   { paddingHorizontal: 16, paddingBottom: 6 },
+  header: { flexDirection: "row", marginBottom: 4 },
+  hCell:    { width: CELL_W, textAlign: "center", fontSize: 10, fontWeight: "700", color: "rgba(255,255,255,0.55)", letterSpacing: 0.6 },
+  hWeekend: { color: "rgba(255,255,255,0.75)" },
   grid: { flexDirection: "row", flexWrap: "wrap" },
   cell: { width: CELL_W, alignItems: "center", paddingVertical: 3 },
-  circle: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  circleSelected: { backgroundColor: T.primary },
-  circleToday:    { borderWidth: 1.5, borderColor: T.primary },
-  num:         { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.7)" },
-  numSelected: { color: "#fff", fontWeight: "700" },
-  numToday:    { color: T.primary, fontWeight: "800" },
-  numFaded:    { color: "rgba(255,255,255,0.18)" },
+  circle:       { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+  circleSel:    { backgroundColor: "#fff" },
+  circleToday:  { borderWidth: 1.5, borderColor: "rgba(255,255,255,0.7)" },
+  num:       { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.85)" },
+  numSel:    { color: T.primary, fontWeight: "800" },
+  numToday:  { color: "#fff", fontWeight: "800" },
+  numFaded:  { color: "rgba(255,255,255,0.35)" },
   dots: { flexDirection: "row", gap: 2, height: 5, marginTop: 2 },
-  dot:    { width: 3, height: 3, borderRadius: 2, backgroundColor: T.primary + "90" },
-  dotSel: { backgroundColor: "#fff" },
+  dot:    { width: 3, height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.55)" },
+  dotSel: { backgroundColor: T.primary },
 });
 
 const cc = StyleSheet.create({
   card: {
     flexDirection: "row",
-    borderRadius: 18,
-    marginBottom: 14,
+    backgroundColor: C.cardBg,
+    borderRadius: 16,
+    marginBottom: 12,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.07)",
+    borderColor: C.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   accent: { width: 4 },
-  inner:  { flex: 1, padding: 16 },
+  body:   { flex: 1, padding: 14 },
 
   sessionChip: {
-    position: "absolute", top: 14, right: 14,
+    position: "absolute", top: 12, right: 12,
     borderRadius: 8, borderWidth: 1,
     paddingHorizontal: 8, paddingVertical: 3,
   },
-  sessionChipTxt: { fontSize: 10, fontWeight: "800", letterSpacing: 0.4 },
+  sessionChipTxt: { fontSize: 10, fontWeight: "800", letterSpacing: 0.3 },
 
-  topRow:  { flexDirection: "row", alignItems: "flex-start", gap: 8, paddingRight: 52 },
-  subject: { flex: 1, color: "#fff", fontSize: 17, fontWeight: "800", letterSpacing: -0.4, lineHeight: 22 },
+  topRow:  { flexDirection: "row", alignItems: "flex-start", gap: 8, paddingRight: 48 },
+  subject: { flex: 1, color: C.textPrimary, fontSize: 16, fontWeight: "800", letterSpacing: -0.3, lineHeight: 21 },
 
-  modeBadge: {
-    flexDirection: "row", alignItems: "center", gap: 5,
-    borderRadius: 8, borderWidth: 1,
-    paddingHorizontal: 8, paddingVertical: 4,
-    alignSelf: "flex-start",
-  },
-  modeDot:  { width: 5, height: 5, borderRadius: 3 },
-  modeTxt:  { fontSize: 9, fontWeight: "800", letterSpacing: 0.8 },
+  modeBadge: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 7, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 3, alignSelf: "flex-start" },
+  modeDot:   { width: 5, height: 5, borderRadius: 3 },
+  modeTxt:   { fontSize: 9, fontWeight: "800", letterSpacing: 0.7 },
 
-  timeBlock: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 },
-  timeTxt:   { fontSize: 14, fontWeight: "700" },
-  durationTxt: { color: "rgba(255,255,255,0.35)", fontSize: 13 },
+  timeRow:    { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
+  timeIconWrap: { width: 22, height: 22, borderRadius: 7, alignItems: "center", justifyContent: "center" },
+  timeTxt:    { fontSize: 13, fontWeight: "700" },
+  durationTxt:{ color: C.textMuted, fontSize: 12, marginLeft: 2 },
 
-  divider: { height: 1, marginVertical: 12 },
+  divider: { height: 1, backgroundColor: C.border, marginVertical: 10 },
 
-  metaGrid: { gap: 6 },
-  metaItem: { flexDirection: "row", alignItems: "center", gap: 7 },
-  metaTxt:  { color: "rgba(255,255,255,0.5)", fontSize: 12, flex: 1 },
+  meta:    { gap: 5 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 7 },
+  metaTxt: { color: C.textSecond, fontSize: 12, flex: 1 },
 
-  statusRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
-  statusLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusTxt: { fontSize: 11, fontWeight: "700", letterSpacing: 0.4 },
+  footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
+
+  statusBadge: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4 },
+  statusDot:   { width: 5, height: 5, borderRadius: 3 },
+  statusTxt:   { fontSize: 11, fontWeight: "700" },
 
   rescheduleBtn: {
     flexDirection: "row", alignItems: "center", gap: 5,
     borderRadius: 8, borderWidth: 1,
     paddingHorizontal: 10, paddingVertical: 5,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "#F8FAFC",
   },
   rescheduleTxt: { fontSize: 11, fontWeight: "700" },
 });
 
 const rm = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
+  backdrop: { flex: 1, backgroundColor: "rgba(15,23,42,0.45)", justifyContent: "flex-end" },
   sheet: {
-    backgroundColor: "#141e30",
+    backgroundColor: "#fff",
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 8,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.07)",
+    shadowColor: "#000", shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08, shadowRadius: 20, elevation: 16,
   },
   handle: {
-    width: 38, height: 4, borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignSelf: "center", marginBottom: 16,
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: C.border,
+    alignSelf: "center", marginBottom: 18,
   },
   header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20 },
-  iconWrap: { width: 42, height: 42, borderRadius: 13, alignItems: "center", justifyContent: "center" },
-  title: { color: "#fff", fontSize: 15, fontWeight: "700" },
-  sub:   { color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 },
+  iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  title: { color: C.textPrimary, fontSize: 15, fontWeight: "700" },
+  sub:   { color: C.textSecond, fontSize: 12, marginTop: 2 },
   closeBtn: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: C.bg, borderWidth: 1, borderColor: C.border,
     alignItems: "center", justifyContent: "center",
   },
 
   currentRow: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 20,
+    backgroundColor: C.bg, borderRadius: 12,
+    borderWidth: 1, borderColor: C.border,
+    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 20,
   },
-  currentLabel: { color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: "600" },
-  currentDate:  { color: "rgba(255,255,255,0.65)", fontSize: 12, fontWeight: "600" },
+  currentLabel: { color: C.textMuted, fontSize: 12, fontWeight: "600" },
+  currentVal:   { color: C.textSecond, fontSize: 12, fontWeight: "600" },
 
-  sectionLabel: {
-    color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: "700",
-    letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10,
-  },
-  dateBtn: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    borderWidth: 1.5, borderRadius: 14,
-    paddingHorizontal: 14, paddingVertical: 14,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    marginBottom: 20,
-  },
-  dateTxt: { flex: 1, color: "#fff", fontSize: 14, fontWeight: "700" },
-
-  errTxt: { color: T.error, fontSize: 12, fontWeight: "600", marginBottom: 12 },
-
-  actions: { flexDirection: "row", gap: 10, marginTop: 4 },
+  actions: { flexDirection: "row", gap: 10 },
   cancelBtn: {
     flex: 1, paddingVertical: 14, borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: C.bg, borderWidth: 1, borderColor: C.border,
     alignItems: "center", justifyContent: "center",
   },
-  cancelTxt: { color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: "700" },
-  confirmBtn: {
-    flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8, paddingVertical: 14, borderRadius: 14,
-  },
+  cancelTxt:  { color: C.textSecond, fontSize: 14, fontWeight: "700" },
+  confirmBtn: { flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 14 },
   confirmTxt: { color: "#fff", fontSize: 14, fontWeight: "700" },
+
+  // date transfer row
+  dateTransferRow: {
+    flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16,
+  },
+  dateTransferBox: {
+    flex: 1, backgroundColor: C.bg, borderRadius: 12,
+    borderWidth: 1, borderColor: C.border,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  dateTransferBoxTo: { borderWidth: 1.5 },
+  dateTransferArrow: {
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: "center", justifyContent: "center",
+  },
+  dateTransferLabel: {
+    fontSize: 9, fontWeight: "800", letterSpacing: 1,
+    color: C.textMuted, marginBottom: 3,
+  },
+  dateTransferVal: {
+    color: C.textPrimary, fontSize: 11, fontWeight: "600", lineHeight: 15,
+  },
+
+  errTxt: { color: T.error, fontSize: 12, fontWeight: "600", marginBottom: 12 },
+});
+
+const cal = StyleSheet.create({
+  wrap: {
+    backgroundColor: C.bg, borderRadius: 16,
+    borderWidth: 1, borderColor: C.border,
+    paddingHorizontal: 8, paddingBottom: 10, marginBottom: 16,
+  },
+  navRow: {
+    flexDirection: "row", alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 6, paddingVertical: 12,
+  },
+  navBtn: {
+    width: 32, height: 32, borderRadius: 10,
+    backgroundColor: C.headerBg, borderWidth: 1, borderColor: C.border,
+    alignItems: "center", justifyContent: "center",
+  },
+  navTitle: { color: C.textPrimary, fontSize: 14, fontWeight: "700" },
+
+  headerRow: { flexDirection: "row", marginBottom: 4, paddingHorizontal: 2 },
+  headerCell: {
+    width: CAL_CELL, textAlign: "center",
+    fontSize: 10, fontWeight: "700",
+    color: C.textMuted, letterSpacing: 0.5,
+  },
+  headerWeekend: { color: C.accent },
+
+  grid: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 2 },
+  cell: { width: CAL_CELL, alignItems: "center", paddingVertical: 3 },
+
+  circle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  circleSel:   { },
+  circleToday: { borderWidth: 1.5 },
+
+  num:      { fontSize: 13, fontWeight: "600", color: C.textSecond },
+  numSel:   { color: "#fff", fontWeight: "800" },
+  numToday: { fontWeight: "800" },
+  numFaded: { color: C.textMuted, opacity: 0.4 },
+  numPast:  { color: C.textMuted },
 });
 
 const es = StyleSheet.create({
-  wrap: { alignItems: "center", paddingTop: 56, gap: 12 },
+  wrap:       { alignItems: "center", paddingTop: 56, gap: 12 },
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    alignItems: "center", justifyContent: "center",
-    marginBottom: 4,
+    backgroundColor: T.primary + "0F",
+    alignItems: "center", justifyContent: "center", marginBottom: 4,
   },
-  title: { color: "rgba(255,255,255,0.6)", fontSize: 17, fontWeight: "700" },
-  sub:   { color: "rgba(255,255,255,0.25)", fontSize: 13, textAlign: "center", paddingHorizontal: 40, lineHeight: 20 },
+  title: { color: C.textPrimary, fontSize: 16, fontWeight: "700" },
+  sub:   { color: C.textSecond, fontSize: 13, textAlign: "center", paddingHorizontal: 40, lineHeight: 20 },
 });
