@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Animated,
   View,
   Text,
   ScrollView,
@@ -13,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getMyClasses, FinalClass, AUTH_STORAGE_KEY } from "../api/client";
@@ -21,8 +23,10 @@ import ClassCard from "../components/classes/ClassCard";
 import AttendanceSheetModal from "../components/classes/AttendanceSheetModal";
 
 type Nav = StackNavigationProp<RootStackParamList, "MyClasses">;
+type Route = RouteProp<RootStackParamList, "MyClasses">;
 interface Props {
   navigation: Nav;
+  route: Route;
 }
 
 // ─── Status filter tabs ───────────────────────────────────────────────────────
@@ -55,8 +59,14 @@ const EmptyState = ({ status }: { status: StatusFilter }) => (
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
-export default function MyClassesScreen({ navigation }: Props) {
+export default function MyClassesScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
+  const highlightClassId = route.params?.highlightClassId;
+
+  const scrollRef = useRef<ScrollView>(null);
+  const cardOffsets = useRef<Record<string, number>>({});
+  const highlightAnim = useRef(new Animated.Value(0)).current;
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [classes, setClasses] = useState<FinalClass[]>([]);
@@ -122,12 +132,40 @@ export default function MyClassesScreen({ navigation }: Props) {
         const raw = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
         const uid = raw ? JSON.parse(raw)?.user?.id : null;
         setUserId(uid);
-        fetchClasses(statusFilter, uid);
+        // If we need to highlight a specific class, load ALL statuses
+        const filter = highlightClassId ? "ALL" : statusFilter;
+        if (highlightClassId) setStatusFilter("ALL");
+        fetchClasses(filter, uid);
       } catch {
         fetchClasses(statusFilter);
       }
     })();
   }, [statusFilter]);
+
+  // Scroll to + highlight + open modal after classes load
+  useEffect(() => {
+    if (!highlightClassId || loading || classes.length === 0) return;
+    const target = classes.find(
+      (c) => String((c as any)._id || c.id) === highlightClassId,
+    );
+    if (!target) return;
+
+    setTimeout(() => {
+      const yOffset = cardOffsets.current[highlightClassId];
+      if (yOffset !== undefined) {
+        scrollRef.current?.scrollTo({ y: yOffset - 20, animated: true });
+      }
+      setHighlightedId(highlightClassId);
+      highlightAnim.setValue(0);
+      Animated.sequence([
+        Animated.timing(highlightAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.delay(800),
+        Animated.timing(highlightAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+      ]).start(() => setHighlightedId(null));
+
+      setTimeout(() => openAttendance(target), 500);
+    }, 400);
+  }, [loading, classes]);
 
   // Init cycle map when classes load
   useEffect(() => {
@@ -173,6 +211,7 @@ export default function MyClassesScreen({ navigation }: Props) {
       />
 
       <ScrollView
+        ref={scrollRef}
         style={s.scroll}
         contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -312,17 +351,39 @@ export default function MyClassesScreen({ navigation }: Props) {
               const id = String((cls as any)._id || cls.id || "");
               const maxCycle = Math.max(1, cls.sheetCount ?? 1);
               const selectedCycle = cycleByClass[id] ?? 1;
+              const isHighlighted = highlightedId === id;
               return (
-                <ClassCard
+                <View
                   key={id}
-                  cls={cls}
-                  selectedCycle={selectedCycle}
-                  maxCycle={maxCycle}
-                  onCycleChange={(delta) =>
-                    handleCycleChange(id, delta, maxCycle)
-                  }
-                  onViewAttendance={() => openAttendance(cls)}
-                />
+                  onLayout={(e) => {
+                    cardOffsets.current[id] = e.nativeEvent.layout.y;
+                  }}
+                  style={{ position: "relative" }}
+                >
+                  <ClassCard
+                    cls={cls}
+                    selectedCycle={selectedCycle}
+                    maxCycle={maxCycle}
+                    onCycleChange={(delta) =>
+                      handleCycleChange(id, delta, maxCycle)
+                    }
+                    onViewAttendance={() => openAttendance(cls)}
+                  />
+                  {isHighlighted && (
+                    <Animated.View
+                      pointerEvents="none"
+                      style={[
+                        StyleSheet.absoluteFillObject,
+                        {
+                          borderRadius: 16,
+                          borderWidth: 2,
+                          borderColor: T.primary,
+                          opacity: highlightAnim,
+                        },
+                      ]}
+                    />
+                  )}
+                </View>
               );
             })}
         </View>

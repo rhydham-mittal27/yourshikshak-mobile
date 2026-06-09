@@ -35,7 +35,7 @@ export type RootStackParamList = {
   ClassOpportunities: undefined;
   MyDemos: { highlightId?: string } | undefined;
   EditProfile: undefined;
-  MyClasses: undefined;
+  MyClasses: { highlightClassId?: string } | undefined;
   Timetable: undefined;
 };
 

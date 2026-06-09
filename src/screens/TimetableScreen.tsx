@@ -260,7 +260,19 @@ export default function TimetableScreen({ navigation }: Props) {
               <Text style={s.emptySubtitle}>Free day — enjoy the break!</Text>
             </View>
           ) : (
-            daySessions.map((cls) => <ClassCard key={cls._id} cls={cls} />)
+            daySessions.map((cls) => (
+              <Pressable
+                key={cls._id}
+                onPress={() =>
+                  navigation.navigate("MyClasses", {
+                    highlightClassId: String((cls as any)._id || cls.id),
+                  })
+                }
+                style={({ pressed }) => pressed && { opacity: 0.75 }}
+              >
+                <ClassCard cls={cls} />
+              </Pressable>
+            ))
           )}
         </Animated.ScrollView>
       )}
