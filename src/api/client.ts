@@ -766,29 +766,6 @@ export const getMyClasses = async (
   return apiClient.get(`/final-classes/tutor/my-classes?status=${status}`) as any;
 };
 
-// ─── Timetable / Sessions ────────────────────────────────────────────────────
-
-export interface ClassSession {
-  _id: string;
-  sessionDate: string;
-  timeSlot: string;
-  sessionNumber: number;
-  status: string;
-  cycleMonth: number;
-  cycleYear: number;
-  finalClass?: FinalClass;
-}
-
-export const getMyTutorSessions = async (
-  month: number,
-  year: number,
-): Promise<{ data: ClassSession[] }> => {
-  const res: any = await apiClient.get(
-    `/class-sessions/tutor/my?month=${month}&year=${year}&ensure=true`,
-  );
-  return { data: res.data ?? res ?? [] };
-};
-
 export const getClassAttendance = async (
   classId: string,
 ): Promise<{ data: ClassAttendanceRecord[] }> =>
