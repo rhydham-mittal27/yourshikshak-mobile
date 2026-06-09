@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { T } from "../../constants/colors";
 import { PendingCycleClass, setCycleStartDate } from "../../api/client";
 
@@ -26,6 +27,7 @@ export default function CycleStartModal({ classes, onDone }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const insets = useSafeAreaInsets();
   const cls = classes[index];
   if (!cls) return null;
 
@@ -128,7 +130,7 @@ export default function CycleStartModal({ classes, onDone }: Props) {
           </ScrollView>
 
           {/* Actions */}
-          <View style={s.footer}>
+          <View style={[s.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
             <Pressable
               style={[s.submitBtn, submitting && { opacity: 0.6 }]}
               onPress={handleSubmit}
