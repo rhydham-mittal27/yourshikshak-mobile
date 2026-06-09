@@ -13,7 +13,6 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   getClassAttendance,
   submitAttendance,
@@ -172,52 +171,22 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
       >
         <Pressable style={s.overlay} onPress={onClose} />
         <View style={s.sheet}>
-          {/* Drag handle */}
-          <View style={s.dragHandle} />
-
           {/* Header */}
-          <LinearGradient
-            colors={[T.darkBg, T.darkBgMid]}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={s.header}
-          >
-            <View style={s.headerLeft}>
+          <View style={s.header}>
+            <View style={s.dragHandle} />
+            <View style={s.headerRow}>
               <View style={s.headerIconBg}>
-                <Ionicons name="clipboard" size={16} color="#fff" />
+                <Ionicons name="clipboard-outline" size={18} color={T.primary} />
               </View>
-              <View>
-                <Text style={s.headerTitle}>Attendance Sheet</Text>
-                <Text style={s.headerSub}>{cls?.studentName}  ·  Cycle {cycle}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.headerTitle}>{cls?.studentName || "Attendance"}</Text>
+                <Text style={s.headerSub}>Cycle {cycle}  ·  {subjectLabel(cls)}</Text>
               </View>
+              <Pressable onPress={onClose} style={s.closeBtn} hitSlop={12}>
+                <Ionicons name="close" size={18} color="#64748B" />
+              </Pressable>
             </View>
-            <Pressable onPress={onClose} style={s.closeBtn} hitSlop={10}>
-              <Ionicons name="close" size={18} color="rgba(255,255,255,0.7)" />
-            </Pressable>
-          </LinearGradient>
-
-          {/* Class info chips */}
-          {cls && (
-            <View style={s.infoStrip}>
-              {subjectLabel(cls) !== "—" && (
-                <View style={s.infoChip}>
-                  <Ionicons name="book-outline" size={11} color={T.primary} />
-                  <Text style={s.infoChipTxt}>{subjectLabel(cls)}</Text>
-                </View>
-              )}
-              {cls.grade && (
-                <View style={s.infoChip}>
-                  <Ionicons name="layers-outline" size={11} color={T.primary} />
-                  <Text style={s.infoChipTxt}>Grade {cls.grade}</Text>
-                </View>
-              )}
-              {cls.board && (
-                <View style={s.infoChip}>
-                  <Ionicons name="ribbon-outline" size={11} color={T.primary} />
-                  <Text style={s.infoChipTxt}>{cls.board}</Text>
-                </View>
-              )}
-            </View>
-          )}
+          </View>
 
           {/* Tabs */}
           <View style={s.tabRow}>
@@ -465,23 +434,23 @@ const s = StyleSheet.create({
     overflow: "hidden",
   },
   dragHandle: {
-    width: 40, height: 4, borderRadius: 2, backgroundColor: "#E2E8F0",
-    alignSelf: "center", marginTop: 10, marginBottom: -4, zIndex: 1,
+    width: 36, height: 4, borderRadius: 2, backgroundColor: "#E2E8F0",
+    alignSelf: "center", marginTop: 10, marginBottom: 12,
   },
   header: {
-    flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 18,
+    paddingHorizontal: 16, paddingBottom: 14,
+    borderBottomWidth: 1, borderBottomColor: "#F1F5F9",
   },
-  headerLeft: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
+  headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   headerIconBg: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center", justifyContent: "center",
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: `${T.primary}12`, alignItems: "center", justifyContent: "center",
   },
-  headerTitle: { fontSize: 16, fontWeight: "800", color: "#fff", letterSpacing: -0.3 },
-  headerSub: { fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 },
+  headerTitle: { fontSize: 15, fontWeight: "700", color: "#0F172A", letterSpacing: -0.2 },
+  headerSub: { fontSize: 11, color: "#94A3B8", marginTop: 2 },
   closeBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center",
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center",
   },
   infoStrip: {
     flexDirection: "row", flexWrap: "wrap", gap: 6,
