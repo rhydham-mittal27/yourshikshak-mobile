@@ -3,7 +3,7 @@ import axios from "axios";
 // Switch between real API and dummy data by changing BASE_URL:
 //   "static"                        → dummy data (no network calls)
 //   "https://api.yourshikshak.in/api" → live backend
-const BASE_URL = "http://10.0.2.2:5000/api";
+const BASE_URL = "https://api.yourshikshak.in/api";
 
 export const IS_STATIC = BASE_URL === "static";
 
@@ -755,8 +755,16 @@ export interface ClassAttendanceRecord {
 
 export const getMyClasses = async (
   status = "ACTIVE",
-): Promise<{ data: FinalClass[]; pagination?: any }> =>
-  apiClient.get(`/final-classes/tutor/my-classes?status=${status}`) as any;
+  userId?: string,
+): Promise<{ data: FinalClass[]; pagination?: any }> => {
+  if (userId) {
+    const res: any = await apiClient.get(
+      `/final-classes/tutor/${userId}?status=${status}&page=1&limit=100`,
+    );
+    return { data: res.data ?? res ?? [] };
+  }
+  return apiClient.get(`/final-classes/tutor/my-classes?status=${status}`) as any;
+};
 
 export const getClassAttendance = async (
   classId: string,

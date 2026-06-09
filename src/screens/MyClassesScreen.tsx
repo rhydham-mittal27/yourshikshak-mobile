@@ -14,7 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { getMyClasses, FinalClass } from "../api/client";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getMyClasses, FinalClass, AUTH_STORAGE_KEY } from "../api/client";
 import { T } from "../constants/colors";
 import ClassCard from "../components/classes/ClassCard";
 import AttendanceSheetModal from "../components/classes/AttendanceSheetModal";
@@ -57,6 +58,7 @@ const EmptyState = ({ status }: { status: StatusFilter }) => (
 export default function MyClassesScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
+  const [userId, setUserId] = useState<string | null>(null);
   const [classes, setClasses] = useState<FinalClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,17 +74,18 @@ export default function MyClassesScreen({ navigation }: Props) {
   const [sheetCycle, setSheetCycle] = useState(1);
 
   const fetchClasses = useCallback(
-    async (filter: StatusFilter = statusFilter) => {
+    async (filter: StatusFilter = statusFilter, uid?: string | null) => {
+      const resolvedUid = uid ?? userId;
       setError(null);
       try {
         const status = filter === "ALL" ? undefined : filter;
-        const res = await getMyClasses(status || "ACTIVE");
+        const res = await getMyClasses(status || "ACTIVE", resolvedUid ?? undefined);
         // If ALL, fetch all statuses
         if (filter === "ALL") {
           const [active, completed, paused] = await Promise.all([
-            getMyClasses("ACTIVE"),
-            getMyClasses("COMPLETED"),
-            getMyClasses("PAUSED"),
+            getMyClasses("ACTIVE", resolvedUid ?? undefined),
+            getMyClasses("COMPLETED", resolvedUid ?? undefined),
+            getMyClasses("PAUSED", resolvedUid ?? undefined),
           ]);
           const all = [
             ...(active.data || []),
@@ -108,12 +111,22 @@ export default function MyClassesScreen({ navigation }: Props) {
         setRefreshing(false);
       }
     },
-    [statusFilter],
+    [statusFilter, userId],
   );
 
+  // Load userId from auth storage, then fetch
   useEffect(() => {
-    setLoading(true);
-    fetchClasses(statusFilter);
+    (async () => {
+      setLoading(true);
+      try {
+        const raw = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+        const uid = raw ? JSON.parse(raw)?.user?.id : null;
+        setUserId(uid);
+        fetchClasses(statusFilter, uid);
+      } catch {
+        fetchClasses(statusFilter);
+      }
+    })();
   }, [statusFilter]);
 
   // Init cycle map when classes load
