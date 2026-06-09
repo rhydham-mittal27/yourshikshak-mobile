@@ -11,11 +11,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StackNavigationProp } from "@react-navigation/stack";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { AUTH_STORAGE_KEY, FinalClass, getMyClasses } from "../api/client";
+import { ClassSessionItem, FinalClass, getTutorSessions } from "../api/client";
 import { T } from "../constants/colors";
 
 type Nav = StackNavigationProp<RootStackParamList, "Timetable">;
@@ -25,10 +24,6 @@ interface Props { navigation: Nav }
 
 const DAY_LABELS  = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
-const JS_DAY_TO_API: Record<number, string> = {
-  0: "SUNDAY", 1: "MONDAY", 2: "TUESDAY", 3: "WEDNESDAY",
-  4: "THURSDAY", 5: "FRIDAY", 6: "SATURDAY",
-};
 const MONTH_NAMES = [
   "January","February","March","April","May","June",
   "July","August","September","October","November","December",
@@ -64,25 +59,20 @@ function toKey(d: Date) {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
+function monthKey(year: number, month: number) {
+  return `${year}-${month}`;
+}
+
 /** All calendar cells for a month grid (includes leading/trailing padding days) */
 function monthGridDays(year: number, month: number): (Date | null)[] {
   const first = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const leadingBlanks = first.getDay(); // 0=Sun
+  const leadingBlanks = first.getDay();
   const cells: (Date | null)[] = [];
   for (let i = 0; i < leadingBlanks; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
-  // Pad to full rows
   while (cells.length % 7 !== 0) cells.push(null);
   return cells;
-}
-
-function classesForDay(classes: FinalClass[], day: Date): FinalClass[] {
-  const apiDay = JS_DAY_TO_API[day.getDay()];
-  return classes.filter((cls) => {
-    const days: string[] = cls.schedule?.daysOfWeek ?? [];
-    return days.includes(apiDay);
-  });
 }
 
 function parseTime(timeSlot?: string): number {
@@ -96,8 +86,8 @@ function parseTime(timeSlot?: string): number {
   return h * 60 + (m || 0);
 }
 
-function subjectLabel(cls: FinalClass): string {
-  const raw = cls.subject?.[0];
+function subjectLabel(cls?: FinalClass): string {
+  const raw = cls?.subject?.[0];
   if (!raw) return "—";
   if (typeof raw === "string") return raw;
   return raw.label ?? raw.name ?? raw.value ?? "—";
@@ -106,8 +96,8 @@ function subjectLabel(cls: FinalClass): string {
 const MODE_COLOR: Record<string, string> = {
   ONLINE: T.success, OFFLINE: T.primary, HYBRID: T.warning,
 };
-const STATUS_COLOR: Record<string, string> = {
-  ACTIVE: T.success, COMPLETED: T.mutedFg, PAUSED: T.warning, CANCELLED: T.error,
+const SESSION_STATUS_COLOR: Record<string, string> = {
+  PLANNED: T.mutedFg, COMPLETED: T.success, CANCELLED: T.error,
 };
 
 type ViewMode = "week" | "month";
@@ -122,7 +112,11 @@ export default function TimetableScreen({ navigation }: Props) {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
   const [monthDate, setMonthDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDay, setSelectedDay] = useState(today);
-  const [classes, setClasses] = useState<FinalClass[]>([]);
+
+  // sessionCache[monthKey(year, month)] = ClassSessionItem[]
+  const [sessionCache, setSessionCache] = useState<Record<string, ClassSessionItem[]>>({});
+  const fetchingRef = useRef<Set<string>>(new Set());
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,38 +124,92 @@ export default function TimetableScreen({ navigation }: Props) {
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  const load = useCallback(async (userId?: string) => {
-    setError(null);
+  // Build a flat list of all cached sessions for quick date lookup
+  const allSessions = Object.values(sessionCache).flat();
+
+  // Map dateKey → sessions for quick lookup
+  const sessionsByDay = React.useMemo(() => {
+    const map: Record<string, ClassSessionItem[]> = {};
+    for (const s of allSessions) {
+      const d = new Date(s.sessionDate);
+      const k = toKey(d);
+      if (!map[k]) map[k] = [];
+      map[k].push(s);
+    }
+    return map;
+  }, [allSessions.length, sessionCache]);
+
+  const sessionsForDay = (d: Date): ClassSessionItem[] => {
+    const items = sessionsByDay[toKey(d)] ?? [];
+    return [...items].sort((a, b) => parseTime(a.timeSlot) - parseTime(b.timeSlot));
+  };
+
+  const fetchMonth = useCallback(async (year: number, month: number, force = false) => {
+    const key = monthKey(year, month);
+    if (!force && (sessionCache[key] !== undefined || fetchingRef.current.has(key))) return;
+    fetchingRef.current.add(key);
     try {
-      const [active, completed, paused] = await Promise.all([
-        getMyClasses("ACTIVE", userId),
-        getMyClasses("COMPLETED", userId),
-        getMyClasses("PAUSED", userId),
-      ]);
-      setClasses([...(active.data ?? []), ...(completed.data ?? []), ...(paused.data ?? [])]);
+      const res = await getTutorSessions(month + 1, year); // API month is 1-indexed
+      setSessionCache((prev) => ({ ...prev, [key]: res.data ?? [] }));
     } catch (e: any) {
-      setError(e?.message ?? "Failed to load classes");
+      setError(e?.message ?? "Failed to load sessions");
+      setSessionCache((prev) => ({ ...prev, [key]: [] }));
+    } finally {
+      fetchingRef.current.delete(key);
     }
   }, []);
 
+  // Determine which months are needed for the current view
+  const neededMonthKeys = React.useMemo(() => {
+    const months = new Set<string>();
+    if (viewMode === "week") {
+      weekDays.forEach((d) => months.add(monthKey(d.getFullYear(), d.getMonth())));
+    } else {
+      months.add(monthKey(monthDate.getFullYear(), monthDate.getMonth()));
+    }
+    return months;
+  }, [viewMode, weekStart, monthDate]);
+
+  // Initial load
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const raw = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
-      const userId = raw ? JSON.parse(raw)?.user?.id : undefined;
-      await load(userId);
+      setError(null);
+      const promises: Promise<void>[] = [];
+      neededMonthKeys.forEach((k) => {
+        const [y, m] = k.split("-").map(Number);
+        promises.push(fetchMonth(y, m));
+      });
+      await Promise.all(promises);
       setLoading(false);
       Animated.timing(fadeAnim, { toValue: 1, duration: 280, useNativeDriver: true }).start();
     })();
   }, []);
 
+  // Fetch when navigating to a new month/week
+  useEffect(() => {
+    neededMonthKeys.forEach((k) => {
+      const [y, m] = k.split("-").map(Number);
+      fetchMonth(y, m);
+    });
+  }, [neededMonthKeys]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    const raw = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
-    const userId = raw ? JSON.parse(raw)?.user?.id : undefined;
-    await load(userId);
+    setError(null);
+    const promises: Promise<void>[] = [];
+    neededMonthKeys.forEach((k) => {
+      const [y, m] = k.split("-").map(Number);
+      promises.push(fetchMonth(y, m, true));
+    });
+    await Promise.all(promises);
     setRefreshing(false);
-  }, [load]);
+  }, [neededMonthKeys, fetchMonth]);
+
+  const selectDay = (day: Date) => {
+    setSelectedDay(day);
+    if (viewMode === "week") setWeekStart(startOfWeek(day));
+  };
 
   const goBack = () => {
     if (viewMode === "week") {
@@ -183,20 +231,12 @@ export default function TimetableScreen({ navigation }: Props) {
     }
   };
 
-  const selectDay = (day: Date) => {
-    setSelectedDay(day);
-    if (viewMode === "week") setWeekStart(startOfWeek(day));
-  };
+  const daySessions = sessionsForDay(selectedDay);
 
-  const daySessions = classesForDay(classes, selectedDay)
-    .sort((a, b) => parseTime(a.schedule?.timeSlot) - parseTime(b.schedule?.timeSlot));
-
-  // Dot map for week
   const weekDotMap: Record<string, boolean> = {};
-  weekDays.forEach((d) => { if (classesForDay(classes, d).length > 0) weekDotMap[toKey(d)] = true; });
+  weekDays.forEach((d) => { if (sessionsForDay(d).length > 0) weekDotMap[toKey(d)] = true; });
 
-  // Count map for month grid cells
-  const countForDay = (d: Date) => classesForDay(classes, d).length;
+  const countForDay = (d: Date) => sessionsForDay(d).length;
 
   const navLabel = viewMode === "week"
     ? (() => {
@@ -224,7 +264,6 @@ export default function TimetableScreen({ navigation }: Props) {
           <Text style={s.headerTitle}>Timetable</Text>
           <Text style={s.headerSub}>{navLabel}</Text>
         </View>
-        {/* View toggle */}
         <View style={s.viewToggle}>
           <Pressable
             style={[s.toggleBtn, viewMode === "week" && s.toggleBtnActive]}
@@ -308,15 +347,15 @@ export default function TimetableScreen({ navigation }: Props) {
               <Text style={s.emptySubtitle}>Free day — enjoy the break!</Text>
             </View>
           ) : (
-            daySessions.map((cls) => (
+            daySessions.map((session) => (
               <Pressable
-                key={cls._id}
+                key={session._id}
                 onPress={() => navigation.navigate("MyClasses", {
-                  highlightClassId: String((cls as any)._id || cls.id),
+                  highlightClassId: String(session.finalClass?._id ?? ""),
                 })}
                 style={({ pressed }) => pressed && { opacity: 0.75 }}
               >
-                <ClassCard cls={cls} />
+                <SessionCard session={session} />
               </Pressable>
             ))
           )}
@@ -372,14 +411,11 @@ function MonthGrid({ monthDate, selectedDay, today, countForDay, onSelect }: {
 
   return (
     <View style={mg.wrap}>
-      {/* Day-of-week header */}
       <View style={mg.headerRow}>
         {DAY_LETTERS.map((l, i) => (
           <Text key={i} style={[mg.headerCell, (i === 0 || i === 6) && mg.headerWeekend]}>{l}</Text>
         ))}
       </View>
-
-      {/* Grid */}
       <View style={mg.grid}>
         {cells.map((day, idx) => {
           if (!day) return <View key={`blank-${idx}`} style={mg.cell} />;
@@ -404,13 +440,9 @@ function MonthGrid({ monthDate, selectedDay, today, countForDay, onSelect }: {
                   {day.getDate()}
                 </Text>
               </View>
-              {/* Dot row: up to 3 dots for multiple classes */}
               <View style={mg.dots}>
                 {count > 0 && Array.from({ length: Math.min(count, 3) }).map((_, di) => (
-                  <View
-                    key={di}
-                    style={[mg.dot, isSelected && mg.dotSelected]}
-                  />
+                  <View key={di} style={[mg.dot, isSelected && mg.dotSelected]} />
                 ))}
               </View>
             </Pressable>
@@ -421,14 +453,15 @@ function MonthGrid({ monthDate, selectedDay, today, countForDay, onSelect }: {
   );
 }
 
-// ─── Class Card ───────────────────────────────────────────────────────────────
+// ─── Session Card ─────────────────────────────────────────────────────────────
 
-function ClassCard({ cls }: { cls: FinalClass }) {
+function SessionCard({ session }: { session: ClassSessionItem }) {
+  const cls = session.finalClass;
   const subject = subjectLabel(cls);
-  const modeColor = MODE_COLOR[cls.mode] ?? T.primary;
-  const statusColor = STATUS_COLOR[cls.status] ?? T.mutedFg;
-  const timeSlot = cls.schedule?.timeSlot;
-  const startTime = timeSlot?.split("-")[0]?.trim() ?? "—";
+  const mode = cls?.mode ?? "OFFLINE";
+  const modeColor = MODE_COLOR[mode] ?? T.primary;
+  const statusColor = SESSION_STATUS_COLOR[session.status] ?? T.mutedFg;
+  const startTime = session.timeSlot?.split("-")[0]?.trim() ?? "—";
 
   return (
     <View style={cc.card}>
@@ -440,31 +473,29 @@ function ClassCard({ cls }: { cls: FinalClass }) {
         <View style={cc.topRow}>
           <Text style={cc.subject} numberOfLines={1}>{subject}</Text>
           <View style={[cc.modeBadge, { backgroundColor: modeColor + "18" }]}>
-            <Text style={[cc.modeTxt, { color: modeColor }]}>{cls.mode}</Text>
+            <Text style={[cc.modeTxt, { color: modeColor }]}>{mode}</Text>
           </View>
         </View>
-        {cls.studentName ? (
+        {cls?.studentName ? (
           <View style={cc.metaRow}>
             <Ionicons name="person-outline" size={12} color={T.mutedFg} />
             <Text style={cc.metaTxt} numberOfLines={1}>{cls.studentName}</Text>
           </View>
         ) : null}
-        {timeSlot ? (
-          <View style={cc.metaRow}>
-            <Ionicons name="time-outline" size={12} color={T.mutedFg} />
-            <Text style={cc.metaTxt}>{timeSlot}</Text>
-          </View>
-        ) : null}
-        {(cls.grade || cls.board) ? (
+        <View style={cc.metaRow}>
+          <Ionicons name="time-outline" size={12} color={T.mutedFg} />
+          <Text style={cc.metaTxt}>{session.timeSlot || "—"}</Text>
+        </View>
+        {(cls?.grade || cls?.board) ? (
           <View style={cc.metaRow}>
             <Ionicons name="school-outline" size={12} color={T.mutedFg} />
             <Text style={cc.metaTxt}>{[cls.grade, cls.board].filter(Boolean).join(" · ")}</Text>
           </View>
         ) : null}
         <View style={cc.footer}>
-          <Text style={[cc.statusTxt, { color: statusColor }]}>{cls.status}</Text>
-          {cls.completedSessions > 0 && (
-            <Text style={cc.sessCount}>{cls.completedSessions} sessions done</Text>
+          <Text style={[cc.statusTxt, { color: statusColor }]}>{session.status}</Text>
+          {session.sessionNumber > 0 && (
+            <Text style={cc.sessCount}>Session #{session.sessionNumber}</Text>
           )}
         </View>
       </View>
