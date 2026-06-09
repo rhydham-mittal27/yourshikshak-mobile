@@ -11,8 +11,6 @@ import {
   ScrollView,
   Linking,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -1123,10 +1121,7 @@ const MyDemosScreen = ({
           transparent
           onRequestClose={() => setSubmitItem(null)}
         >
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-          >
+          <View style={{ flex: 1 }}>
             <View style={sm.backdrop}>
               <View style={sm.sheet}>
                 <View style={sm.handle} />
@@ -1272,7 +1267,7 @@ const MyDemosScreen = ({
                 </ScrollView>
               </View>
             </View>
-          </KeyboardAvoidingView>
+          </View>
         </Modal>
       )}
     </View>
