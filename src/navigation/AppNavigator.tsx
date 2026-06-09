@@ -20,8 +20,9 @@ import EditProfileScreen from "../screens/EditProfileScreen";
 import MyClassesScreen from "../screens/MyClassesScreen";
 import TimetableScreen from "../screens/TimetableScreen";
 import { ModalProvider } from "../context/ModalContext";
-import { setAuthToken, AUTH_STORAGE_KEY, expressInterest } from "../api/client";
+import { setAuthToken, AUTH_STORAGE_KEY, expressInterest, getPendingCycleStarts, PendingCycleClass } from "../api/client";
 import { registerForPushNotifications } from "../services/pushNotifications";
+import CycleStartModal from "../components/classes/CycleStartModal";
 
 export type RootStackParamList = {
   Intro: undefined;
@@ -46,6 +47,7 @@ const AppNavigator = () => {
     keyof RootStackParamList | null
   >(null);
   const [savedParams, setSavedParams] = useState<any>(null);
+  const [pendingCycles, setPendingCycles] = useState<PendingCycleClass[]>([]);
   const navRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
 
   useEffect(() => {
@@ -63,6 +65,10 @@ const AppNavigator = () => {
               role: user.role,
             });
             setInitialRoute("TutorDashboard");
+            // Check for pending cycle starts
+            getPendingCycleStarts()
+              .then((res) => { if (res.data?.length) setPendingCycles(res.data); })
+              .catch(() => {});
             return;
           }
         }
@@ -94,6 +100,12 @@ const AppNavigator = () => {
           navRef.current?.navigate("TutorDashboard", savedParams ?? {});
         }
 
+        if (data?.type === "CYCLE_COMPLETE" || data?.type === "DEMO_APPROVED") {
+          getPendingCycleStarts()
+            .then((res) => { if (res.data?.length) setPendingCycles(res.data); })
+            .catch(() => {});
+        }
+
         if (data?.type === "VERIFICATION") {
           navRef.current?.navigate("TutorProfile");
         }
@@ -119,6 +131,12 @@ const AppNavigator = () => {
 
   return (
     <ModalProvider>
+      {pendingCycles.length > 0 && (
+        <CycleStartModal
+          classes={pendingCycles}
+          onDone={() => setPendingCycles([])}
+        />
+      )}
       <NavigationContainer ref={navRef}>
         <Stack.Navigator
           initialRouteName={initialRoute}

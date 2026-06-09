@@ -810,4 +810,22 @@ export const getShiftRequestsForClass = async (
 ): Promise<{ data: ShiftRequest[]; count: number }> =>
   apiClient.get(`/shift-requests/class/${classId}`) as any;
 
+export interface PendingCycleClass {
+  _id: string;
+  className: string;
+  studentName: string;
+  classesPerMonth: number;
+  currentCycleNumber: number;
+  schedule?: { daysOfWeek?: string[]; timeSlot?: string };
+}
+
+export const getPendingCycleStarts = async (): Promise<{ data: PendingCycleClass[] }> =>
+  apiClient.get("/final-classes/tutor/pending-cycle-start") as any;
+
+export const setCycleStartDate = async (
+  classId: string,
+  startDate: string,
+): Promise<any> =>
+  apiClient.post(`/final-classes/${classId}/start-cycle`, { startDate });
+
 export default apiClient;
