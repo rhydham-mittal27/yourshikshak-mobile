@@ -955,8 +955,8 @@ const MyDemosScreen = ({
     if (!submitItem || !submitAttStatus) return;
     setSubmitSubmitting(true);
     try {
-      await submitDemoResult(submitItem._id, {
-        status: submitItem.status,
+      await submitDemoResult((submitItem.classLead as any)?._id ?? submitItem._id, {
+        status: "COMPLETED",
         attendanceStatus: submitAttStatus,
         topicCovered: submitTopic,
         feedback: submitFeedback,
