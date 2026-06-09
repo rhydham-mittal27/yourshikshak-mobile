@@ -3,7 +3,7 @@ import axios from "axios";
 // Switch between real API and dummy data by changing BASE_URL:
 //   "static"                        → dummy data (no network calls)
 //   "https://api.yourshikshak.in/api" → live backend
-const BASE_URL = "https://api.yourshikshak.in/api";
+const BASE_URL = "http://192.168.1.5:5000/api";
 
 export const IS_STATIC = BASE_URL === "static";
 
@@ -259,6 +259,7 @@ export interface LeadAnnouncement {
   postedAt: string;
   isActive: boolean;
   interestCount: number;
+  interestedTutors?: Array<{ tutor: string; [key: string]: any }>;
   classLead: {
     _id: string;
     studentName: string;
