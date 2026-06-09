@@ -1632,8 +1632,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         <Pressable
           style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
           onPress={() => {
-            closeSidebar();
             navigation.navigate("MyClasses");
+            closeSidebar();
           }}
         >
           <View style={[sb.navIconBg, { backgroundColor: `${T.success}18` }]}>
@@ -1647,8 +1647,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         <Pressable
           style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
           onPress={() => {
-            closeSidebar();
             navigation.navigate("Timetable");
+            closeSidebar();
           }}
         >
           <View style={[sb.navIconBg, { backgroundColor: `${T.primary}18` }]}>
@@ -1662,8 +1662,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         <Pressable
           style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
           onPress={() => {
-            closeSidebar();
             navigation.navigate("ClassOpportunities");
+            closeSidebar();
           }}
         >
           <View style={[sb.navIconBg, { backgroundColor: `${T.secondary}18` }]}>
@@ -1681,8 +1681,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         <Pressable
           style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
           onPress={() => {
-            closeSidebar();
             navigation.navigate("MyDemos");
+            closeSidebar();
           }}
         >
           <View style={[sb.navIconBg, { backgroundColor: "#8B5CF618" }]}>
@@ -1700,8 +1700,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         <Pressable
           style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
           onPress={() => {
-            closeSidebar();
             navigation.navigate("Notifications");
+            closeSidebar();
           }}
         >
           <View style={[sb.navIconBg, { backgroundColor: `${T.warning}18` }]}>
@@ -1733,6 +1733,21 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           />
         </Pressable>
 
+        {/* Settings */}
+        <Pressable
+          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
+          onPress={() => {
+            navigation.navigate("Settings");
+            closeSidebar();
+          }}
+        >
+          <View style={[sb.navIconBg, { backgroundColor: "#64748B18" }]}>
+            <Ionicons name="settings-outline" size={18} color="#94A3B8" />
+          </View>
+          <Text style={sb.navLabel}>Settings</Text>
+          <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
+        </Pressable>
+
         {/* Spacer pushes Profile to bottom */}
         <View style={{ flex: 1 }} />
 
@@ -1742,8 +1757,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         <Pressable
           style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
           onPress={() => {
+            navigation.navigate("TutorProfile");
             closeSidebar();
-            setTimeout(() => navigation.navigate("TutorProfile"), 280);
           }}
         >
           <View style={[sb.navIconBg, { backgroundColor: `${T.primary}20` }]}>
