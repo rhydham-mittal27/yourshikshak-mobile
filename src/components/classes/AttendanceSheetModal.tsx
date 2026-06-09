@@ -167,9 +167,7 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={close}>
-      <View style={{ flex: 1, justifyContent: "flex-end" }}>
-        {/* Dimmed overlay — tap to close */}
-        <Pressable style={s.overlay} onPress={close} />
+      <Pressable style={s.container} onPress={close} activeOpacity={1}>
 
         {/* Gesture-driven sheet */}
         <Animated.View style={[s.sheet, { height: sheetH }]} {...pan.panHandlers}>
@@ -358,13 +356,17 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
               </>
             )}
           </Animated.View>
-      </View>
+      </Pressable>
     </Modal>
   );
 };
 
 const s = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(2,8,23,0.75)" },
+  container: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(2,8,23,0.75)",
+  },
   sheet: {
     backgroundColor: "#fff", borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: "hidden",
   },
