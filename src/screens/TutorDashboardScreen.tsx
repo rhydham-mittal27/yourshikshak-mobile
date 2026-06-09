@@ -481,10 +481,12 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
 
   // Sidebar
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarModalVisible, setSidebarModalVisible] = useState(false);
   const sidebarAnim = useRef(new Animated.Value(-SIDEBAR_W)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
 
   const openSidebar = () => {
+    setSidebarModalVisible(true);
     setSidebarOpen(true);
     Animated.parallel([
       Animated.spring(sidebarAnim, {
@@ -501,6 +503,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const closeSidebar = () => {
+    setSidebarOpen(false);
     Animated.parallel([
       Animated.spring(sidebarAnim, {
         toValue: -SIDEBAR_W,
@@ -512,7 +515,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         duration: 200,
         useNativeDriver: true,
       }),
-    ]).start(() => setSidebarOpen(false));
+    ]).start(() => setSidebarModalVisible(false));
   };
 
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
@@ -1581,29 +1584,33 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
       </ScrollView>
 
       {/* ── Sidebar overlay + drawer ──────────────────────────────────────── */}
-      {/* Visual dark backdrop — always mounted so fade-out animates fully */}
-      <Animated.View
-        style={[sb.overlay, { opacity: overlayAnim }]}
-        pointerEvents="none"
-      />
-      {/* Touch target — only present when sidebar is open */}
-      {sidebarOpen && (
+      <Modal
+        visible={sidebarModalVisible}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        onRequestClose={closeSidebar}
+      >
+        {/* Dark overlay covering the non-drawer area */}
+        <Animated.View
+          style={[sb.overlay, { opacity: overlayAnim }]}
+          pointerEvents="none"
+        />
+        {/* Tap-to-close: only the area to the right of the drawer */}
         <Pressable
-          style={StyleSheet.absoluteFillObject}
+          style={{ position: "absolute", top: 0, bottom: 0, left: SIDEBAR_W, right: 0 }}
           onPress={closeSidebar}
         />
-      )}
 
-      <Animated.View
-        style={[
-          sb.drawer,
-          {
-            transform: [{ translateX: sidebarAnim }],
-            paddingTop: Math.max(insets.top, 20),
-          },
-        ]}
-        pointerEvents={sidebarOpen ? "auto" : "none"}
-      >
+        <Animated.View
+          style={[
+            sb.drawer,
+            {
+              transform: [{ translateX: sidebarAnim }],
+              paddingTop: Math.max(insets.top, 20),
+            },
+          ]}
+        >
         {/* Drawer header */}
         <View style={sb.drawerHeader}>
           {profilePhotoUrl && !photoError ? (
@@ -1772,6 +1779,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           />
         </Pressable>
       </Animated.View>
+      </Modal>
 
       {/* ── Attendance Modal ──────────────────────────────────────────────── */}
       <Modal
