@@ -115,14 +115,7 @@ const AppModal: React.FC<Props> = ({
       onRequestClose={onDismiss}
     >
       {/* Backdrop */}
-      <Pressable style={s.backdrop} onPress={onDismiss}>
-        <Animated.View
-          style={[
-            s.backdrop,
-            { opacity: opacityAnim, backgroundColor: "rgba(0,0,0,0.45)" },
-          ]}
-        />
-      </Pressable>
+      <Pressable style={[s.backdrop, { backgroundColor: "rgba(2,8,23,0.75)" }]} onPress={onDismiss} />
 
       {/* Sheet */}
       <View style={s.centerer} pointerEvents="box-none">
