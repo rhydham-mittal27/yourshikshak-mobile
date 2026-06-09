@@ -461,7 +461,7 @@ const s = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    maxHeight: "50%",
+    height: "70%",
     overflow: "hidden",
   },
   dragHandle: {
