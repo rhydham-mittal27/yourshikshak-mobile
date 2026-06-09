@@ -61,8 +61,8 @@ const isTodayClassDay = (cls: FinalClass | null): boolean => {
   return schedule.daysOfWeek.includes(days[new Date().getDay()]);
 };
 
-const subjectLabel = (cls: FinalClass) => {
-  if (!cls.subject?.length) return "—";
+const subjectLabel = (cls: FinalClass | null) => {
+  if (!cls || !cls.subject?.length) return "—";
   return (Array.isArray(cls.subject) ? cls.subject : [cls.subject])
     .map((s) => (typeof s === "string" ? s : s?.label || s?.name || ""))
     .filter(Boolean)
@@ -275,7 +275,7 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
                 <Text style={s.formLabel}>CLASS</Text>
                 <Text style={s.formValue}>{cls?.studentName}</Text>
                 <Text style={s.formSub}>
-                  {subjectLabel(cls!)} · Grade {cls?.grade} · {cls?.completedSessions ?? 0}/{cls?.classesPerMonth ?? cls?.totalSessions ?? "?"} sessions
+                  {cls ? subjectLabel(cls) : "—"} · Grade {cls?.grade} · {cls?.completedSessions ?? 0}/{cls?.classesPerMonth ?? cls?.totalSessions ?? "?"} sessions
                 </Text>
               </View>
 
