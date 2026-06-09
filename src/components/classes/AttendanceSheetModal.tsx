@@ -17,8 +17,6 @@ import Animated, {
   withSpring,
   withTiming,
   runOnJS,
-  interpolate,
-  Extrapolation,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -94,12 +92,11 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
   const classDay = isTodayClassDay(cls);
 
   // ── Gesture / animation ──────────────────────────────────────────────────
-  const sheetH    = useSharedValue(0);
-  const startH    = useSharedValue(0);
-  const overlayOp = useSharedValue(0);
+  const sheetH = useSharedValue(0);
+  const startH = useSharedValue(0);
 
-  const open  = () => { sheetH.value = withSpring(SNAP_COLLAPSED, SPRING); overlayOp.value = withTiming(1, { duration: 250 }); };
-  const close = () => { sheetH.value = withTiming(0, { duration: 220 }); overlayOp.value = withTiming(0, { duration: 220 }, () => runOnJS(onClose)()); };
+  const open  = () => { sheetH.value = withSpring(SNAP_COLLAPSED, SPRING); };
+  const close = () => { sheetH.value = withTiming(0, { duration: 220 }, () => runOnJS(onClose)()); };
 
   useEffect(() => { if (visible) open(); }, [visible]);
 
@@ -108,22 +105,18 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
     .onUpdate((e) => {
       const next = startH.value - e.translationY;
       sheetH.value = Math.max(80, Math.min(SNAP_EXPANDED, next));
-      overlayOp.value = interpolate(sheetH.value, [0, SNAP_COLLAPSED], [0, 1], Extrapolation.CLAMP);
     })
     .onEnd((e) => {
       if (sheetH.value < CLOSE_THRESHOLD || e.velocityY > 800) {
         runOnJS(close)();
       } else if (e.velocityY < -600 || sheetH.value > SCREEN_H * 0.78) {
         sheetH.value = withSpring(SNAP_EXPANDED, SPRING);
-        overlayOp.value = withTiming(1);
       } else {
         sheetH.value = withSpring(SNAP_COLLAPSED, SPRING);
-        overlayOp.value = withTiming(1);
       }
     });
 
-  const sheetStyle   = useAnimatedStyle(() => ({ height: sheetH.value }));
-  const overlayStyle = useAnimatedStyle(() => ({ opacity: overlayOp.value }));
+  const sheetStyle = useAnimatedStyle(() => ({ height: sheetH.value }));
 
   // ── Data loading ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -175,9 +168,7 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={close}>
       <GestureHandlerRootView style={{ flex: 1, justifyContent: "flex-end" }}>
         {/* Dimmed overlay — tap to close */}
-        <Animated.View style={[s.overlay, overlayStyle]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={close} />
-        </Animated.View>
+        <Pressable style={s.overlay} onPress={close} />
 
         {/* Gesture-driven sheet */}
         <GestureDetector gesture={panGesture}>
@@ -374,7 +365,7 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
 };
 
 const s = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(2,8,23,0.6)" },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(2,8,23,0.75)" },
   sheet: {
     backgroundColor: "#fff", borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: "hidden",
   },
