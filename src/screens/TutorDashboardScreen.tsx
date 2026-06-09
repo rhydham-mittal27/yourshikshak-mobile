@@ -488,34 +488,20 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
   const openSidebar = () => {
     setSidebarModalVisible(true);
     setSidebarOpen(true);
-    Animated.parallel([
-      Animated.spring(sidebarAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        bounciness: 0,
-      }),
-      Animated.timing(overlayAnim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.spring(sidebarAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      bounciness: 0,
+    }).start();
   };
 
   const closeSidebar = () => {
     setSidebarOpen(false);
-    Animated.parallel([
-      Animated.spring(sidebarAnim, {
-        toValue: -SIDEBAR_W,
-        useNativeDriver: true,
-        bounciness: 0,
-      }),
-      Animated.timing(overlayAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => setSidebarModalVisible(false));
+    Animated.spring(sidebarAnim, {
+      toValue: -SIDEBAR_W,
+      useNativeDriver: true,
+      bounciness: 0,
+    }).start(() => setSidebarModalVisible(false));
   };
 
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
@@ -1591,14 +1577,9 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         statusBarTranslucent
         onRequestClose={closeSidebar}
       >
-        {/* Dark overlay covering the non-drawer area */}
-        <Animated.View
-          style={[sb.overlay, { opacity: overlayAnim }]}
-          pointerEvents="none"
-        />
-        {/* Tap-to-close: only the area to the right of the drawer */}
+        {/* Static dark backdrop + tap-to-close */}
         <Pressable
-          style={{ position: "absolute", top: 0, bottom: 0, left: SIDEBAR_W, right: 0 }}
+          style={sb.overlay}
           onPress={closeSidebar}
         />
 
@@ -2777,7 +2758,6 @@ const sb = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(2,8,23,0.75)",
-    zIndex: 10,
   },
   drawer: {
     position: "absolute",
