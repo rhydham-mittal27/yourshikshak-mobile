@@ -1581,11 +1581,12 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
       </ScrollView>
 
       {/* ── Sidebar overlay + drawer ──────────────────────────────────────── */}
-      {sidebarOpen && (
-        <TouchableWithoutFeedback onPress={closeSidebar}>
-          <Animated.View style={[sb.overlay, { opacity: overlayAnim }]} />
-        </TouchableWithoutFeedback>
-      )}
+      <TouchableWithoutFeedback onPress={closeSidebar}>
+        <Animated.View
+          pointerEvents={sidebarOpen ? "auto" : "none"}
+          style={[sb.overlay, { opacity: overlayAnim }]}
+        />
+      </TouchableWithoutFeedback>
 
       <Animated.View
         style={[
