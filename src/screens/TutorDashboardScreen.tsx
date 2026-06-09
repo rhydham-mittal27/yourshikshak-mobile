@@ -1643,6 +1643,21 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
         </Pressable>
 
+        {/* Timetable */}
+        <Pressable
+          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
+          onPress={() => {
+            closeSidebar();
+            navigation.navigate("Timetable");
+          }}
+        >
+          <View style={[sb.navIconBg, { backgroundColor: `${T.primary}18` }]}>
+            <Ionicons name="calendar-outline" size={18} color={T.primary} />
+          </View>
+          <Text style={sb.navLabel}>Timetable</Text>
+          <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
+        </Pressable>
+
         {/* Class Opportunities */}
         <Pressable
           style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
