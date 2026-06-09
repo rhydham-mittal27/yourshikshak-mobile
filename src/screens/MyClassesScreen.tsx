@@ -336,6 +336,7 @@ export default function MyClassesScreen({ navigation }: Props) {
         cls={sheetClass}
         cycle={sheetCycle}
         onClose={() => setSheetVisible(false)}
+        onSubmitSuccess={() => fetchClasses(statusFilter)}
       />
     </View>
   );
