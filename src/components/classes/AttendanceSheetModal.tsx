@@ -18,7 +18,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from "react-native-reanimated";
-import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import {
   getClassAttendance,
   submitAttendance,
@@ -166,7 +166,7 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={close}>
-      <GestureHandlerRootView style={{ flex: 1, justifyContent: "flex-end" }}>
+      <View style={{ flex: 1, justifyContent: "flex-end" }}>
         {/* Dimmed overlay — tap to close */}
         <Pressable style={s.overlay} onPress={close} />
 
@@ -359,7 +359,7 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
             )}
           </Animated.View>
         </GestureDetector>
-      </GestureHandlerRootView>
+      </View>
     </Modal>
   );
 };
