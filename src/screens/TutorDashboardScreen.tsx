@@ -1581,12 +1581,18 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
       </ScrollView>
 
       {/* ── Sidebar overlay + drawer ──────────────────────────────────────── */}
-      <TouchableWithoutFeedback onPress={closeSidebar}>
-        <Animated.View
-          pointerEvents={sidebarOpen ? "auto" : "none"}
-          style={[sb.overlay, { opacity: overlayAnim }]}
+      {/* Visual dark backdrop — always mounted so fade-out animates fully */}
+      <Animated.View
+        style={[sb.overlay, { opacity: overlayAnim }]}
+        pointerEvents="none"
+      />
+      {/* Touch target — only present when sidebar is open */}
+      {sidebarOpen && (
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={closeSidebar}
         />
-      </TouchableWithoutFeedback>
+      )}
 
       <Animated.View
         style={[
