@@ -560,38 +560,34 @@ const DUMMY_TODAY_CLASSES: TodayClassesResponse = {
 };
 
 export const getTodayClasses = async (
-  tutorId: string,
+  _tutorId: string,
 ): Promise<TodayClassesResponse> => {
   if (IS_STATIC) return Promise.resolve(DUMMY_TODAY_CLASSES);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const DAY_NAMES = [
-    "SUNDAY",
-    "MONDAY",
-    "TUESDAY",
-    "WEDNESDAY",
-    "THURSDAY",
-    "FRIDAY",
-    "SATURDAY",
-  ];
-  const todayDay = DAY_NAMES[new Date().getDay()];
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const month = now.getMonth() + 1; // 1-indexed
+  const year = now.getFullYear();
 
-  // Same as web: GET /api/final-classes/tutor/:tutorId?status=ACTIVE&page=1&limit=50
-  const classRes: any = await apiClient.get(
-    `/final-classes/tutor/${tutorId}?status=ACTIVE&page=1&limit=50`,
+  // Fetch real ClassSession documents for this month
+  const sessionsRes: any = await apiClient.get(
+    `/class-sessions/tutor/my?month=${month}&year=${year}`,
   );
-  const all: any[] = classRes.data ?? classRes ?? [];
+  const sessions: any[] = sessionsRes.data ?? sessionsRes ?? [];
 
-  // Same as web: fetch today's attendance to exclude already-marked classes
-  const todayDate = new Date();
-  todayDate.setHours(0, 0, 0, 0);
-  const tomorrowDate = new Date(todayDate);
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  // Keep only sessions whose sessionDate is today (compare YYYY-MM-DD)
+  const todaySessions = sessions.filter((s: any) => {
+    const d = new Date(s.sessionDate);
+    return d.toISOString().slice(0, 10) === todayStr;
+  });
 
+  // Also fetch today's attendance to mark already-submitted sessions
+  const todayDate = new Date(now); todayDate.setHours(0, 0, 0, 0);
+  const tomorrowDate = new Date(todayDate); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
   let markedClassIds = new Set<string>();
   try {
     const attRes: any = await apiClient.get(
-      `/attendance?tutorId=${tutorId}&fromDate=${todayDate.toISOString()}&toDate=${tomorrowDate.toISOString()}`,
+      `/attendance?fromDate=${todayDate.toISOString()}&toDate=${tomorrowDate.toISOString()}`,
     );
     const attList: any[] = attRes.data ?? attRes ?? [];
     markedClassIds = new Set(
@@ -601,38 +597,28 @@ export const getTodayClasses = async (
       }),
     );
   } catch (_) {
-    // attendance fetch failure shouldn't block class display
+    // attendance fetch failure shouldn't block display
   }
 
-  // Filter: today's day in daysOfWeek AND attendance not already marked
-  const filtered = all.filter((cls: any) => {
-    const id = cls._id ?? cls.id;
-    if (markedClassIds.has(id)) return false;
-    const days: string[] = cls.schedule?.daysOfWeek ?? [];
-    if (!days.length) return true; // no schedule restriction → always show
-    return days.includes(todayDay);
-  });
-
-  const mapped: TodayClass[] = filtered.map((c: any) => {
+  const mapped: TodayClass[] = todaySessions.map((s: any) => {
+    const c = s.finalClass ?? {};
+    const classId = c._id ?? c.id ?? s.finalClass;
     const subjects = Array.isArray(c.subject)
-      ? c.subject
-          .map((s: any) => s.label ?? s.name ?? s)
-          .filter(Boolean)
-          .join(", ")
+      ? c.subject.map((sub: any) => sub.label ?? sub.name ?? sub).filter(Boolean).join(", ")
       : String(c.subject ?? "—");
     return {
-      _id: c._id ?? c.id,
+      _id: String(classId ?? s._id),
       studentName: c.studentName ?? "—",
       studentPhone: c.parent?.phone,
       subject: subjects || "—",
       grade: c.grade,
       board: c.board,
       date: todayStr,
-      scheduledTime: c.schedule?.timeSlot ?? "—",
+      scheduledTime: s.timeSlot ?? c.schedule?.timeSlot ?? "—",
       durationHours: c.classDurationHours ?? 1,
       mode: c.mode ?? "OFFLINE",
-      status: "SCHEDULED" as const,
-      attendanceMarked: false,
+      status: (s.status === "COMPLETED" ? "COMPLETED" : "SCHEDULED") as TodayClass["status"],
+      attendanceMarked: s.status === "COMPLETED" || markedClassIds.has(String(classId)),
       city: c.location?.city,
       area: c.location?.area,
       paymentAmount: c.tutorRatePerSession ?? c.ratePerSession,
@@ -827,5 +813,25 @@ export const setCycleStartDate = async (
   startDate: string,
 ): Promise<any> =>
   apiClient.post(`/final-classes/${classId}/start-cycle`, { startDate });
+
+// ─── Class Sessions ───────────────────────────────────────────────────────────
+
+export interface ClassSessionItem {
+  _id: string;
+  sessionDate: string;
+  sessionNumber: number;
+  cycleNumber?: number;
+  cycleMonth: number;
+  cycleYear: number;
+  status: "PLANNED" | "COMPLETED" | "CANCELLED";
+  timeSlot: string;
+  finalClass?: FinalClass;
+}
+
+export const getTutorSessions = async (
+  month: number,
+  year: number,
+): Promise<{ data: ClassSessionItem[] }> =>
+  apiClient.get(`/class-sessions/tutor/my?month=${month}&year=${year}`) as any;
 
 export default apiClient;
