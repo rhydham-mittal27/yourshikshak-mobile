@@ -2489,7 +2489,7 @@ const tc = StyleSheet.create({
 const am = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(2,8,23,0.75)",
     justifyContent: "flex-end",
   },
   sheet: {
@@ -2761,7 +2761,7 @@ const dc = StyleSheet.create({
 const sb = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(2,8,23,0.75)",
     zIndex: 10,
   },
   drawer: {
@@ -2893,7 +2893,7 @@ const sb = StyleSheet.create({
 const wa = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(2,8,23,0.75)",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 28,
