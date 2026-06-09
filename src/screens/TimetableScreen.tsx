@@ -244,7 +244,7 @@ export default function TimetableScreen({ navigation }: Props) {
     <View style={s.root}>
 
       {/* ── Hero header (branded gradient) ──────────────────────────────── */}
-      <LinearGradient colors={["#1E4A8C", "#2D68C4", "#4A7FD4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, { paddingTop: insets.top }]}>
+      <LinearGradient colors={[T.darkBg, T.darkBgMid, "#162032"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, { paddingTop: insets.top }]}>
         {/* Top row: back + title + toggle */}
         <View style={s.header}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={s.backWrap}>
@@ -753,7 +753,7 @@ const s = StyleSheet.create({
     borderBottomRightRadius: 28,
     paddingBottom: 4,
     // Cast shadow so the white content below feels like it's "under" the hero
-    shadowColor: "#1E4A8C",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
     shadowRadius: 12,
