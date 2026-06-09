@@ -780,4 +780,33 @@ export const updateMyProfile = async (
 ): Promise<{ data: any }> =>
   apiClient.put("/tutors/my-profile", payload) as any;
 
+// ─── Shift Requests ───────────────────────────────────────────────────────────
+
+export interface ShiftRequest {
+  _id: string;
+  finalClass: string | { _id: string; [key: string]: any };
+  cycleNumber: number;
+  shiftDays: number;
+  reason: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  rejectionReason?: string;
+  createdAt: string;
+}
+
+export const createShiftRequest = async (payload: {
+  finalClassId: string;
+  cycleNumber: number;
+  shiftDays: number;
+  reason: string;
+}): Promise<{ data: ShiftRequest }> =>
+  apiClient.post("/shift-requests", payload) as any;
+
+export const getMyShiftRequests = async (): Promise<{ data: ShiftRequest[]; count: number }> =>
+  apiClient.get("/shift-requests/tutor/mine") as any;
+
+export const getShiftRequestsForClass = async (
+  classId: string,
+): Promise<{ data: ShiftRequest[]; count: number }> =>
+  apiClient.get(`/shift-requests/class/${classId}`) as any;
+
 export default apiClient;
