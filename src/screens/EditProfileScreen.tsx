@@ -356,7 +356,7 @@ const CurriculumPickerModal = ({
             const someSelected = gradeSubs.some((s) => selected.includes(s._id));
             const selectedCount = gradeSubs.filter((s) => selected.includes(s._id)).length;
             return (
-              <View key={grade._id} style={{ marginBottom: 20 }}>
+              <View key={grade._id} style={{ marginBottom: 14 }}>
                 <Pressable
                   onPress={() => {
                     const ids = gradeSubs.map((s) => s._id);
@@ -696,7 +696,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
         <ScrollView
           contentContainerStyle={[
             styles.scroll,
-            { paddingBottom: insets.bottom + 32 },
+            { paddingBottom: insets.bottom + 20 },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -929,7 +929,7 @@ const sel = StyleSheet.create({
     borderColor: "#E2E8F0",
     borderRadius: 10,
     paddingHorizontal: 13,
-    paddingVertical: 11,
+    paddingVertical: 8,
     backgroundColor: "#FAFBFC",
     marginTop: 4,
   },
@@ -953,18 +953,18 @@ const sel = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#F8FAFC",
   },
   itemActive: { backgroundColor: `${T.primary}08` },
   itemTxt: { fontSize: 13, color: T.textPrimary, fontWeight: "500" },
   itemTxtActive: { color: T.primary, fontWeight: "700" },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 6 },
   chip: {
-    paddingHorizontal: 13,
-    paddingVertical: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: "#E2E8F0",
@@ -977,8 +977,8 @@ const sel = StyleSheet.create({
 
 const styles = StyleSheet.create({
   // ── Hero ───────────────────────────────────────────────────────────────────
-  hero: { paddingHorizontal: 20, paddingBottom: 22 },
-  topBar: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20 },
+  hero: { paddingHorizontal: 20, paddingBottom: 14 },
+  topBar: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
   backBtn: {
     width: 36,
     height: 36,
@@ -1006,16 +1006,16 @@ const styles = StyleSheet.create({
   // Hero avatar row
   heroBody: { flexDirection: "row", alignItems: "center", gap: 14 },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "rgba(124,58,237,0.35)",
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarTxt: { fontSize: 18, fontWeight: "800", color: "#fff", letterSpacing: -0.5 },
+  avatarTxt: { fontSize: 15, fontWeight: "800", color: "#fff", letterSpacing: -0.5 },
   heroName: { fontSize: 16, fontWeight: "700", color: "#fff", letterSpacing: -0.3 },
   heroSub: { fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 3 },
   verifiedBadge: {
@@ -1032,12 +1032,12 @@ const styles = StyleSheet.create({
   verifiedTxt: { fontSize: 10, fontWeight: "700", color: "#10B981" },
 
   // ── Scroll & Cards ─────────────────────────────────────────────────────────
-  scroll: { padding: 14, gap: 10 },
+  scroll: { padding: 12, gap: 8 },
   card: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 16,
-    gap: 6,
+    padding: 12,
+    gap: 4,
     borderLeftWidth: 4,
     borderLeftColor: T.primary,
     shadowColor: "#1A2540",
@@ -1052,8 +1052,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 8,
-    paddingBottom: 8,
+    marginBottom: 4,
+    paddingBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
@@ -1072,7 +1072,7 @@ const styles = StyleSheet.create({
   },
 
   // ── Field label ────────────────────────────────────────────────────────────
-  fieldLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+  fieldLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
   fieldLabel: {
     fontSize: 10,
     fontWeight: "700",
@@ -1097,12 +1097,12 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
     borderRadius: 10,
     paddingHorizontal: 13,
-    paddingVertical: 10,
+    paddingVertical: 8,
     fontSize: 13,
     color: T.textPrimary,
     backgroundColor: "#FAFBFC",
   },
-  inputMulti: { height: 76, paddingTop: 10 },
+  inputMulti: { height: 64, paddingTop: 8 },
 
   // ── Locked field row ───────────────────────────────────────────────────────
   lockedRow: {
@@ -1112,8 +1112,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#EDE9FE",
-    paddingHorizontal: 13,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     marginTop: 2,
   },
   lockedLabel: {
@@ -1136,12 +1136,12 @@ const styles = StyleSheet.create({
   },
 
   // ── Pills ──────────────────────────────────────────────────────────────────
-  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 4 },
+  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 2 },
   pill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 13,
-    paddingVertical: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: "#E2E8F0",
@@ -1156,8 +1156,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#E2E8F0",
     borderRadius: 10,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     fontSize: 13,
     color: T.textPrimary,
     backgroundColor: "#FAFBFC",
@@ -1181,7 +1181,7 @@ const styles = StyleSheet.create({
     borderColor: "#DDD6FE",
     borderRadius: 10,
     paddingHorizontal: 13,
-    paddingVertical: 11,
+    paddingVertical: 8,
     backgroundColor: "#F5F3FF",
     marginTop: 2,
   },
