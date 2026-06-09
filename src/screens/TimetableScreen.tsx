@@ -3,6 +3,8 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
+  Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,9 +16,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { ClassSessionItem, FinalClass, getTutorSessions } from "../api/client";
+import { ClassSessionItem, FinalClass, getTutorSessions, rescheduleSession } from "../api/client";
 import { T } from "../constants/colors";
 
 type Nav = StackNavigationProp<RootStackParamList, "Timetable">;
@@ -120,6 +123,9 @@ export default function TimetableScreen({ navigation }: Props) {
   const [error, setError]         = useState<string | null>(null);
   const fadeAnim  = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(12)).current;
+
+  // Reschedule modal
+  const [rescheduleTarget, setRescheduleTarget] = useState<ClassSessionItem | null>(null);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -362,12 +368,37 @@ export default function TimetableScreen({ navigation }: Props) {
                   })}
                   style={({ pressed }) => ({ opacity: pressed ? 0.82 : 1 })}
                 >
-                  <SessionCard session={session} index={index} />
+                  <SessionCard
+                    session={session}
+                    index={index}
+                    onReschedule={() => setRescheduleTarget(session)}
+                  />
                 </Pressable>
               ))}
             </>
           )}
         </Animated.ScrollView>
+      )}
+
+      {/* ── Reschedule modal ────────────────────────────────────────────── */}
+      {rescheduleTarget && (
+        <RescheduleModal
+          session={rescheduleTarget}
+          onClose={() => setRescheduleTarget(null)}
+          onSuccess={(updatedSession) => {
+            // Patch the session in cache so timetable updates immediately
+            setSessionCache((prev) => {
+              const next = { ...prev };
+              for (const key of Object.keys(next)) {
+                next[key] = next[key].map((s) =>
+                  s._id === updatedSession._id ? { ...s, ...updatedSession } : s
+                );
+              }
+              return next;
+            });
+            setRescheduleTarget(null);
+          }}
+        />
       )}
     </View>
   );
@@ -478,7 +509,15 @@ function MonthGrid({ monthDate, selectedDay, today, countForDay, onSelect }: {
 
 // ─── Session Card ─────────────────────────────────────────────────────────────
 
-function SessionCard({ session, index }: { session: ClassSessionItem; index: number }) {
+function SessionCard({
+  session,
+  index,
+  onReschedule,
+}: {
+  session: ClassSessionItem;
+  index: number;
+  onReschedule: () => void;
+}) {
   const cls        = session.finalClass;
   const subject    = subjectLabel(cls);
   const mode       = cls?.mode ?? "OFFLINE";
@@ -487,6 +526,7 @@ function SessionCard({ session, index }: { session: ClassSessionItem; index: num
   const statusConf = STATUS_CONFIG[session.status] ?? STATUS_CONFIG.PLANNED;
   const startTime  = session.timeSlot?.split("(")[0]?.trim() ?? "—";
   const duration   = session.timeSlot?.match(/\(([^)]+)\)/)?.[1];
+  const canReschedule = session.status === "PLANNED";
 
   return (
     <View style={cc.card}>
@@ -539,13 +579,138 @@ function SessionCard({ session, index }: { session: ClassSessionItem; index: num
           ) : null}
         </View>
 
-        {/* Status bar */}
+        {/* Bottom row: status + reschedule button */}
         <View style={cc.statusRow}>
-          <View style={[cc.statusDot, { backgroundColor: statusConf.color }]} />
-          <Text style={[cc.statusTxt, { color: statusConf.color }]}>{statusConf.label}</Text>
+          <View style={cc.statusLeft}>
+            <View style={[cc.statusDot, { backgroundColor: statusConf.color }]} />
+            <Text style={[cc.statusTxt, { color: statusConf.color }]}>{statusConf.label}</Text>
+          </View>
+          {canReschedule && (
+            <Pressable
+              onPress={(e) => { e.stopPropagation?.(); onReschedule(); }}
+              style={({ pressed }) => [cc.rescheduleBtn, pressed && { opacity: 0.7 }]}
+            >
+              <Ionicons name="calendar-outline" size={12} color={modeColor} />
+              <Text style={[cc.rescheduleTxt, { color: modeColor }]}>Reschedule</Text>
+            </Pressable>
+          )}
         </View>
       </LinearGradient>
     </View>
+  );
+}
+
+// ─── Reschedule Modal ─────────────────────────────────────────────────────────
+
+function RescheduleModal({
+  session,
+  onClose,
+  onSuccess,
+}: {
+  session: ClassSessionItem;
+  onClose: () => void;
+  onSuccess: (updated: ClassSessionItem) => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const [date, setDate]         = useState(new Date(session.sessionDate));
+  const [showPicker, setShowPicker] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+
+  const subject = subjectLabel(session.finalClass);
+  const mode    = session.finalClass?.mode ?? "OFFLINE";
+  const modeColor = MODE_COLOR[mode] ?? T.primary;
+
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "long", year: "numeric" });
+
+  const handleConfirm = async () => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res: any = await rescheduleSession(session._id, date.toISOString());
+      onSuccess({ ...session, sessionDate: res.data?.sessionDate ?? date.toISOString() });
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to reschedule");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+      <Pressable style={rm.backdrop} onPress={onClose}>
+        <Pressable style={[rm.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]} onPress={() => {}}>
+          {/* Handle */}
+          <View style={rm.handle} />
+
+          {/* Header */}
+          <View style={rm.header}>
+            <LinearGradient
+              colors={[modeColor + "25", modeColor + "08"]}
+              style={rm.iconWrap}
+            >
+              <Ionicons name="calendar-outline" size={20} color={modeColor} />
+            </LinearGradient>
+            <View style={{ flex: 1 }}>
+              <Text style={rm.title}>Reschedule Session</Text>
+              <Text style={rm.sub} numberOfLines={1}>{subject} · {session.finalClass?.studentName ?? ""}</Text>
+            </View>
+            <Pressable onPress={onClose} hitSlop={10} style={rm.closeBtn}>
+              <Ionicons name="close" size={18} color="rgba(255,255,255,0.4)" />
+            </Pressable>
+          </View>
+
+          {/* Current date info */}
+          <View style={rm.currentRow}>
+            <Text style={rm.currentLabel}>Current date</Text>
+            <Text style={rm.currentDate}>{fmt(new Date(session.sessionDate))}</Text>
+          </View>
+
+          {/* New date picker */}
+          <Text style={rm.sectionLabel}>New date</Text>
+          <Pressable style={[rm.dateBtn, { borderColor: modeColor + "60" }]} onPress={() => setShowPicker(true)}>
+            <Ionicons name="calendar" size={17} color={modeColor} />
+            <Text style={rm.dateTxt}>{fmt(date)}</Text>
+            <Ionicons name="chevron-down" size={15} color="rgba(255,255,255,0.3)" />
+          </Pressable>
+
+          {showPicker && (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              onChange={(_, selected) => {
+                setShowPicker(Platform.OS === "ios");
+                if (selected) setDate(selected);
+              }}
+            />
+          )}
+
+          {error ? <Text style={rm.errTxt}>{error}</Text> : null}
+
+          {/* Actions */}
+          <View style={rm.actions}>
+            <Pressable style={rm.cancelBtn} onPress={onClose}>
+              <Text style={rm.cancelTxt}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              style={[rm.confirmBtn, { backgroundColor: modeColor }, submitting && { opacity: 0.6 }]}
+              onPress={handleConfirm}
+              disabled={submitting}
+            >
+              {submitting
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <>
+                    <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
+                    <Text style={rm.confirmTxt}>Confirm</Text>
+                  </>
+              }
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -737,9 +902,79 @@ const cc = StyleSheet.create({
   metaItem: { flexDirection: "row", alignItems: "center", gap: 7 },
   metaTxt:  { color: "rgba(255,255,255,0.5)", fontSize: 12, flex: 1 },
 
-  statusRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
+  statusRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
+  statusLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusTxt: { fontSize: 11, fontWeight: "700", letterSpacing: 0.4 },
+
+  rescheduleBtn: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    borderRadius: 8, borderWidth: 1,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  rescheduleTxt: { fontSize: 11, fontWeight: "700" },
+});
+
+const rm = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#141e30",
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingHorizontal: 20, paddingTop: 8,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.07)",
+  },
+  handle: {
+    width: 38, height: 4, borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignSelf: "center", marginBottom: 16,
+  },
+  header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20 },
+  iconWrap: { width: 42, height: 42, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  title: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  sub:   { color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 },
+  closeBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center", justifyContent: "center",
+  },
+
+  currentRow: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 20,
+  },
+  currentLabel: { color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: "600" },
+  currentDate:  { color: "rgba(255,255,255,0.65)", fontSize: 12, fontWeight: "600" },
+
+  sectionLabel: {
+    color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: "700",
+    letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10,
+  },
+  dateBtn: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    borderWidth: 1.5, borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 14,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    marginBottom: 20,
+  },
+  dateTxt: { flex: 1, color: "#fff", fontSize: 14, fontWeight: "700" },
+
+  errTxt: { color: T.error, fontSize: 12, fontWeight: "600", marginBottom: 12 },
+
+  actions: { flexDirection: "row", gap: 10, marginTop: 4 },
+  cancelBtn: {
+    flex: 1, paddingVertical: 14, borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center", justifyContent: "center",
+  },
+  cancelTxt: { color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: "700" },
+  confirmBtn: {
+    flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, paddingVertical: 14, borderRadius: 14,
+  },
+  confirmTxt: { color: "#fff", fontSize: 14, fontWeight: "700" },
 });
 
 const es = StyleSheet.create({

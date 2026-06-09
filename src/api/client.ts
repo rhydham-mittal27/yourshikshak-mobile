@@ -834,4 +834,11 @@ export const getTutorSessions = async (
 ): Promise<{ data: ClassSessionItem[] }> =>
   apiClient.get(`/class-sessions/tutor/my?month=${month}&year=${year}`) as any;
 
+export const rescheduleSession = async (
+  sessionId: string,
+  newDate: string,
+  newTimeSlot?: string,
+): Promise<any> =>
+  apiClient.patch(`/class-sessions/${sessionId}/reschedule`, { newDate, newTimeSlot });
+
 export default apiClient;
