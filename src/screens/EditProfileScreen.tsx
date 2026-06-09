@@ -69,6 +69,54 @@ const LOCKED_FIELDS = new Set([
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+// Compact labeled input — label sits inside the box above the value
+const LabeledField = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  multiline = false,
+  keyboardType = "default",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  multiline?: boolean;
+  keyboardType?: any;
+}) => (
+  <View style={styles.labeledBox}>
+    <Text style={styles.labeledLabel}>{label}</Text>
+    <TextInput
+      value={value}
+      onChangeText={onChange}
+      placeholder={placeholder}
+      placeholderTextColor="#CBD5E1"
+      style={[styles.labeledInput, multiline && styles.labeledInputMulti]}
+      multiline={multiline}
+      numberOfLines={multiline ? 2 : 1}
+      textAlignVertical={multiline ? "top" : "center"}
+      keyboardType={keyboardType}
+    />
+  </View>
+);
+
+// 2-column grid for locked fields — halves vertical space
+const LockedGrid = ({ fields }: { fields: { label: string; value: string }[] }) => {
+  const pairs: { label: string; value: string }[][] = [];
+  for (let i = 0; i < fields.length; i += 2) pairs.push(fields.slice(i, i + 2));
+  return (
+    <View style={{ gap: 6, marginTop: 2 }}>
+      {pairs.map((row, i) => (
+        <View key={i} style={{ flexDirection: "row", gap: 6 }}>
+          {row.map((f) => <LockedField key={f.label} label={f.label} value={f.value} flex />)}
+          {row.length === 1 && <View style={{ flex: 1 }} />}
+        </View>
+      ))}
+    </View>
+  );
+};
+
 const SectionHeader = ({
   icon,
   title,
@@ -99,7 +147,7 @@ const FieldLabel = ({ label, locked }: { label: string; locked?: boolean }) => (
 );
 
 // Locked field — masked row, tap to toggle reveal
-const LockedField = ({ label, value }: { label: string; value: string }) => {
+const LockedField = ({ label, value, flex }: { label: string; value: string; flex?: boolean }) => {
   const [show, setShow] = React.useState(false);
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -117,7 +165,7 @@ const LockedField = ({ label, value }: { label: string; value: string }) => {
   React.useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   return (
-    <Pressable onPress={reveal} style={styles.lockedRow} hitSlop={4}>
+    <Pressable onPress={reveal} style={[styles.lockedRow, flex && { flex: 1 }]} hitSlop={4}>
       <View style={{ flex: 1 }}>
         <Text style={styles.lockedLabel}>{label}</Text>
         <Text style={styles.lockedValue} numberOfLines={1}>
@@ -706,67 +754,45 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
             <SectionHeader icon="person-outline" title="Personal Info" accent={T.primary} />
 
             {isVerified ? (
-              <LockedField label="Full Name" value={fullName} />
+              <LockedGrid fields={[
+                { label: "Full Name", value: fullName },
+                { label: "Email", value: email },
+                { label: "Phone", value: phoneNumber },
+                { label: "Gender", value: gender },
+              ]} />
             ) : (
               <>
-                <FieldLabel label="Full Name" />
-                <Field value={fullName} onChange={setFullName} placeholder="Full name" />
-              </>
-            )}
-
-            <LockedField label="Email" value={email} />
-
-            {isVerified ? (
-              <LockedField label="Phone Number" value={phoneNumber} />
-            ) : (
-              <>
-                <FieldLabel label="Phone Number" />
-                <Field value={phoneNumber} onChange={setPhoneNumber} placeholder="Phone" keyboardType="phone-pad" />
-              </>
-            )}
-
-            <FieldLabel label="Alternate Phone" />
-            <Field
-              value={alternatePhone}
-              onChange={setAlternatePhone}
-              placeholder="Optional alternate number"
-              keyboardType="phone-pad"
-            />
-
-            {isVerified ? (
-              <LockedField label="Gender" value={gender} />
-            ) : (
-              <>
+                <LockedField label="Email" value={email} />
+                <LabeledField label="Full Name" value={fullName} onChange={setFullName} placeholder="Full name" />
+                <LabeledField label="Phone" value={phoneNumber} onChange={setPhoneNumber} placeholder="Phone number" keyboardType="phone-pad" />
                 <FieldLabel label="Gender" />
                 <SingleSelect options={GENDERS} value={gender} onChange={setGender} color="#7C3AED" />
               </>
             )}
+            <LabeledField label="Alternate Phone" value={alternatePhone} onChange={setAlternatePhone} placeholder="Optional" keyboardType="phone-pad" />
           </View>
 
-          {/* ── Qualifications ── */}
+          {/* ── Qualifications & Teaching ── */}
           <View style={[styles.card, { borderLeftColor: "#7C3AED" }]}>
-            <SectionHeader icon="school-outline" title="Qualifications & Experience" accent="#7C3AED" />
+            <SectionHeader icon="school-outline" title="Qualifications & Teaching" accent="#7C3AED" />
 
             {isVerified ? (
-              <LockedField label="Highest Qualification" value={qualification} />
+              <LockedGrid fields={[
+                { label: "Qualification", value: qualification },
+                { label: "Experience", value: experience },
+              ]} />
             ) : (
               <>
-                <FieldLabel label="Highest Qualification" />
-                <Field value={qualification} onChange={setQualification} placeholder="e.g. B.Ed, M.Sc" />
-              </>
-            )}
-
-            {isVerified ? (
-              <LockedField label="Experience" value={experience} />
-            ) : (
-              <>
+                <LabeledField label="Qualification" value={qualification} onChange={setQualification} placeholder="e.g. B.Ed, M.Sc" />
                 <FieldLabel label="Experience" />
                 <SingleSelect options={EXP_OPTIONS} value={experience} onChange={setExperience} color="#7C3AED" />
               </>
             )}
 
-            <FieldLabel label="Subjects" />
-            <Pressable onPress={() => setSubjectModal(true)} style={styles.subjectPickerBtn}>
+            <FieldLabel label="Teaching Mode" />
+            <SingleSelect options={MODES} value={preferredMode} onChange={setPreferredMode} color="#F59E0B" />
+
+            <Pressable onPress={() => setSubjectModal(true)} style={[styles.subjectPickerBtn, { marginTop: 4 }]}>
               <View style={styles.subjectPickerLeft}>
                 <Ionicons name="book-outline" size={14} color="#7C3AED" />
                 <Text style={styles.subjectPickerTxt}>
@@ -774,9 +800,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
                 </Text>
               </View>
               {selectedSubjects.length > 0 ? (
-                <View style={styles.subjectCount}>
-                  <Text style={styles.subjectCountTxt}>{selectedSubjects.length}</Text>
-                </View>
+                <View style={styles.subjectCount}><Text style={styles.subjectCountTxt}>{selectedSubjects.length}</Text></View>
               ) : (
                 <Ionicons name="chevron-forward" size={14} color="#7C3AED" />
               )}
@@ -786,44 +810,15 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
                 {selectedSubjects.map((id) => {
                   const sub = subjectOpts.find((s) => s._id === id);
                   return sub ? (
-                    <Pressable
-                      key={id}
-                      onPress={() => toggleSubject(id)}
-                      style={[
-                        styles.pill,
-                        {
-                          backgroundColor: `${T.primary}15`,
-                          borderColor: `${T.primary}30`,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.pillTxt, { color: T.primary }]}>
-                        {sub.label}
-                      </Text>
-                      <Ionicons
-                        name="close"
-                        size={10}
-                        color={T.primary}
-                        style={{ marginLeft: 3 }}
-                      />
+                    <Pressable key={id} onPress={() => toggleSubject(id)}
+                      style={[styles.pill, { backgroundColor: `${T.primary}15`, borderColor: `${T.primary}30` }]}>
+                      <Text style={[styles.pillTxt, { color: T.primary }]}>{sub.label}</Text>
+                      <Ionicons name="close" size={10} color={T.primary} style={{ marginLeft: 3 }} />
                     </Pressable>
                   ) : null;
                 })}
               </View>
             )}
-          </View>
-
-          {/* ── Teaching ── */}
-          <View style={[styles.card, { borderLeftColor: "#F59E0B" }]}>
-            <SectionHeader icon="tv-outline" title="Teaching Preferences" accent="#F59E0B" />
-
-            <FieldLabel label="Teaching Mode" />
-            <SingleSelect
-              options={MODES}
-              value={preferredMode}
-              onChange={setPreferredMode}
-              color="#F59E0B"
-            />
           </View>
 
           {/* ── Location ── */}
@@ -848,20 +843,14 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
             ) : null}
 
             {isVerified ? (
-              <LockedField label="Permanent Address" value={permanentAddress} />
+              <LockedGrid fields={[
+                { label: "Permanent Address", value: permanentAddress },
+                { label: "Residential Address", value: residentialAddress },
+              ]} />
             ) : (
               <>
-                <FieldLabel label="Permanent Address" />
-                <Field value={permanentAddress} onChange={setPermanentAddress} placeholder="Permanent address" multiline />
-              </>
-            )}
-
-            {isVerified ? (
-              <LockedField label="Residential Address" value={residentialAddress} />
-            ) : (
-              <>
-                <FieldLabel label="Residential Address" />
-                <Field value={residentialAddress} onChange={setResidentialAddress} placeholder="Residential address" multiline />
+                <LabeledField label="Permanent Address" value={permanentAddress} onChange={setPermanentAddress} placeholder="Permanent address" multiline />
+                <LabeledField label="Residential Address" value={residentialAddress} onChange={setResidentialAddress} placeholder="Residential address" multiline />
               </>
             )}
           </View>
@@ -870,25 +859,22 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           <View style={[styles.card, { borderLeftColor: "#10B981" }]}>
             <SectionHeader icon="flash-outline" title="Bio & Skills" accent="#10B981" />
 
-            <FieldLabel label="Bio" />
-            <Field
-              value={bio}
-              onChange={setBio}
-              placeholder="Tell students about yourself…"
-              multiline
-            />
+            <LabeledField label="Bio" value={bio} onChange={setBio} placeholder="Tell students about yourself…" multiline />
 
-            <FieldLabel label="Languages Known" />
-            <PillSelect
-              options={COMMON_LANGUAGES}
-              selected={languagesKnown}
-              onToggle={(l) =>
-                setLanguagesKnown((p) =>
-                  p.includes(l) ? p.filter((x) => x !== l) : [...p, l],
-                )
-              }
-              color="#10B981"
-            />
+            <FieldLabel label="Languages" />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
+              {COMMON_LANGUAGES.map((l) => {
+                const on = languagesKnown.includes(l);
+                return (
+                  <Pressable key={l} onPress={() =>
+                    setLanguagesKnown((p) => p.includes(l) ? p.filter((x) => x !== l) : [...p, l])}
+                    style={[styles.pill, on && { backgroundColor: "#10B98120", borderColor: "#10B981" }]}>
+                    <Text style={[styles.pillTxt, on && { color: "#10B981" }]}>{l}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
 
             <FieldLabel label="Skills" />
             <TagInput
@@ -1197,6 +1183,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   subjectCountTxt: { fontSize: 11, color: "#fff", fontWeight: "800" },
+
+  // ── LabeledField ──────────────────────────────────────────────────────────
+  labeledBox: {
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 7,
+    backgroundColor: "#FAFBFC",
+    marginTop: 4,
+  },
+  labeledLabel: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 1,
+  },
+  labeledInput: {
+    fontSize: 13,
+    color: T.textPrimary,
+    padding: 0,
+    margin: 0,
+  },
+  labeledInputMulti: { height: 44, textAlignVertical: "top" },
 
   // Legacy stubs (keep to avoid style-not-found crashes)
   lockedFieldWrap: {},
