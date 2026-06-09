@@ -120,17 +120,15 @@ const LockedGrid = ({ fields }: { fields: { label: string; value: string }[] }) 
 const SectionHeader = ({
   icon,
   title,
-  accent = T.primary,
+  accent,
 }: {
   icon: any;
   title: string;
   accent?: string;
 }) => (
   <View style={styles.sectionHead}>
-    <View style={[styles.sectionIcon, { backgroundColor: `${accent}18` }]}>
-      <Ionicons name={icon} size={14} color={accent} />
-    </View>
-    <Text style={[styles.sectionTitle, { color: accent }]}>{title}</Text>
+    <Ionicons name={icon} size={13} color="#7c828a" />
+    <Text style={styles.sectionTitle}>{title}</Text>
   </View>
 );
 
@@ -672,7 +670,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
       <View
         style={{
           flex: 1,
-          backgroundColor: "#F1F5F9",
+          backgroundColor: "#f7f7f7",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -683,7 +681,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F1F5F9" }}>
+    <View style={{ flex: 1, backgroundColor: "#f7f7f7" }}>
       <StatusBar
         barStyle="light-content"
         backgroundColor="transparent"
@@ -750,7 +748,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           keyboardShouldPersistTaps="handled"
         >
           {/* ── Personal Info ── */}
-          <View style={[styles.card, { borderLeftColor: T.primary }]}>
+          <View style={styles.card}>
             <SectionHeader icon="person-outline" title="Personal Info" accent={T.primary} />
 
             {isVerified ? (
@@ -773,7 +771,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           </View>
 
           {/* ── Qualifications & Teaching ── */}
-          <View style={[styles.card, { borderLeftColor: "#7C3AED" }]}>
+          <View style={styles.card}>
             <SectionHeader icon="school-outline" title="Qualifications & Teaching" accent="#7C3AED" />
 
             {isVerified ? (
@@ -822,7 +820,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           </View>
 
           {/* ── Location ── */}
-          <View style={[styles.card, { borderLeftColor: "#E11D48" }]}>
+          <View style={styles.card}>
             <SectionHeader icon="location-outline" title="Location" accent="#E11D48" />
 
             <FSelect
@@ -856,7 +854,7 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           </View>
 
           {/* ── Bio & Skills ── */}
-          <View style={[styles.card, { borderLeftColor: "#10B981" }]}>
+          <View style={styles.card}>
             <SectionHeader icon="flash-outline" title="Bio & Skills" accent="#10B981" />
 
             <LabeledField label="Bio" value={bio} onChange={setBio} placeholder="Tell students about yourself…" multiline />
@@ -911,125 +909,120 @@ const sel = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    backgroundColor: "#FAFBFC",
+    borderWidth: 1,
+    borderColor: "#dee1e6",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#f7f7f7",
     marginTop: 4,
   },
   boxOpen: { borderColor: T.primary, borderWidth: 1.5, backgroundColor: "#fff" },
-  val: { fontSize: 13, color: T.textPrimary, flex: 1, fontWeight: "500" },
-  placeholder: { color: "#94A3B8", fontWeight: "400" },
+  val: { fontSize: 14, color: "#0a0b0d", flex: 1, fontWeight: "400" },
+  placeholder: { color: "#a8acb3" },
   dropdown: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
+    borderColor: "#dee1e6",
+    borderRadius: 16,
     backgroundColor: "#fff",
     marginTop: 4,
     overflow: "hidden",
-    shadowColor: "#1A2540",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 4,
   },
   item: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F8FAFC",
+    borderBottomColor: "#f7f7f7",
   },
-  itemActive: { backgroundColor: `${T.primary}08` },
-  itemTxt: { fontSize: 13, color: T.textPrimary, fontWeight: "500" },
-  itemTxtActive: { color: T.primary, fontWeight: "700" },
+  itemActive: { backgroundColor: "#eef0f3" },
+  itemTxt: { fontSize: 14, color: "#0a0b0d", fontWeight: "400" },
+  itemTxtActive: { color: T.primary, fontWeight: "600" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 6 },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: "#dee1e6",
+    backgroundColor: "#eef0f3",
   },
-  chipTxt: { fontSize: 12, color: "#64748B", fontWeight: "600" },
+  chipTxt: { fontSize: 12, color: "#5b616e", fontWeight: "500" },
 });
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   // ── Hero ───────────────────────────────────────────────────────────────────
-  hero: { paddingHorizontal: 20, paddingBottom: 14 },
-  topBar: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  hero: { paddingHorizontal: 20, paddingBottom: 16 },
+  topBar: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 14 },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    width: 34,
+    height: 34,
+    borderRadius: 100,
+    backgroundColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
     justifyContent: "center",
   },
-  heroTitle: { flex: 1, fontSize: 17, fontWeight: "700", color: "#fff", letterSpacing: -0.3 },
+  heroTitle: { flex: 1, fontSize: 16, fontWeight: "600", color: "#fff", letterSpacing: -0.2 },
   saveBtn: {
     paddingHorizontal: 20,
-    paddingVertical: 9,
-    borderRadius: 20,
-    backgroundColor: "#fff",
+    paddingVertical: 8,
+    borderRadius: 100,           // pill
+    backgroundColor: T.primary,
     minWidth: 64,
     alignItems: "center",
-    shadowColor: "#7C3AED",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
   },
-  saveBtnTxt: { color: "#7C3AED", fontWeight: "800", fontSize: 13 },
+  saveBtnTxt: { color: "#fff", fontWeight: "700", fontSize: 13 },
 
-  // Hero avatar row
-  heroBody: { flexDirection: "row", alignItems: "center", gap: 14 },
+  // Hero identity row
+  heroBody: { flexDirection: "row", alignItems: "center", gap: 12 },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(124,58,237,0.35)",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.2)",
+    width: 42,
+    height: 42,
+    borderRadius: 100,           // full circle
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarTxt: { fontSize: 15, fontWeight: "800", color: "#fff", letterSpacing: -0.5 },
-  heroName: { fontSize: 16, fontWeight: "700", color: "#fff", letterSpacing: -0.3 },
-  heroSub: { fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 3 },
+  avatarTxt: { fontSize: 14, fontWeight: "700", color: "#fff" },
+  heroName: { fontSize: 15, fontWeight: "600", color: "#fff", letterSpacing: -0.2 },
+  heroSub: { fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 },
   verifiedBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    marginTop: 4,
-    backgroundColor: "rgba(16,185,129,0.15)",
-    borderRadius: 10,
+    marginTop: 3,
+    backgroundColor: "rgba(5,177,105,0.18)",
+    borderRadius: 100,
     paddingHorizontal: 8,
     paddingVertical: 3,
     alignSelf: "flex-start",
   },
-  verifiedTxt: { fontSize: 10, fontWeight: "700", color: "#10B981" },
+  verifiedTxt: { fontSize: 10, fontWeight: "600", color: "#05b169" },
 
   // ── Scroll & Cards ─────────────────────────────────────────────────────────
   scroll: { padding: 12, gap: 8 },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 12,
-    gap: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: T.primary,
-    shadowColor: "#1A2540",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
+    backgroundColor: "#ffffff",
+    borderRadius: 24,            // rounded.xl from design.md
+    padding: 14,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "#dee1e6",     // hairline from design.md
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,        // single shadow tier from design.md
+    shadowRadius: 12,
     elevation: 2,
   },
 
@@ -1037,125 +1030,122 @@ const styles = StyleSheet.create({
   sectionHead: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-    paddingBottom: 6,
+    gap: 6,
+    marginBottom: 8,
+    paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: "#eef0f3",  // hairline-soft from design.md
   },
-  sectionIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  sectionIcon: {},               // unused but kept for TS compat
   sectionTitle: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "600",
+    color: "#5b616e",             // body gray from design.md
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
   },
 
   // ── Field label ────────────────────────────────────────────────────────────
-  fieldLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
+  fieldLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
   fieldLabel: {
     fontSize: 10,
-    fontWeight: "700",
-    color: "#94A3B8",
+    fontWeight: "600",
+    color: "#7c828a",             // muted from design.md
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    marginTop: 4,
+    marginBottom: 2,
   },
   lockBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#F5F3FF",
-    borderRadius: 4,
-    paddingHorizontal: 5,
+    backgroundColor: "#eef0f3",
+    borderRadius: 100,
+    paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  lockTxt: { fontSize: 9, color: "#7C3AED", fontWeight: "700" },
+  lockTxt: { fontSize: 9, color: "#5b616e", fontWeight: "600" },
 
   // ── Inputs ─────────────────────────────────────────────────────────────────
   input: {
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    fontSize: 13,
-    color: T.textPrimary,
-    backgroundColor: "#FAFBFC",
+    borderWidth: 1,
+    borderColor: "#dee1e6",
+    borderRadius: 12,            // rounded.md from design.md
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: "#0a0b0d",            // ink from design.md
+    backgroundColor: "#f7f7f7", // surface-soft
   },
-  inputMulti: { height: 64, paddingTop: 8 },
+  inputMulti: { height: 64, paddingTop: 10 },
 
-  // ── Locked field row ───────────────────────────────────────────────────────
+  // ── Locked field ───────────────────────────────────────────────────────────
   lockedRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F7FF",
-    borderRadius: 10,
+    backgroundColor: "#f7f7f7",  // surface-soft — neutral, not purple
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#EDE9FE",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    borderColor: "#dee1e6",      // hairline
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     marginTop: 2,
+    flex: 0,
   },
   lockedLabel: {
     fontSize: 10,
-    fontWeight: "700",
-    color: "#7C3AED",
+    fontWeight: "600",
+    color: "#7c828a",            // muted
     textTransform: "uppercase",
     letterSpacing: 0.4,
-    marginBottom: 3,
+    marginBottom: 2,
   },
-  lockedValue: { fontSize: 13, color: "#4C1D95", fontWeight: "600", letterSpacing: 1 },
+  lockedValue: { fontSize: 13, color: "#0a0b0d", fontWeight: "500", letterSpacing: 1.5 },
   lockedEye: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(124,58,237,0.1)",
+    width: 26,
+    height: 26,
+    borderRadius: 100,
+    backgroundColor: "#eef0f3",
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
   },
 
   // ── Pills ──────────────────────────────────────────────────────────────────
-  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 2 },
+  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   pill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 100,           // pill shape from design.md
+    borderWidth: 1,
+    borderColor: "#dee1e6",
+    backgroundColor: "#eef0f3", // surface-strong
   },
-  pillTxt: { fontSize: 12, fontWeight: "600", color: "#64748B" },
+  pillTxt: { fontSize: 12, fontWeight: "500", color: "#5b616e" },
 
   // ── Tag input ──────────────────────────────────────────────────────────────
   tagInputRow: { flexDirection: "row", gap: 8 },
   tagInput: {
     flex: 1,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: "#dee1e6",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     fontSize: 13,
-    color: T.textPrimary,
-    backgroundColor: "#FAFBFC",
+    color: "#0a0b0d",
+    backgroundColor: "#f7f7f7",
   },
   tagAddBtn: {
-    width: 44,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 100,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FAFBFC",
+    backgroundColor: T.primary,
   },
 
   // ── Subject picker ─────────────────────────────────────────────────────────
@@ -1163,55 +1153,55 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1.5,
-    borderColor: "#DDD6FE",
-    borderRadius: 10,
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    backgroundColor: "#F5F3FF",
-    marginTop: 2,
+    borderWidth: 1,
+    borderColor: "#dee1e6",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#f7f7f7",
+    marginTop: 4,
   },
   subjectPickerLeft: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
-  subjectPickerTxt: { fontSize: 13, color: "#7C3AED", fontWeight: "600", flex: 1 },
+  subjectPickerTxt: { fontSize: 13, color: "#5b616e", fontWeight: "500", flex: 1 },
   subjectCount: {
     minWidth: 22,
     height: 22,
-    borderRadius: 11,
-    backgroundColor: "#7C3AED",
+    borderRadius: 100,
+    backgroundColor: T.primary,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 6,
   },
-  subjectCountTxt: { fontSize: 11, color: "#fff", fontWeight: "800" },
+  subjectCountTxt: { fontSize: 11, color: "#fff", fontWeight: "700" },
 
   // ── LabeledField ──────────────────────────────────────────────────────────
   labeledBox: {
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingTop: 6,
-    paddingBottom: 7,
-    backgroundColor: "#FAFBFC",
+    borderWidth: 1,
+    borderColor: "#dee1e6",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingTop: 7,
+    paddingBottom: 8,
+    backgroundColor: "#f7f7f7",
     marginTop: 4,
   },
   labeledLabel: {
     fontSize: 9,
-    fontWeight: "700",
-    color: "#94A3B8",
+    fontWeight: "600",
+    color: "#7c828a",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 1,
+    letterSpacing: 0.6,
+    marginBottom: 2,
   },
   labeledInput: {
-    fontSize: 13,
-    color: T.textPrimary,
+    fontSize: 14,
+    color: "#0a0b0d",
     padding: 0,
     margin: 0,
   },
   labeledInputMulti: { height: 44, textAlignVertical: "top" },
 
-  // Legacy stubs (keep to avoid style-not-found crashes)
+  // Legacy stubs
   lockedFieldWrap: {},
   tooltip: {},
   tooltipTxt: {},
