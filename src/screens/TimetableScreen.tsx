@@ -248,7 +248,9 @@ export default function TimetableScreen({ navigation }: Props) {
         {/* Top row: back + title + toggle */}
         <View style={s.headerRow}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={s.backBtn}>
-            <Ionicons name="chevron-back" size={20} color="rgba(255,255,255,0.9)" />
+            <View style={s.backBtnInner}>
+              <Ionicons name="chevron-back" size={20} color="rgba(255,255,255,0.9)" />
+            </View>
           </Pressable>
 
           <View style={s.titleWrap}>
@@ -581,6 +583,11 @@ const s = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10,
   },
   backBtn: {
+    width: 74, height: 36, borderRadius: 18,
+    alignItems: "flex-start", justifyContent: "center",
+    paddingLeft: 0,
+  },
+  backBtnInner: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: "rgba(255,255,255,0.07)",
     alignItems: "center", justifyContent: "center",
