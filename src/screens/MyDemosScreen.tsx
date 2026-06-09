@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,9 @@ import {
   ScrollView,
   Linking,
   TextInput,
+  Keyboard,
+  Animated,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -874,6 +877,20 @@ const MyDemosScreen = ({
   const [selected, setSelected] = useState<TutorDemo | null>(null);
   const flatListRef = React.useRef<FlatList>(null);
 
+  // keyboard offset for submit modal
+  const kbOffset = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => Animated.timing(kbOffset, { toValue: e.endCoordinates.height, duration: 250, useNativeDriver: false }).start(),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => Animated.timing(kbOffset, { toValue: 0, duration: 200, useNativeDriver: false }).start(),
+    );
+    return () => { show.remove(); hide.remove(); };
+  }, [kbOffset]);
+
   // submit modal state
   const [submitItem, setSubmitItem] = useState<TutorDemo | null>(null);
   const [submitTopic, setSubmitTopic] = useState("");
@@ -1121,7 +1138,7 @@ const MyDemosScreen = ({
           transparent
           onRequestClose={() => setSubmitItem(null)}
         >
-          <View style={{ flex: 1 }}>
+          <Animated.View style={{ flex: 1, paddingBottom: kbOffset }}>
             <View style={sm.backdrop}>
               <View style={sm.sheet}>
                 <View style={sm.handle} />
@@ -1267,7 +1284,7 @@ const MyDemosScreen = ({
                 </ScrollView>
               </View>
             </View>
-          </View>
+          </Animated.View>
         </Modal>
       )}
     </View>
