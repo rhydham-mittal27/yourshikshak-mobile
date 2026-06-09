@@ -18,6 +18,9 @@ import {
   submitAttendance,
   ClassAttendanceRecord,
   FinalClass,
+  createShiftRequest,
+  getShiftRequestsForClass,
+  ShiftRequest,
 } from "../../api/client";
 import { T } from "../../constants/colors";
 
@@ -34,7 +37,7 @@ interface Props {
   onSubmitSuccess?: () => void;
 }
 
-type Tab = "submit" | "history";
+type Tab = "submit" | "history" | "shift";
 
 const STATUS_META: Record<string, { color: string; bg: string; icon: any; label: string }> = {
   PRESENT:   { color: T.success,   bg: "#ECFDF5", icon: "checkmark-circle", label: "Present" },
@@ -81,6 +84,15 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
   const [alreadyMarked, setAlreadyMarked]   = useState(false);
   const [checkingMark, setCheckingMark]     = useState(false);
   const [submitSuccess, setSubmitSuccess]   = useState(false);
+
+  // Shift request state
+  const [shiftDays, setShiftDays]             = useState("");
+  const [shiftReason, setShiftReason]         = useState("");
+  const [shiftRequests, setShiftRequests]     = useState<ShiftRequest[]>([]);
+  const [shiftLoading, setShiftLoading]       = useState(false);
+  const [shiftError, setShiftError]           = useState<string | null>(null);
+  const [shiftSubmitting, setShiftSubmitting] = useState(false);
+  const [shiftSuccess, setShiftSuccess]       = useState(false);
 
   const classDay = isTodayClassDay(cls);
 
@@ -141,8 +153,28 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
   }, [visible, cls, cycle]);
 
   useEffect(() => {
-    if (visible) { setTopic(""); setNotes(""); setStudentStatus("PRESENT"); setSubmitError(null); setSubmitSuccess(false); setTab("submit"); }
+    if (visible) {
+      setTopic(""); setNotes(""); setStudentStatus("PRESENT");
+      setSubmitError(null); setSubmitSuccess(false); setTab("submit");
+      setShiftDays(""); setShiftReason(""); setShiftError(null); setShiftSuccess(false);
+      setShiftRequests([]);
+    }
   }, [visible]);
+
+  // Load shift requests when shift tab is opened
+  useEffect(() => {
+    if (tab !== "shift" || !cls) return;
+    const id = String((cls as any)._id || (cls as any).id || "");
+    if (!id) return;
+    setShiftLoading(true); setShiftError(null);
+    getShiftRequestsForClass(id)
+      .then((res) => {
+        const all = res.data || [];
+        setShiftRequests(all.filter((r) => r.cycleNumber === cycle));
+      })
+      .catch((e) => setShiftError(e?.message || "Failed to load requests"))
+      .finally(() => setShiftLoading(false));
+  }, [tab, cls, cycle]);
 
   const handleSubmit = async () => {
     if (!cls) return;
@@ -156,6 +188,24 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
       setSubmitError(e?.message || "Failed to submit attendance");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleShiftSubmit = async () => {
+    if (!cls) return;
+    const days = parseInt(shiftDays, 10);
+    if (!days || days === 0) { setShiftError("Enter a non-zero number of days"); return; }
+    if (!shiftReason.trim()) { setShiftError("Reason is required"); return; }
+    const id = String((cls as any)._id || (cls as any).id || "");
+    setShiftSubmitting(true); setShiftError(null);
+    try {
+      const res = await createShiftRequest({ finalClassId: id, cycleNumber: cycle, shiftDays: days, reason: shiftReason.trim() });
+      setShiftRequests((prev) => [res.data, ...prev]);
+      setShiftSuccess(true); setShiftDays(""); setShiftReason("");
+    } catch (e: any) {
+      setShiftError(e?.message || "Failed to submit request");
+    } finally {
+      setShiftSubmitting(false);
     }
   };
 
@@ -192,12 +242,16 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
 
             {/* Tabs */}
             <View style={s.tabRow}>
-              {(["submit", "history"] as Tab[]).map((t) => (
-                <Pressable key={t} onPress={() => setTab(t)} style={[s.tabBtn, tab === t && s.tabBtnActive]}>
-                  <Ionicons name={t === "submit" ? "add-circle-outline" : "list-outline"} size={13} color={tab === t ? T.primary : "#94A3B8"} />
-                  <Text style={[s.tabTxt, tab === t && s.tabTxtActive]}>{t === "submit" ? "Submit" : "History"}</Text>
-                </Pressable>
-              ))}
+              {(["submit", "history", "shift"] as Tab[]).map((t) => {
+                const icon = t === "submit" ? "add-circle-outline" : t === "history" ? "list-outline" : "calendar-outline";
+                const label = t === "submit" ? "Submit" : t === "history" ? "History" : "Reschedule";
+                return (
+                  <Pressable key={t} onPress={() => setTab(t)} style={[s.tabBtn, tab === t && s.tabBtnActive]}>
+                    <Ionicons name={icon} size={13} color={tab === t ? T.primary : "#94A3B8"} />
+                    <Text style={[s.tabTxt, tab === t && s.tabTxtActive]}>{label}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
 
             {/* ── Submit Tab ── */}
@@ -355,6 +409,129 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
                 )}
               </>
             )}
+            {/* ── Shift Tab ── */}
+            {tab === "shift" && (
+              <ScrollView style={s.body} contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
+                {/* Info */}
+                <View style={[s.alertBox, { backgroundColor: "#EFF6FF", borderColor: "#BFDBFE", marginBottom: 16 }]}>
+                  <Ionicons name="information-circle-outline" size={15} color="#2563EB" />
+                  <Text style={[s.alertTxt, { color: "#1E40AF", flex: 1 }]}>
+                    Request a shift for remaining <Text style={{ fontWeight: "700" }}>PLANNED</Text> sessions in Cycle {cycle}. Your coordinator will approve or reject it.
+                  </Text>
+                </View>
+
+                {shiftSuccess && (
+                  <View style={[s.alertBox, { backgroundColor: "#ECFDF5", borderColor: "#A7F3D0", marginBottom: 16 }]}>
+                    <Ionicons name="checkmark-circle-outline" size={15} color={T.success} />
+                    <Text style={[s.alertTxt, { color: "#065F46" }]}>Shift request submitted! Awaiting coordinator approval.</Text>
+                  </View>
+                )}
+
+                {/* Form */}
+                {!shiftSuccess && (
+                  <View style={s.shiftFormCard}>
+                    <Text style={s.formLabel}>SHIFT BY (DAYS)</Text>
+                    <View style={s.shiftDaysRow}>
+                      <Pressable
+                        onPress={() => setShiftDays((v) => String((parseInt(v || "0", 10) || 0) - 1))}
+                        style={s.shiftStepBtn}
+                      >
+                        <Ionicons name="remove" size={18} color="#475569" />
+                      </Pressable>
+                      <TextInput
+                        style={s.shiftDaysInput}
+                        keyboardType="numeric"
+                        value={shiftDays}
+                        onChangeText={setShiftDays}
+                        placeholder="0"
+                        placeholderTextColor="#94A3B8"
+                        textAlign="center"
+                      />
+                      <Pressable
+                        onPress={() => setShiftDays((v) => String((parseInt(v || "0", 10) || 0) + 1))}
+                        style={s.shiftStepBtn}
+                      >
+                        <Ionicons name="add" size={18} color="#475569" />
+                      </Pressable>
+                    </View>
+                    <Text style={s.inputHint}>
+                      {parseInt(shiftDays || "0", 10) > 0
+                        ? `Sessions will move forward by ${shiftDays} day(s)`
+                        : parseInt(shiftDays || "0", 10) < 0
+                        ? `Sessions will move back by ${Math.abs(parseInt(shiftDays, 10))} day(s)`
+                        : "Positive = forward, negative = backward"}
+                    </Text>
+
+                    <Text style={[s.inputLabel, { marginTop: 14 }]}>REASON</Text>
+                    <TextInput
+                      style={[s.input, { height: 72, marginTop: 6 }]}
+                      placeholder="e.g., Festival holiday, exam week..."
+                      placeholderTextColor="#94A3B8"
+                      value={shiftReason}
+                      onChangeText={setShiftReason}
+                      multiline
+                      textAlignVertical="top"
+                    />
+
+                    {shiftError && (
+                      <View style={[s.alertBox, { backgroundColor: "#FEF2F2", borderColor: "#FECACA", marginTop: 10 }]}>
+                        <Ionicons name="alert-circle-outline" size={15} color={T.error} />
+                        <Text style={[s.alertTxt, { color: "#991B1B", flex: 1 }]}>{shiftError}</Text>
+                      </View>
+                    )}
+
+                    <Pressable
+                      onPress={handleShiftSubmit}
+                      disabled={shiftSubmitting}
+                      style={[s.submitBtn, { marginTop: 14 }, shiftSubmitting && s.submitBtnDisabled]}
+                    >
+                      {shiftSubmitting
+                        ? <ActivityIndicator color="#fff" size="small" />
+                        : <Ionicons name="swap-horizontal" size={18} color="#fff" />}
+                      <Text style={s.submitBtnTxt}>
+                        {shiftSubmitting ? "Submitting…" : "Request Shift"}
+                      </Text>
+                    </Pressable>
+                  </View>
+                )}
+
+                {/* Past requests for this cycle */}
+                {shiftRequests.length > 0 && (
+                  <>
+                    <Text style={s.shiftHistTitle}>Past Requests — Cycle {cycle}</Text>
+                    {shiftRequests.map((r, i) => {
+                      const isPending  = r.status === "PENDING";
+                      const isApproved = r.status === "APPROVED";
+                      const color  = isPending ? "#D97706" : isApproved ? T.success : T.error;
+                      const bg     = isPending ? "#FFFBEB" : isApproved ? "#ECFDF5" : "#FEF2F2";
+                      const border = isPending ? "#FDE68A" : isApproved ? "#A7F3D0" : "#FECACA";
+                      const icon: any = isPending ? "time-outline" : isApproved ? "checkmark-circle-outline" : "close-circle-outline";
+                      return (
+                        <View key={r._id || i} style={[s.shiftReqCard, { backgroundColor: bg, borderColor: border }]}>
+                          <View style={s.shiftReqTop}>
+                            <Ionicons name={icon} size={16} color={color} />
+                            <Text style={[s.shiftReqStatus, { color }]}>{r.status}</Text>
+                            <Text style={s.shiftReqDays}>
+                              {r.shiftDays > 0 ? "+" : ""}{r.shiftDays} day{Math.abs(r.shiftDays) !== 1 ? "s" : ""}
+                            </Text>
+                          </View>
+                          <Text style={s.shiftReqReason} numberOfLines={2}>{r.reason}</Text>
+                          {r.rejectionReason && (
+                            <Text style={s.shiftReqReject}>Rejected: {r.rejectionReason}</Text>
+                          )}
+                          <Text style={s.shiftReqDate}>{new Date(r.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</Text>
+                        </View>
+                      );
+                    })}
+                  </>
+                )}
+
+                {shiftLoading && (
+                  <View style={s.center}><ActivityIndicator color={T.primary} /></View>
+                )}
+              </ScrollView>
+            )}
+
           </Animated.View>
       </Pressable>
     </Modal>
@@ -435,6 +612,20 @@ const s = StyleSheet.create({
   statusBadge: { justifyContent: "center" },
   statusPill: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 100, alignSelf: "flex-start" },
   statusPillTxt: { fontSize: 9, fontWeight: "700" },
+
+  // Shift tab
+  shiftFormCard: { backgroundColor: "#F8FAFC", borderRadius: 14, padding: 16, borderWidth: 1, borderColor: "#E2E8F0", marginBottom: 20 },
+  shiftDaysRow: { flexDirection: "row", alignItems: "center", gap: 0, borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 12, overflow: "hidden", marginTop: 8 },
+  shiftStepBtn: { width: 48, height: 48, alignItems: "center", justifyContent: "center", backgroundColor: "#F1F5F9" },
+  shiftDaysInput: { flex: 1, height: 48, fontSize: 18, fontWeight: "700", color: "#0F172A", backgroundColor: "#fff" },
+  shiftHistTitle: { fontSize: 11, fontWeight: "800", color: "#94A3B8", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 },
+  shiftReqCard: { borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 10 },
+  shiftReqTop: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 },
+  shiftReqStatus: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5, textTransform: "uppercase" },
+  shiftReqDays: { marginLeft: "auto", fontSize: 12, fontWeight: "700", color: "#475569" },
+  shiftReqReason: { fontSize: 12, color: "#475569", lineHeight: 17 },
+  shiftReqReject: { fontSize: 11, color: "#991B1B", marginTop: 4, fontStyle: "italic" },
+  shiftReqDate: { fontSize: 10, color: "#94A3B8", marginTop: 6 },
 });
 
 export default AttendanceSheetModal;
