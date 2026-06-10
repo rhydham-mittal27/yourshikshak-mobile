@@ -818,7 +818,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           iconColor: "#7C3AED",
           iconBg: "#7C3AED15",
           label: "Demos Scheduled",
-          value: fmt(analytics!.demos.total),
+          value: fmt(demos.length),
           sub: `${fmt(analytics!.demos.approved)} approved`,
           subIcon: "thumbs-up-outline" as any,
           subColor: T.success,
@@ -897,7 +897,6 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
               </View>
               <Text style={s.brandName}>YourShikshak</Text>
             </View>
-            {/* Avatar button — opens sidebar */}
             <Pressable onPress={openSidebar} style={s.avatarBtn} hitSlop={8}>
               {profilePhotoUrl && !photoError ? (
                 <Image
@@ -934,7 +933,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
               </View>
               <View style={s.stripSep} />
               <View style={s.stripItem}>
-                <Text style={s.stripVal}>{fmt(analytics!.demos.total)}</Text>
+                <Text style={s.stripVal}>{fmt(demos.length)}</Text>
                 <Text style={s.stripLbl}>Demos{"\n"}scheduled</Text>
               </View>
               <View style={s.stripSep} />
