@@ -981,22 +981,21 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                       )}
                       <Pressable
                         onPress={() => setCurrModalOpen(true)}
-                        style={s.currPickerBtn}
+                        style={[s.currPickerBtn, { justifyContent: "space-between" }]}
                       >
-                        <Ionicons
-                          name={
-                            form.subjects.length > 0
-                              ? "create-outline"
-                              : "add-circle-outline"
-                          }
-                          size={16}
-                          color={T.primary}
-                        />
-                        <Text style={s.currPickerBtnTxt}>
-                          {form.subjects.length > 0
-                            ? `Modify Selection (${form.subjects.length})`
-                            : "Choose Subjects"}
-                        </Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                          <Ionicons
+                            name={form.subjects.length > 0 ? "create-outline" : "add-circle-outline"}
+                            size={16}
+                            color={T.primary}
+                          />
+                          <Text style={s.currPickerBtnTxt}>
+                            {form.subjects.length > 0
+                              ? `Modify Selection (${form.subjects.length})`
+                              : "Choose Subjects"}
+                          </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={14} color={T.primary} />
                       </Pressable>
                       {errors.subjects && (
                         <Text
@@ -1268,165 +1267,121 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       <Modal
         visible={currModalOpen}
         animationType="slide"
+        transparent
         onRequestClose={() => setCurrModalOpen(false)}
       >
-        <View style={cp.root}>
-          {/* Header */}
-          <View style={cp.header}>
-            <Pressable onPress={() => setCurrModalOpen(false)} hitSlop={10}>
-              <Ionicons name="close" size={22} color={T.textPrimary} />
-            </Pressable>
-            <Text style={cp.headerTitle}>
-              Subjects ({form.subjects.length} selected)
-            </Text>
-            <Pressable
-              onPress={() => {
-                setErrors((e) => ({ ...e, subjects: undefined }));
-                setCurrModalOpen(false);
-              }}
-            >
-              <Text style={cp.doneBtn}>Done</Text>
-            </Pressable>
-          </View>
+        <Pressable style={cp.backdrop} onPress={() => setCurrModalOpen(false)}>
+          <Pressable style={cp.sheet} onPress={() => {}}>
+            {/* Handle */}
+            <View style={cp.handle} />
 
-          {/* Board tabs */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={cp.boardBar}
-            contentContainerStyle={{
-              paddingHorizontal: 16,
-              gap: 8,
-              alignItems: "center",
-            }}
-          >
-            {boards.map((board) => (
-              <Pressable
-                key={board._id}
-                onPress={() => setActiveBoardId(board._id)}
-                style={[
-                  cp.boardTab,
-                  activeBoardId === board._id && cp.boardTabActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    cp.boardTabTxt,
-                    activeBoardId === board._id && cp.boardTabTxtActive,
-                  ]}
-                >
-                  {board.label}
+            {/* Header */}
+            <View style={cp.header}>
+              <View>
+                <Text style={cp.headerTitle}>Select Subjects</Text>
+                <Text style={cp.headerSub}>
+                  {form.subjects.length > 0
+                    ? `${form.subjects.length} subject${form.subjects.length > 1 ? "s" : ""} selected`
+                    : "Tap to select subjects you teach"}
                 </Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  setErrors((e) => ({ ...e, subjects: undefined }));
+                  setCurrModalOpen(false);
+                }}
+                style={cp.doneBtn}
+              >
+                <Text style={cp.doneBtnTxt}>Done</Text>
               </Pressable>
-            ))}
-          </ScrollView>
+            </View>
 
-          {/* Grades + subjects */}
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ padding: 16 }}
-          >
-            {grades
-              .filter((g) => {
-                const pid =
-                  typeof g.parent === "object"
-                    ? (g.parent as any)?._id
-                    : g.parent;
-                return pid === activeBoardId;
-              })
-              .map((grade) => {
-                const gradeSubs = subjectOpts.filter((s) => {
-                  const pid =
-                    typeof s.parent === "object"
-                      ? (s.parent as any)?._id
-                      : s.parent;
-                  return pid === grade._id;
-                });
-                if (gradeSubs.length === 0) return null;
-                const allSelected = gradeSubs.every((s) =>
-                  form.subjects.includes(s._id),
-                );
-                const someSelected = gradeSubs.some((s) =>
-                  form.subjects.includes(s._id),
-                );
-                const selectedCount = gradeSubs.filter((s) =>
-                  form.subjects.includes(s._id),
-                ).length;
-                return (
-                  <View key={grade._id} style={{ marginBottom: 20 }}>
-                    <Pressable
-                      onPress={() => {
-                        const ids = gradeSubs.map((s) => s._id);
-                        setForm((p) => ({
-                          ...p,
-                          subjects: allSelected
-                            ? p.subjects.filter((id) => !ids.includes(id))
-                            : Array.from(new Set([...p.subjects, ...ids])),
-                        }));
-                      }}
-                      style={cp.gradeHeader}
-                    >
-                      <View
-                        style={[
-                          cp.gradeCheck,
-                          (allSelected || someSelected) && {
-                            backgroundColor: T.primary,
-                            borderColor: T.primary,
-                          },
-                        ]}
+            {/* Board tabs */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={cp.boardBar}
+              contentContainerStyle={{ paddingHorizontal: 16, gap: 8, alignItems: "center" }}
+            >
+              {boards.map((board) => (
+                <Pressable
+                  key={board._id}
+                  onPress={() => setActiveBoardId(board._id)}
+                  style={[cp.boardTab, activeBoardId === board._id && cp.boardTabActive]}
+                >
+                  <Text style={[cp.boardTabTxt, activeBoardId === board._id && cp.boardTabTxtActive]}>
+                    {board.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            {/* Grades + subjects */}
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+              {grades
+                .filter((g) => {
+                  const pid = typeof g.parent === "object" ? (g.parent as any)?._id : g.parent;
+                  return pid === activeBoardId;
+                })
+                .map((grade) => {
+                  const gradeSubs = subjectOpts.filter((s) => {
+                    const pid = typeof s.parent === "object" ? (s.parent as any)?._id : s.parent;
+                    return pid === grade._id;
+                  });
+                  if (gradeSubs.length === 0) return null;
+                  const allSelected  = gradeSubs.every((s) => form.subjects.includes(s._id));
+                  const someSelected = gradeSubs.some((s) => form.subjects.includes(s._id));
+                  const selectedCount = gradeSubs.filter((s) => form.subjects.includes(s._id)).length;
+                  return (
+                    <View key={grade._id} style={cp.gradeSection}>
+                      <Pressable
+                        onPress={() => {
+                          const ids = gradeSubs.map((s) => s._id);
+                          setForm((p) => ({
+                            ...p,
+                            subjects: allSelected
+                              ? p.subjects.filter((id) => !ids.includes(id))
+                              : Array.from(new Set([...p.subjects, ...ids])),
+                          }));
+                        }}
+                        style={cp.gradeHeader}
                       >
-                        {allSelected && (
-                          <Ionicons name="checkmark" size={12} color="#fff" />
-                        )}
-                        {!allSelected && someSelected && (
-                          <View
-                            style={{
-                              width: 8,
-                              height: 2,
-                              backgroundColor: "#fff",
-                              borderRadius: 1,
-                            }}
-                          />
-                        )}
-                      </View>
-                      <Text style={cp.gradeLabel}>{grade.label}</Text>
-                      <Text style={cp.gradeCount}>
-                        {selectedCount}/{gradeSubs.length}
-                      </Text>
-                    </Pressable>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        gap: 8,
-                        marginTop: 8,
-                      }}
-                    >
-                      {gradeSubs.map((sub) => {
-                        const selected = form.subjects.includes(sub._id);
-                        return (
-                          <Pressable
-                            key={sub._id}
-                            onPress={() => toggle("subjects", sub._id)}
-                            style={[cp.subChip, selected && cp.subChipSelected]}
-                          >
-                            <Text
-                              style={[
-                                cp.subChipTxt,
-                                selected && cp.subChipTxtSelected,
-                              ]}
+                        <View style={[cp.gradeCheck, (allSelected || someSelected) && cp.gradeCheckActive]}>
+                          {allSelected && <Ionicons name="checkmark" size={11} color="#fff" />}
+                          {!allSelected && someSelected && (
+                            <View style={{ width: 8, height: 2, backgroundColor: "#fff", borderRadius: 1 }} />
+                          )}
+                        </View>
+                        <Text style={cp.gradeLabel}>{grade.label}</Text>
+                        <View style={[cp.gradeCountBadge, selectedCount > 0 && cp.gradeCountBadgeActive]}>
+                          <Text style={[cp.gradeCount, selectedCount > 0 && cp.gradeCountActive]}>
+                            {selectedCount}/{gradeSubs.length}
+                          </Text>
+                        </View>
+                      </Pressable>
+                      <View style={cp.chipRow}>
+                        {gradeSubs.map((sub) => {
+                          const selected = form.subjects.includes(sub._id);
+                          return (
+                            <Pressable
+                              key={sub._id}
+                              onPress={() => toggle("subjects", sub._id)}
+                              style={[cp.subChip, selected && cp.subChipSelected]}
                             >
-                              {sub.label}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
+                              {selected && <Ionicons name="checkmark" size={11} color="#fff" style={{ marginRight: 2 }} />}
+                              <Text style={[cp.subChipTxt, selected && cp.subChipTxtSelected]}>
+                                {sub.label}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
                     </View>
-                  </View>
-                );
-              })}
-          </ScrollView>
-        </View>
+                  );
+                })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
@@ -1924,76 +1879,111 @@ const s = StyleSheet.create({
     borderColor: `${T.primary}30`,
     marginTop: 8,
   },
-  currPickerBtnTxt: { fontSize: 13, color: T.primary, fontWeight: "700" },
+  currPickerBtnTxt: { fontSize: 13, color: T.primary, fontWeight: "600" },
 });
 
 // ─── Curriculum Picker Styles ─────────────────────────────────────────────────
 
 const cp = StyleSheet.create({
-  root: { flex: 1, backgroundColor: T.background },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    height: "60%",
+    backgroundColor: T.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: T.border,
+    alignSelf: "center",
+    marginTop: 10,
+    marginBottom: 2,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 56 : 40,
-    paddingBottom: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
   },
   headerTitle: { fontSize: 15, fontWeight: "700", color: T.textPrimary },
-  doneBtn: { fontSize: 15, fontWeight: "700", color: T.primary },
+  headerSub: { fontSize: 12, color: T.textSecondary, marginTop: 2 },
+  doneBtn: {
+    backgroundColor: T.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  doneBtnTxt: { fontSize: 13, fontWeight: "700", color: "#fff" },
   boardBar: {
-    maxHeight: 52,
+    maxHeight: 50,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
   },
   boardTab: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 20,
     backgroundColor: T.paper,
     borderWidth: 1,
     borderColor: T.border,
   },
   boardTabActive: { backgroundColor: T.primary, borderColor: T.primary },
-  boardTabTxt: { fontSize: 13, fontWeight: "600", color: T.textSecondary },
+  boardTabTxt: { fontSize: 12, fontWeight: "600", color: T.textSecondary },
   boardTabTxtActive: { color: "#fff" },
+  gradeSection: { marginBottom: 16 },
   gradeHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: T.border,
+    paddingHorizontal: 4,
   },
   gradeCheck: {
     width: 20,
     height: 20,
-    borderRadius: 4,
+    borderRadius: 5,
     borderWidth: 2,
     borderColor: T.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  gradeLabel: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "700",
-    color: T.textPrimary,
+  gradeCheckActive: { backgroundColor: T.primary, borderColor: T.primary },
+  gradeLabel: { flex: 1, fontSize: 13, fontWeight: "700", color: T.textPrimary },
+  gradeCountBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    backgroundColor: T.paper,
+    borderWidth: 1,
+    borderColor: T.border,
   },
-  gradeCount: { fontSize: 12, color: T.textSecondary, fontWeight: "600" },
+  gradeCountBadgeActive: { backgroundColor: `${T.primary}20`, borderColor: `${T.primary}50` },
+  gradeCount: { fontSize: 11, color: T.textSecondary, fontWeight: "600" },
+  gradeCountActive: { color: T.primary },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 8, paddingLeft: 30 },
   subChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 11,
+    paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: T.border,
     backgroundColor: T.paper,
   },
   subChipSelected: { backgroundColor: T.primary, borderColor: T.primary },
-  subChipTxt: { fontSize: 13, color: T.textSecondary, fontWeight: "500" },
-  subChipTxtSelected: { color: "#fff", fontWeight: "700" },
+  subChipTxt: { fontSize: 12, color: T.textSecondary, fontWeight: "500" },
+  subChipTxtSelected: { color: "#fff", fontWeight: "600" },
 });
 
 export default RegisterScreen;
