@@ -57,10 +57,13 @@ const AppNavigator = () => {
 
   useEffect(() => {
     (async () => {
+      const [raw] = await Promise.all([
+        AsyncStorage.getItem(AUTH_STORAGE_KEY),
+        new Promise((r) => setTimeout(r, 3000)),
+      ]);
       try {
-        const raw = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
         if (raw) {
-          const { accessToken, user } = JSON.parse(raw);
+          const { accessToken, user } = JSON.parse(raw as string);
           setAuthToken(accessToken);
           if (user.role === "TUTOR") {
             registerForPushNotifications();
@@ -70,7 +73,6 @@ const AppNavigator = () => {
               role: user.role,
             });
             setInitialRoute("TutorDashboard");
-            // Check for pending cycle starts
             getPendingCycleStarts()
               .then((res) => { if (res.data?.length) setPendingCycles(res.data); })
               .catch(() => {});
