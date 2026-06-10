@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
   Animated,
   Modal,
   PanResponder,
@@ -8,8 +8,10 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { T } from "../constants/colors";
+import { deleteAccount, setAuthToken, AUTH_STORAGE_KEY } from "../api/client";
 
 type Nav = StackNavigationProp<RootStackParamList, "Settings">;
 interface Props { navigation: Nav }
@@ -155,7 +158,13 @@ export default function SettingsScreen({ navigation }: Props) {
 
       {/* Delete account modal */}
       {deleteModalVisible && (
-        <DeleteAccountModal onClose={() => setDeleteModalVisible(false)} />
+        <DeleteAccountModal
+          onClose={() => setDeleteModalVisible(false)}
+          onDeleted={() => {
+            setDeleteModalVisible(false);
+            navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+          }}
+        />
       )}
     </View>
   );
@@ -163,9 +172,14 @@ export default function SettingsScreen({ navigation }: Props) {
 
 // ─── Delete Account Modal ─────────────────────────────────────────────────────
 
-function DeleteAccountModal({ onClose }: { onClose: () => void }) {
+function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDeleted: () => void }) {
   const insets     = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(0)).current;
+  const [confirmText, setConfirmText] = useState("");
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+
+  const confirmed = confirmText.trim() === "DELETE";
 
   const panResponder = useRef(
     PanResponder.create({
@@ -182,61 +196,102 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
     })
   ).current;
 
-  const handleDelete = () => {
-    Alert.alert(
-      "Coming Soon",
-      "Account deletion will be available in a future update.",
-      [{ text: "OK", onPress: onClose }]
-    );
+  const handleDelete = async () => {
+    if (!confirmed || loading) return;
+    setError(null);
+    setLoading(true);
+    try {
+      await deleteAccount();
+      await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+      setAuthToken(null);
+      onDeleted();
+    } catch (err: any) {
+      setError(err?.message || "Something went wrong. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable style={dm.backdrop} onPress={onClose}>
+      <Pressable style={dm.backdrop} onPress={loading ? undefined : onClose}>
         <Animated.View
-          style={[dm.sheet, { paddingBottom: Math.max(insets.bottom, 24), transform: [{ translateY }] }]}
+          style={[dm.sheet, { paddingBottom: Math.max(insets.bottom, 28), transform: [{ translateY }] }]}
           {...panResponder.panHandlers}
         >
           <View style={dm.handle} />
 
           {/* Icon */}
           <View style={dm.iconCircle}>
-            <Ionicons name="warning-outline" size={28} color={C.danger} />
+            <Ionicons name="shield-outline" size={28} color={C.danger} />
           </View>
 
           {/* Title */}
-          <Text style={dm.title}>Delete Account</Text>
-          <Text style={dm.body}>
-            This will permanently delete your YourShikshak account, including all your classes, sessions, demos, and profile data.{"\n\n"}
-            <Text style={{ fontWeight: "700" }}>This action cannot be undone.</Text>
-          </Text>
+          <Text style={dm.title}>Delete Your Account</Text>
+
+          {/* Retention notice */}
+          <View style={dm.retentionCard}>
+            <Ionicons name="time-outline" size={16} color="#92400E" style={{ marginTop: 1 }} />
+            <Text style={dm.retentionText}>
+              Your account data will be securely retained for{" "}
+              <Text style={dm.retentionBold}>30 days</Text> from the date of deletion. Should you change your mind within this period, please contact our support team to restore your account. After 30 days, all associated data will be{" "}
+              <Text style={dm.retentionBold}>permanently and irreversibly erased</Text>.
+            </Text>
+          </View>
 
           {/* What gets deleted */}
+          <Text style={dm.sectionLabel}>THE FOLLOWING WILL BE REMOVED</Text>
           <View style={dm.listCard}>
             {[
-              { icon: "book-outline",         label: "All active classes" },
-              { icon: "calendar-outline",     label: "Scheduled sessions" },
-              { icon: "videocam-outline",     label: "Demo history" },
-              { icon: "person-outline",       label: "Profile & documents" },
-              { icon: "cash-outline",         label: "Earnings & payment info" },
+              { icon: "book-outline",     label: "All active and past classes" },
+              { icon: "calendar-outline", label: "Scheduled & completed sessions" },
+              { icon: "videocam-outline", label: "Demo history & feedback" },
+              { icon: "person-outline",   label: "Profile, bio & documents" },
+              { icon: "cash-outline",     label: "Earnings & payment records" },
             ].map((item) => (
               <View key={item.label} style={dm.listRow}>
                 <View style={dm.listIconWrap}>
-                  <Ionicons name={item.icon as any} size={14} color={C.danger} />
+                  <Ionicons name={item.icon as any} size={13} color={C.danger} />
                 </View>
                 <Text style={dm.listLabel}>{item.label}</Text>
               </View>
             ))}
           </View>
 
+          {/* Confirmation input */}
+          <Text style={dm.confirmPrompt}>
+            To confirm, type <Text style={dm.confirmWord}>DELETE</Text> below
+          </Text>
+          <TextInput
+            style={[dm.confirmInput, confirmed && dm.confirmInputActive]}
+            value={confirmText}
+            onChangeText={setConfirmText}
+            placeholder="Type DELETE to confirm"
+            placeholderTextColor={C.textMuted}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            editable={!loading}
+          />
+
+          {error ? <Text style={dm.errorText}>{error}</Text> : null}
+
           {/* Actions */}
           <View style={dm.actions}>
-            <Pressable style={dm.cancelBtn} onPress={onClose}>
+            <Pressable style={dm.cancelBtn} onPress={onClose} disabled={loading}>
               <Text style={dm.cancelTxt}>Keep Account</Text>
             </Pressable>
-            <Pressable style={dm.deleteBtn} onPress={handleDelete}>
-              <Ionicons name="trash-outline" size={15} color="#fff" />
-              <Text style={dm.deleteTxt}>Delete Account</Text>
+            <Pressable
+              style={[dm.deleteBtn, (!confirmed || loading) && dm.deleteBtnDisabled]}
+              onPress={handleDelete}
+              disabled={!confirmed || loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="trash-outline" size={15} color="#fff" />
+                  <Text style={dm.deleteTxt}>Delete Account</Text>
+                </>
+              )}
             </Pressable>
           </View>
         </Animated.View>
@@ -307,56 +362,84 @@ const s = StyleSheet.create({
 });
 
 const dm = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(15,23,42,0.45)", justifyContent: "flex-end" },
+  backdrop: { flex: 1, backgroundColor: "rgba(15,23,42,0.55)", justifyContent: "flex-end" },
   sheet: {
     backgroundColor: "#fff",
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
     paddingHorizontal: 24, paddingTop: 8,
     shadowColor: "#000", shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08, shadowRadius: 20, elevation: 16,
+    shadowOpacity: 0.1, shadowRadius: 24, elevation: 20,
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
     backgroundColor: "#E2E8F0",
-    alignSelf: "center", marginBottom: 24,
+    alignSelf: "center", marginBottom: 20,
   },
 
   iconCircle: {
     width: 64, height: 64, borderRadius: 32,
     backgroundColor: C.dangerBg,
-    borderWidth: 1, borderColor: C.dangerBorder,
+    borderWidth: 1.5, borderColor: C.dangerBorder,
     alignItems: "center", justifyContent: "center",
-    alignSelf: "center", marginBottom: 16,
+    alignSelf: "center", marginBottom: 14,
   },
   title: {
-    color: C.textPrimary, fontSize: 18, fontWeight: "800",
-    textAlign: "center", marginBottom: 10,
-  },
-  body: {
-    color: C.textSecond, fontSize: 13, lineHeight: 20,
-    textAlign: "center", marginBottom: 20,
+    color: C.textPrimary, fontSize: 19, fontWeight: "800",
+    textAlign: "center", marginBottom: 14, letterSpacing: -0.3,
   },
 
+  retentionCard: {
+    flexDirection: "row", gap: 10,
+    backgroundColor: "#FFFBEB",
+    borderWidth: 1, borderColor: "#FDE68A",
+    borderRadius: 14, padding: 14, marginBottom: 18,
+  },
+  retentionText: {
+    flex: 1, color: "#78350F", fontSize: 12.5, lineHeight: 19,
+  },
+  retentionBold: { fontWeight: "700", color: "#92400E" },
+
+  sectionLabel: {
+    fontSize: 9.5, fontWeight: "800", letterSpacing: 1.1,
+    color: C.textMuted, marginBottom: 8,
+  },
   listCard: {
     backgroundColor: C.dangerBg, borderRadius: 14,
     borderWidth: 1, borderColor: C.dangerBorder,
-    padding: 14, gap: 10, marginBottom: 24,
+    padding: 14, gap: 10, marginBottom: 20,
   },
-  listRow:     { flexDirection: "row", alignItems: "center", gap: 10 },
-  listIconWrap:{ width: 26, height: 26, borderRadius: 8, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  listLabel:   { color: C.danger, fontSize: 12, fontWeight: "600" },
+  listRow:      { flexDirection: "row", alignItems: "center", gap: 10 },
+  listIconWrap: { width: 24, height: 24, borderRadius: 7, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+  listLabel:    { color: "#B91C1C", fontSize: 12, fontWeight: "500" },
 
-  actions:   { flexDirection: "row", gap: 10 },
+  confirmPrompt: {
+    fontSize: 12.5, color: C.textSecond, marginBottom: 8,
+  },
+  confirmWord: { fontWeight: "700", color: C.danger, fontFamily: "monospace" },
+  confirmInput: {
+    borderWidth: 1.5, borderColor: C.border, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 14, fontWeight: "600", color: C.textPrimary,
+    letterSpacing: 1, marginBottom: 8,
+  },
+  confirmInputActive: { borderColor: C.danger, backgroundColor: "#FEF2F2" },
+
+  errorText: {
+    color: C.danger, fontSize: 12, marginBottom: 10, textAlign: "center",
+  },
+
+  actions:   { flexDirection: "row", gap: 10, marginTop: 8 },
   cancelBtn: {
     flex: 1, paddingVertical: 14, borderRadius: 14,
     backgroundColor: C.bg, borderWidth: 1, borderColor: C.border,
     alignItems: "center", justifyContent: "center",
   },
-  cancelTxt:  { color: C.textSecond, fontSize: 14, fontWeight: "700" },
+  cancelTxt: { color: C.textSecond, fontSize: 14, fontWeight: "700" },
   deleteBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 7, paddingVertical: 14, borderRadius: 14,
     backgroundColor: C.danger,
   },
-  deleteTxt:  { color: "#fff", fontSize: 14, fontWeight: "700" },
+  deleteBtnDisabled: { backgroundColor: "#FCA5A5" },
+  deleteTxt: { color: "#fff", fontSize: 14, fontWeight: "700" },
 });
