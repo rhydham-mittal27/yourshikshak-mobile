@@ -35,6 +35,8 @@ import {
   setAuthToken,
   AUTH_STORAGE_KEY,
   Option,
+  sendRegistrationOtp,
+  verifyRegistrationOtp,
 } from "../api/client";
 import { useModal } from "../context/ModalContext";
 import { T } from "../constants/colors";
@@ -548,6 +550,14 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
+  // ── Email OTP verification ─────────────────────────────────────────────────
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [otpError, setOtpError] = useState("");
+
   const [cityOpts, setCityOpts] = useState<string[]>([]);
   const [areaOpts, setAreaOpts] = useState<string[]>([]);
   const [extraOpts, setExtraOpts] = useState<string[]>([]);
@@ -659,6 +669,42 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     });
   };
 
+  const handleSendOtp = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setErrors((e) => ({ ...e, email: "Enter a valid email address first" }));
+      return;
+    }
+    setOtpSending(true);
+    setOtpError("");
+    try {
+      await sendRegistrationOtp(form.email);
+      setOtpValue("");
+      setOtpModalOpen(true);
+    } catch (err: any) {
+      showError(err?.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpValue.length !== 6) {
+      setOtpError("Enter the 6-digit OTP");
+      return;
+    }
+    setOtpVerifying(true);
+    setOtpError("");
+    try {
+      await verifyRegistrationOtp(form.email, otpValue);
+      setEmailVerified(true);
+      setOtpModalOpen(false);
+    } catch (err: any) {
+      setOtpError(err?.response?.data?.message || "Invalid or expired OTP");
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
   const validate = (): boolean => {
     const e: typeof errors = {};
     if (step === 0) {
@@ -667,6 +713,8 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         e.phoneNumber = "Enter a valid 10-digit number";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
         e.email = "Enter a valid email address";
+      else if (!emailVerified)
+        e.email = "Please verify your email before proceeding";
     }
     if (step === 1) {
       if (!form.qualification.trim())
@@ -885,12 +933,35 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 <FInput
                   label="Email Address"
                   value={form.email}
-                  onChange={(v) => set("email", v)}
+                  onChange={(v) => { set("email", v); setEmailVerified(false); }}
                   icon="mail-outline"
                   error={errors.email}
                   keyboardType="email-address"
                   placeholder="you@example.com"
                 />
+                {/* Email OTP verification */}
+                {!emailVerified ? (
+                  <TouchableOpacity
+                    style={s.verifyEmailBtn}
+                    onPress={handleSendOtp}
+                    disabled={otpSending}
+                    activeOpacity={0.8}
+                  >
+                    {otpSending ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <Ionicons name="shield-checkmark-outline" size={16} color="#fff" />
+                        <Text style={s.verifyEmailBtnText}>Verify Email</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                ) : (
+                  <View style={s.emailVerifiedBadge}>
+                    <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
+                    <Text style={s.emailVerifiedText}>Email Verified</Text>
+                  </View>
+                )}
                 <FInput
                   label="Bio (Optional)"
                   value={form.bio}
@@ -1262,6 +1333,57 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* ── Email OTP Modal ──────────────────────────────────────────────────── */}
+      <Modal
+        visible={otpModalOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setOtpModalOpen(false)}
+      >
+        <Pressable style={cp.backdrop} onPress={() => setOtpModalOpen(false)}>
+          <Pressable style={[cp.sheet, { height: "auto", paddingBottom: 40 }]} onPress={() => {}}>
+            <View style={cp.handle} />
+            <View style={cp.header}>
+              <Text style={cp.headerTitle}>Verify Your Email</Text>
+              <TouchableOpacity onPress={() => setOtpModalOpen(false)}>
+                <Ionicons name="close" size={22} color={T.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={s.otpSubtitle}>
+              We sent a 6-digit code to{"\n"}
+              <Text style={{ color: T.primary, fontWeight: "600" }}>{form.email}</Text>
+            </Text>
+            <TextInput
+              style={s.otpInput}
+              value={otpValue}
+              onChangeText={(t) => { setOtpValue(t.replace(/\D/g, "").slice(0, 6)); setOtpError(""); }}
+              keyboardType="number-pad"
+              placeholder="• • • • • •"
+              placeholderTextColor={T.textSecondary}
+              maxLength={6}
+            />
+            {otpError ? <Text style={s.otpError}>{otpError}</Text> : null}
+            <TouchableOpacity
+              style={[s.verifyEmailBtn, { marginHorizontal: 20, marginTop: 12 }]}
+              onPress={handleVerifyOtp}
+              disabled={otpVerifying}
+              activeOpacity={0.8}
+            >
+              {otpVerifying ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={s.verifyEmailBtnText}>Confirm OTP</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity style={s.resendOtpBtn} onPress={handleSendOtp} disabled={otpSending}>
+              <Text style={s.resendOtpText}>
+                {otpSending ? "Sending…" : "Resend OTP"}
+              </Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* ── Curriculum Picker Modal ─────────────────────────────────────────── */}
       <Modal
@@ -1880,6 +2002,51 @@ const s = StyleSheet.create({
     marginTop: 8,
   },
   currPickerBtnTxt: { fontSize: 13, color: T.primary, fontWeight: "600" },
+  // Email OTP
+  verifyEmailBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: T.primary,
+    borderRadius: 10,
+    paddingVertical: 11,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  verifyEmailBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  emailVerifiedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#14532d22",
+    borderRadius: 8,
+    marginTop: 4,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: "#22c55e44",
+    alignSelf: "flex-start",
+  },
+  emailVerifiedText: { color: "#22c55e", fontWeight: "600", fontSize: 13 },
+  otpSubtitle: { color: T.textSecondary, fontSize: 14, textAlign: "center", marginVertical: 16, lineHeight: 22 },
+  otpInput: {
+    marginHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: T.border,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    fontSize: 24,
+    letterSpacing: 10,
+    textAlign: "center",
+    color: T.textPrimary,
+    backgroundColor: T.background,
+  },
+  otpError: { color: "#ef4444", fontSize: 12, textAlign: "center", marginTop: 6 },
+  resendOtpBtn: { alignSelf: "center", marginTop: 14 },
+  resendOtpText: { color: T.primary, fontSize: 13, fontWeight: "600" },
 });
 
 // ─── Curriculum Picker Styles ─────────────────────────────────────────────────
