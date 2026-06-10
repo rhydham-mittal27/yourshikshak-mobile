@@ -3,7 +3,7 @@ import axios from "axios";
 // Switch between real API and dummy data by changing BASE_URL:
 //   "static"                        → dummy data (no network calls)
 //   "https://api.yourshikshak.in/api" → live backend
-const BASE_URL = "http://192.168.1.6:5000/api";
+const BASE_URL = "https://api.yourshikshak.in/api";
 
 export const IS_STATIC = BASE_URL === "static";
 
@@ -643,6 +643,16 @@ export const submitAttendance = async (
     finalClassId: classId,
     ...payload,
   }) as Promise<AttendanceResponse>;
+};
+
+// ─── Registration Email OTP ──────────────────────────────────────────────────
+
+export const sendRegistrationOtp = async (email: string): Promise<void> => {
+  await apiClient.post("/auth/email-otp/send", { email });
+};
+
+export const verifyRegistrationOtp = async (email: string, otp: string): Promise<void> => {
+  await apiClient.post("/auth/email-otp/verify", { email, otp });
 };
 
 // ─── Push Notifications ───────────────────────────────────────────────────────
