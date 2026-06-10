@@ -844,4 +844,7 @@ export const rescheduleSession = async (
 export const deleteAccount = (): Promise<void> =>
   apiClient.delete('/auth/account') as any;
 
+export const restoreAccount = (email: string, password: string): Promise<any> =>
+  apiClient.post('/auth/restore-account', { email, password }) as any;
+
 export default apiClient;
