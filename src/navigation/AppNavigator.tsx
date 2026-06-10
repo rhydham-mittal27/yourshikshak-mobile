@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, ActivityIndicator } from "react-native";
+import { View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import {
@@ -22,6 +22,7 @@ import TimetableScreen from "../screens/TimetableScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import PaymentsScreen from "../screens/PaymentsScreen";
 import { ModalProvider } from "../context/ModalContext";
+import AppSplashScreen from "../components/AppSplashScreen";
 import { setAuthToken, AUTH_STORAGE_KEY, expressInterest, getPendingCycleStarts, PendingCycleClass } from "../api/client";
 import { registerForPushNotifications } from "../services/pushNotifications";
 import CycleStartModal from "../components/classes/CycleStartModal";
@@ -119,18 +120,7 @@ const AppNavigator = () => {
   }, [savedParams]);
 
   if (!initialRoute) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#060D1F",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator color="#fff" />
-      </View>
-    );
+    return <AppSplashScreen />;
   }
 
   return (
