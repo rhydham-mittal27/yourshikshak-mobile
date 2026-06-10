@@ -20,6 +20,7 @@ import EditProfileScreen from "../screens/EditProfileScreen";
 import MyClassesScreen from "../screens/MyClassesScreen";
 import TimetableScreen from "../screens/TimetableScreen";
 import SettingsScreen from "../screens/SettingsScreen";
+import PaymentsScreen from "../screens/PaymentsScreen";
 import { ModalProvider } from "../context/ModalContext";
 import { setAuthToken, AUTH_STORAGE_KEY, expressInterest, getPendingCycleStarts, PendingCycleClass } from "../api/client";
 import { registerForPushNotifications } from "../services/pushNotifications";
@@ -40,6 +41,7 @@ export type RootStackParamList = {
   MyClasses: { highlightClassId?: string } | undefined;
   Timetable: undefined;
   Settings: undefined;
+  Payments: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -171,6 +173,7 @@ const AppNavigator = () => {
           <Stack.Screen name="MyClasses" component={MyClassesScreen} />
           <Stack.Screen name="Timetable" component={TimetableScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Payments" component={PaymentsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </ModalProvider>

@@ -841,6 +841,37 @@ export const rescheduleSession = async (
 ): Promise<any> =>
   apiClient.patch(`/class-sessions/${sessionId}/reschedule`, { newDate, newTimeSlot });
 
+// ─── Payments ─────────────────────────────────────────────────────────────────
+
+export interface PaymentItem {
+  _id: string;
+  amount: number;
+  status: "PENDING" | "PAID" | "OVERDUE";
+  paymentType: string;
+  paymentMethod?: string;
+  paymentDate?: string;
+  dueDate: string;
+  cycleMonth?: number;
+  cycleYear?: number;
+  transactionId?: string;
+  notes?: string;
+  finalClass?: { _id: string; studentName: string; className: string; mode: string };
+  createdAt: string;
+}
+
+export interface PaymentSummaryResponse {
+  data: {
+    payments: PaymentItem[];
+    statistics: { totalAmount: number; paidAmount: number; pendingAmount: number };
+  };
+}
+
+export const getTutorPayoutSummary = (): Promise<PaymentSummaryResponse> =>
+  apiClient.get("/payments/tutor/summary?paymentType=TUTOR_PAYOUT") as any;
+
+export const getTutorVerificationFeeSummary = (): Promise<PaymentSummaryResponse> =>
+  apiClient.get("/payments/tutor/summary?paymentType=TUTOR_VERIFICATION_FEES") as any;
+
 export const deleteAccount = (): Promise<void> =>
   apiClient.delete('/auth/account') as any;
 
