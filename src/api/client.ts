@@ -841,4 +841,7 @@ export const rescheduleSession = async (
 ): Promise<any> =>
   apiClient.patch(`/class-sessions/${sessionId}/reschedule`, { newDate, newTimeSlot });
 
+export const deleteAccount = (): Promise<void> =>
+  apiClient.delete('/auth/account') as any;
+
 export default apiClient;
