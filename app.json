@@ -7,13 +7,20 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#0052ff"
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#060D1F"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.yourshikshak.app"
     },
     "android": {
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#060D1F"
+      },
       "adaptiveIcon": {
         "backgroundColor": "#0052ff",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -43,7 +50,8 @@
           "sounds": []
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-splash-screen"
     ],
     "extra": {
       "eas": {
