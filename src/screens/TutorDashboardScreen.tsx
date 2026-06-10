@@ -464,7 +464,24 @@ const emp = StyleSheet.create({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { userId, name } = route.params;
+  const { userId: _userId, name: _name } = route.params ?? ({} as any);
+  const [resolvedUserId, setResolvedUserId] = useState<string | undefined>(_userId);
+  const [resolvedName, setResolvedName] = useState<string | undefined>(_name);
+
+  useEffect(() => {
+    if (_userId) return;
+    AsyncStorage.getItem(AUTH_STORAGE_KEY).then((raw) => {
+      if (!raw) return;
+      try {
+        const { user } = JSON.parse(raw);
+        if (user?.id) setResolvedUserId(user.id);
+        if (user?.name) setResolvedName(user.name);
+      } catch {}
+    });
+  }, []);
+
+  const userId = resolvedUserId ?? "";
+  const name = resolvedName ?? "";
   const insets = useSafeAreaInsets();
   const { showConfirm, showError, showSuccess } = useModal();
 
