@@ -17,6 +17,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Animated,
+  Modal,
   Platform,
   KeyboardAvoidingView,
   StatusBar,
@@ -29,7 +30,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { loginUser, setAuthToken, AUTH_STORAGE_KEY } from "../api/client";
+import { loginUser, restoreAccount, setAuthToken, AUTH_STORAGE_KEY } from "../api/client";
 import { registerForPushNotifications } from "../services/pushNotifications";
 import { useModal } from "../context/ModalContext";
 import { T } from "../constants/colors";
@@ -218,6 +219,10 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [restoreModal, setRestoreModal] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const pendingCreds = useRef<{ email: string; password: string } | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -307,9 +312,37 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
         navigation.reset({ index: 0, routes: [{ name: "Intro" }] });
       }
     } catch (err: any) {
+      if (err?.message === "ACCOUNT_PENDING_DELETION") {
+        pendingCreds.current = { email: email.trim().toLowerCase(), password };
+        setRestoreModal(true);
+        return;
+      }
       showError("Login Failed", err?.message || "Invalid email or password.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!pendingCreds.current || restoreLoading) return;
+    setRestoreError(null);
+    setRestoreLoading(true);
+    try {
+      const res = await restoreAccount(pendingCreds.current.email, pendingCreds.current.password);
+      const { accessToken } = res.data.tokens;
+      const user = res.data.user;
+      setAuthToken(accessToken);
+      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ accessToken, user }));
+      setRestoreModal(false);
+      if (user.role === "TUTOR") {
+        navigation.reset({ index: 0, routes: [{ name: "TutorDashboard", params: { userId: user.id, name: user.name, role: user.role } }] });
+      } else {
+        navigation.reset({ index: 0, routes: [{ name: "Intro" }] });
+      }
+    } catch (err: any) {
+      setRestoreError(err?.message || "Failed to restore account. Please try again.");
+    } finally {
+      setRestoreLoading(false);
     }
   };
 
@@ -483,6 +516,48 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={{ height: Math.max(insets.bottom, 40) }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Restore account modal */}
+      <Modal visible={restoreModal} transparent animationType="slide" onRequestClose={() => !restoreLoading && setRestoreModal(false)}>
+        <Pressable style={rm.backdrop} onPress={() => !restoreLoading && setRestoreModal(false)}>
+          <Pressable style={rm.sheet} onPress={() => {}}>
+            <View style={rm.handle} />
+
+            <View style={rm.iconCircle}>
+              <Ionicons name="refresh-circle-outline" size={30} color="#F59E0B" />
+            </View>
+
+            <Text style={rm.title}>Account Deletion Pending</Text>
+            <Text style={rm.body}>
+              You previously submitted a request to delete this account. Your data is still within the{" "}
+              <Text style={rm.bold}>30-day retention period</Text> and can be fully recovered.{"\n\n"}
+              Would you like to restore your account and continue?
+            </Text>
+
+            <View style={rm.infoRow}>
+              <Ionicons name="shield-checkmark-outline" size={14} color="#065F46" />
+              <Text style={rm.infoText}>All your classes, sessions, and profile data remain intact.</Text>
+            </View>
+
+            {restoreError ? <Text style={rm.errorText}>{restoreError}</Text> : null}
+
+            <View style={rm.actions}>
+              <Pressable style={rm.cancelBtn} onPress={() => setRestoreModal(false)} disabled={restoreLoading}>
+                <Text style={rm.cancelTxt}>Cancel</Text>
+              </Pressable>
+              <Pressable style={[rm.restoreBtn, restoreLoading && rm.restoreBtnDisabled]} onPress={handleRestore} disabled={restoreLoading}>
+                {restoreLoading
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <>
+                      <Ionicons name="refresh-outline" size={15} color="#fff" />
+                      <Text style={rm.restoreTxt}>Restore & Login</Text>
+                    </>
+                }
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -709,6 +784,59 @@ const s = StyleSheet.create({
   signinRow: { flexDirection: "row", justifyContent: "center", marginTop: 4 },
   signinTxt: { fontSize: 13, color: T.mutedFg },
   signinLink: { fontSize: 13, color: T.primary, fontWeight: "700" },
+});
+
+const rm = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: "rgba(15,23,42,0.55)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    paddingHorizontal: 24, paddingTop: 8, paddingBottom: 36,
+    shadowColor: "#000", shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1, shadowRadius: 24, elevation: 20,
+  },
+  handle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: "#E2E8F0", alignSelf: "center", marginBottom: 20,
+  },
+  iconCircle: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: "#FFFBEB",
+    borderWidth: 1.5, borderColor: "#FDE68A",
+    alignItems: "center", justifyContent: "center",
+    alignSelf: "center", marginBottom: 14,
+  },
+  title: {
+    color: "#0F172A", fontSize: 18, fontWeight: "800",
+    textAlign: "center", marginBottom: 10, letterSpacing: -0.3,
+  },
+  body: {
+    color: "#475569", fontSize: 13, lineHeight: 20,
+    textAlign: "center", marginBottom: 14,
+  },
+  bold: { fontWeight: "700", color: "#0F172A" },
+  infoRow: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#ECFDF5", borderRadius: 12,
+    borderWidth: 1, borderColor: "#A7F3D0",
+    padding: 12, marginBottom: 20,
+  },
+  infoText: { flex: 1, color: "#065F46", fontSize: 12.5, lineHeight: 18 },
+  errorText: { color: "#EF4444", fontSize: 12, textAlign: "center", marginBottom: 10 },
+  actions: { flexDirection: "row", gap: 10 },
+  cancelBtn: {
+    flex: 1, paddingVertical: 14, borderRadius: 14,
+    backgroundColor: "#F8FAFC", borderWidth: 1, borderColor: "#E2E8F0",
+    alignItems: "center", justifyContent: "center",
+  },
+  cancelTxt: { color: "#64748B", fontSize: 14, fontWeight: "700" },
+  restoreBtn: {
+    flex: 1.4, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 7, paddingVertical: 14, borderRadius: 14,
+    backgroundColor: "#F59E0B",
+  },
+  restoreBtnDisabled: { backgroundColor: "#FCD34D" },
+  restoreTxt: { color: "#fff", fontSize: 14, fontWeight: "700" },
 });
 
 export default LoginScreen;
