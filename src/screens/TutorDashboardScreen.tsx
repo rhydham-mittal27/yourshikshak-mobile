@@ -1732,6 +1732,21 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           />
         </Pressable>
 
+        {/* Payments */}
+        <Pressable
+          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
+          onPress={() => {
+            navigation.navigate("Payments");
+            closeSidebar();
+          }}
+        >
+          <View style={[sb.navIconBg, { backgroundColor: "#10B98118" }]}>
+            <Ionicons name="cash-outline" size={18} color="#10B981" />
+          </View>
+          <Text style={sb.navLabel}>Payments</Text>
+          <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
+        </Pressable>
+
         {/* Settings */}
         <Pressable
           style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
