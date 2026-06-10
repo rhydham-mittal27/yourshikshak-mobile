@@ -772,6 +772,10 @@ export const getMyProfileForEdit = async (): Promise<{
   data: EditProfileData;
 }> => apiClient.get("/tutors/my-profile/for-edit") as any;
 
+export const markWhatsappCommunityJoined = async (): Promise<void> => {
+  await apiClient.put("/tutors/my-profile", { whatsappCommunityJoined: true });
+};
+
 export const updateMyProfile = async (
   payload: Partial<Omit<EditProfileData, "verificationStatus" | "email">>,
 ): Promise<{ data: any }> =>
