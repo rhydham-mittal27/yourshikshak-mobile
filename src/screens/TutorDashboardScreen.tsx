@@ -57,6 +57,7 @@ import {
   TodayClass,
   LeadAnnouncement,
   TutorDemo,
+  markWhatsappCommunityJoined,
 } from "../api/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useModal } from "../context/ModalContext";
@@ -604,32 +605,22 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           setPhotoError(false);
         }
 
-        // Show WhatsApp community modal once for offline tutors
+        // Show WhatsApp community modal for offline tutors who haven't joined yet
         const profile = profileRes.data as any;
-        if (profile?.preferredMode === "OFFLINE") {
-          const waKey = `@ys_whatsapp_shown_${userId}`;
-          const already = await AsyncStorage.getItem(waKey);
-          if (!already) {
-            try {
-              const cityOpts = await getOptions("CITY");
-              const tutorCity = String(profile?.user?.city || "")
-                .trim()
-                .toLowerCase();
-              const cityOpt = cityOpts.find((c: any) => {
-                const v = String(c.value || "")
-                  .trim()
-                  .toLowerCase();
-                const l = String(c.label || "")
-                  .trim()
-                  .toLowerCase();
-                return v === tutorCity || l === tutorCity;
-              });
-              setWaLink((cityOpt?.metadata as any)?.whatsappLink);
-            } catch {
-              // no city link, still show modal
-            }
-            setShowWAModal(true);
+        if (profile?.preferredMode === "OFFLINE" && !profile?.whatsappCommunityJoined) {
+          try {
+            const cityOpts = await getOptions("CITY");
+            const tutorCity = String(profile?.user?.city || "").trim().toLowerCase();
+            const cityOpt = cityOpts.find((c: any) => {
+              const v = String(c.value || "").trim().toLowerCase();
+              const l = String(c.label || "").trim().toLowerCase();
+              return v === tutorCity || l === tutorCity;
+            });
+            setWaLink((cityOpt?.metadata as any)?.whatsappLink);
+          } catch {
+            // no city link, still show modal
           }
+          setShowWAModal(true);
         }
       }
     } catch (err: any) {
@@ -2129,6 +2120,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
                   waLink || "https://chat.whatsapp.com/YOUR_COMMUNITY_LINK";
                 const { Linking } = require("react-native");
                 Linking.openURL(link).catch(() => {});
+                markWhatsappCommunityJoined().catch(() => {});
+                setShowWAModal(false);
               }}
             >
               <Ionicons name="logo-whatsapp" size={18} color="#fff" />
@@ -2142,7 +2135,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
                 pressed && { opacity: 0.85 },
               ]}
               onPress={async () => {
-                await AsyncStorage.setItem(`@ys_whatsapp_shown_${userId}`, "1");
+                markWhatsappCommunityJoined().catch(() => {});
                 setShowWAModal(false);
               }}
             >
