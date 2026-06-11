@@ -111,7 +111,7 @@ const MiniStat = ({
   label: string;
   value: string | number;
 }) => (
-  <View style={[ms.card, { borderColor: `${color}22`, backgroundColor: `${color}06` }]}>
+  <View style={[ms.card, { backgroundColor: `${color}07` }]}>
     <View style={[ms.iconBox, { backgroundColor: `${color}15` }]}>
       <Ionicons name={icon} size={17} color={color} />
     </View>
@@ -2446,16 +2446,11 @@ const ms = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     borderRadius: T.radiusLg,
-    borderWidth: 1,
-    borderColor: T.border,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
     padding: 11,
     alignItems: "center",
     gap: 5,
-    shadowColor: "#1A2540",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
   },
   iconBox: {
     width: 34,
