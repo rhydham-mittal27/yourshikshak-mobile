@@ -111,9 +111,9 @@ const MiniStat = ({
   label: string;
   value: string | number;
 }) => (
-  <View style={ms.card}>
-    <View style={[ms.iconBox, { backgroundColor: `${color}12` }]}>
-      <Ionicons name={icon} size={16} color={color} />
+  <View style={[ms.card, { borderColor: `${color}22`, backgroundColor: `${color}06` }]}>
+    <View style={[ms.iconBox, { backgroundColor: `${color}15` }]}>
+      <Ionicons name={icon} size={17} color={color} />
     </View>
     <Text style={[ms.value, { color }]}>{value ?? 0}</Text>
     <Text style={ms.label} numberOfLines={1}>{label}</Text>
@@ -144,11 +144,11 @@ const IRow = ({
       style={({ pressed }) => [
         ir.wrap,
         !last && ir.border,
-        pressed && { backgroundColor: `${accent}06` },
+        pressed && { backgroundColor: `${accent}08`, transform: [{ scale: 0.99 }] },
       ]}
     >
-      <View style={[ir.iconBox, { backgroundColor: `${accent}12` }]}>
-        <Ionicons name={icon} size={14} color={accent} />
+      <View style={[ir.iconBox, { backgroundColor: `${accent}14` }]}>
+        <Ionicons name={icon} size={15} color={accent} />
       </View>
       <View style={ir.text}>
         <Text style={ir.lbl}>{label}</Text>
@@ -314,14 +314,15 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [vError, setVError] = useState<string | null>(null);
   const [vSuccess, setVSuccess] = useState(false);
 
-  // Mount animation
+  // Mount + tab + stats animations
   const mountAnim = useRef(new Animated.Value(0)).current;
   const tabAnim = useRef(new Animated.Value(1)).current;
+  const statsAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(mountAnim, {
       toValue: 1,
-      duration: 400,
+      duration: 420,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
@@ -330,8 +331,8 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
   const switchTab = (next: Tab) => {
     if (next === tab) return;
     Animated.sequence([
-      Animated.timing(tabAnim, { toValue: 0, duration: 100, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.timing(tabAnim, { toValue: 1, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(tabAnim, { toValue: 0, duration: 90, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+      Animated.timing(tabAnim, { toValue: 1, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
     setTab(next);
   };
@@ -339,9 +340,11 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
   const load = useCallback(async () => {
     setError(null);
     setPhotoError(false);
+    statsAnim.setValue(0);
     try {
       const res = await getTutorProfile();
       setTutor(res.data);
+      Animated.timing(statsAnim, { toValue: 1, duration: 500, delay: 120, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     } catch (e: any) {
       setError(e?.message || "Failed to load profile.");
     } finally {
@@ -655,6 +658,8 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
               onPress={() => !loading && setPhotoModal(true)}
               disabled={uploading}
             >
+              {/* outer glow ring */}
+              <View style={s.avatarRing}>
               {loading ? (
                 <Sk w={80} h={80} r={40} />
               ) : profilePhoto && !photoError ? (
@@ -671,6 +676,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                   <Text style={s.avatarInitial}>{initials}</Text>
                 </LinearGradient>
               )}
+              </View>
               {!loading && !uploading && (
                 <View style={s.cameraBtn}>
                   <Ionicons name="camera" size={10} color="#fff" />
@@ -839,13 +845,13 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
             ).map(({ key, label, icon }) => (
               <Pressable
                 key={key}
-                style={[tb.tab, tab === key && tb.tabActive]}
+                style={({ pressed }) => [tb.tab, tab === key && tb.tabActive, pressed && { opacity: 0.82, transform: [{ scale: 0.97 }] }]}
                 onPress={() => switchTab(key)}
               >
                 <Ionicons
                   name={icon}
                   size={14}
-                  color={tab === key ? T.primary : T.mutedFg}
+                  color={tab === key ? "#fff" : T.mutedFg}
                 />
                 <Text style={[tb.label, tab === key && tb.labelActive]}>
                   {label}
@@ -855,7 +861,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           {/* ══ TAB CONTENT ════════════════════════════════════════════════ */}
-          <Animated.View style={{ opacity: tabAnim }}>
+          <Animated.View style={{ opacity: tabAnim, transform: [{ translateY: tabAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
           {/* ══ TAB: OVERVIEW ════════════════════════════════════════════════ */}
           {tab === "overview" && (
             <View>
@@ -869,7 +875,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                 </View>
               ) : (
                 tutor && (
-                  <>
+                  <Animated.View style={{ opacity: statsAnim, transform: [{ translateY: statsAnim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}>
                     <View style={s.statsRow}>
                       <MiniStat icon="library-outline"         color={T.primary}  bg="" label="Assigned"  value={tutor.classesAssigned ?? 0} />
                       <MiniStat icon="checkmark-circle-outline" color={T.success}  bg="" label="Completed" value={tutor.classesCompleted ?? 0} />
@@ -886,7 +892,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                       <MiniStat icon="pie-chart-outline"   color="#6366F1" bg="" label="Approval %" value={tutor.approvalRatio != null ? `${tutor.approvalRatio}%` : "—"} />
                       <MiniStat icon="star-half-outline"   color="#F97316" bg="" label="Total Ratings" value={tutor.totalRatings ?? 0} />
                     </View>
-                  </>
+                  </Animated.View>
                 )
               )}
 
@@ -2037,7 +2043,7 @@ const s = StyleSheet.create({
 
   hero: {
     paddingHorizontal: 20,
-    paddingBottom: 50,
+    paddingBottom: 52,
     overflow: "hidden",
   },
   orbA: { position: "absolute", width: 0, height: 0 },
@@ -2076,6 +2082,20 @@ const s = StyleSheet.create({
     marginBottom: 14,
   },
   avatarWrap: { position: "relative" },
+  avatarRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 2,
+    borderColor: "rgba(45,104,196,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 6,
+  },
   avatar: {
     width: 80,
     height: 80,
@@ -2095,11 +2115,11 @@ const s = StyleSheet.create({
   avatarInitial: { color: "#fff", fontSize: 26, fontWeight: "700" },
   cameraBtn: {
     position: "absolute",
-    bottom: 16,
-    right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    bottom: 2,
+    right: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: T.primary,
     borderWidth: 2,
     borderColor: T.darkBg,
@@ -2116,8 +2136,8 @@ const s = StyleSheet.create({
   },
   statusDot: {
     position: "absolute",
-    bottom: 1,
-    left: 1,
+    bottom: 2,
+    left: 2,
     width: 14,
     height: 14,
     borderRadius: 7,
@@ -2133,7 +2153,7 @@ const s = StyleSheet.create({
     letterSpacing: -0.5,
     marginBottom: 2,
   },
-  heroRole: { color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 6 },
+  heroRole: { color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: "500", marginBottom: 8 },
   badgesRow: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
   badge: {
     flexDirection: "row",
@@ -2150,53 +2170,54 @@ const s = StyleSheet.create({
   stripRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderRadius: T.radiusMd,
-    paddingVertical: 10,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 14,
+    paddingVertical: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.1)",
   },
-  stripItem: { flex: 1, alignItems: "center", gap: 3, paddingVertical: 2 },
+  stripItem: { flex: 1, alignItems: "center", gap: 4, paddingVertical: 2 },
   stripVal: {
     color: "#fff",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: -0.3,
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: -0.4,
   },
   stripLbl: {
-    color: "rgba(255,255,255,0.38)",
+    color: "rgba(255,255,255,0.45)",
     fontSize: 9,
     fontWeight: "600",
-    marginTop: 1,
-    letterSpacing: 0.2,
+    marginTop: 0,
+    letterSpacing: 0.3,
   },
-  stripSep: { width: 1, height: 32, backgroundColor: "rgba(255,255,255,0.08)" },
+  stripSep: { width: 1, height: 30, backgroundColor: "rgba(255,255,255,0.12)" },
 
   // slate card body — white stat cards pop against this
   card: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#F4F7FB",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     marginTop: -28,
     padding: 16,
-    paddingTop: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    paddingTop: 10,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 10,
   },
   cardHighlight: {
-    height: 3,
-    marginHorizontal: 40,
+    height: 4,
+    width: 48,
     borderRadius: 2,
     backgroundColor: T.primary,
-    marginBottom: 16,
-    opacity: 0.5,
+    marginBottom: 18,
+    alignSelf: "center",
+    opacity: 0.45,
   },
 
   // stats row (4 mini cards)
-  statsRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  statsRow: { flexDirection: "row", gap: 7, marginBottom: 8 },
 
   // bio
   bioBox: {
@@ -2359,22 +2380,25 @@ const sh = StyleSheet.create({
   wrap: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
-    marginTop: 18,
+    marginBottom: 12,
+    marginTop: 22,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
   },
   iconBg: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
+    width: 26,
+    height: 26,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 8,
+    marginRight: 9,
   },
   title: {
     fontSize: 13,
     fontWeight: "700",
     color: T.textPrimary,
-    letterSpacing: 0.1,
+    letterSpacing: 0.05,
     flex: 1,
   },
   badge: {
@@ -2390,10 +2414,10 @@ const sh = StyleSheet.create({
 const tb = StyleSheet.create({
   bar: {
     flexDirection: "row",
-    backgroundColor: "#E2E8F0",
-    borderRadius: 12,
+    backgroundColor: "#DDE8F5",
+    borderRadius: 14,
     padding: 4,
-    marginBottom: 16,
+    marginBottom: 18,
   },
   tab: {
     flex: 1,
@@ -2401,19 +2425,19 @@ const tb = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 5,
-    paddingVertical: 9,
-    borderRadius: 9,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
   tabActive: {
-    backgroundColor: "#fff",
-    shadowColor: "#1A2540",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    backgroundColor: T.primary,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
   label: { fontSize: 11, fontWeight: "600", color: T.mutedFg },
-  labelActive: { color: T.primary, fontWeight: "800" },
+  labelActive: { color: "#fff", fontWeight: "700" },
 });
 
 // Mini stat card (4 across)
@@ -2421,83 +2445,83 @@ const ms = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: "#fff",
-    borderRadius: T.radiusMd,
+    borderRadius: T.radiusLg,
     borderWidth: 1,
     borderColor: T.border,
-    padding: 10,
+    padding: 11,
     alignItems: "center",
-    gap: 4,
+    gap: 5,
     shadowColor: "#1A2540",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   iconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
   value: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
   },
   label: {
     fontSize: 9,
     color: T.mutedFg,
     fontWeight: "600",
     textAlign: "center",
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
 });
 
 // Compact info row
 const ir = StyleSheet.create({
   container: {
-    borderRadius: T.radiusMd,
+    borderRadius: T.radiusLg,
     borderWidth: 1,
     borderColor: T.border,
     overflow: "hidden",
-    marginBottom: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
+    marginBottom: 6,
+    backgroundColor: T.paper,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   wrap: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     backgroundColor: T.paper,
   },
   border: { borderBottomWidth: 1, borderBottomColor: T.border },
   iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
   },
   text: { flex: 1 },
   lbl: {
-    fontSize: 9,
-    color: T.textDisabled,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
+    fontSize: 10,
+    color: T.mutedFg,
+    fontWeight: "600",
+    letterSpacing: 0.2,
     marginBottom: 2,
   },
-  val: { fontSize: 13, color: T.textPrimary, fontWeight: "600" },
+  val: { fontSize: 14, color: T.textPrimary, fontWeight: "600", letterSpacing: -0.1 },
   arrowBox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 7,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2506,12 +2530,12 @@ const ir = StyleSheet.create({
 // Chip
 const chip = StyleSheet.create({
   wrap: {
-    paddingHorizontal: 9,
-    paddingVertical: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
     borderRadius: T.radiusFull,
     borderWidth: 1,
   },
-  txt: { fontSize: 11, fontWeight: "600" },
+  txt: { fontSize: 12, fontWeight: "600" },
 });
 
 // Document card
@@ -2559,13 +2583,11 @@ const dc = StyleSheet.create({
   viewBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 3,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: T.radiusSm,
-    backgroundColor: T.muted,
+    gap: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: T.radiusMd,
     borderWidth: 1,
-    borderColor: T.border,
   },
   viewTxt: { fontSize: 11, fontWeight: "700" },
 });
