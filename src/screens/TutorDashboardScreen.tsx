@@ -243,7 +243,7 @@ const SectionHead = ({
   title: string;
   count?: number;
 }) => (
-  <View style={[s.sectionHead, { borderLeftColor: T.primary }]}>
+  <View style={s.sectionHead}>
     <View style={[s.sectionIconBg, { backgroundColor: `${T.primary}15` }]}>
       <Ionicons name={icon} size={15} color={T.primary} />
     </View>
@@ -1117,7 +1117,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
               <Ionicons
                 name="today-outline"
                 size={14}
-                color={activeTab === "today" ? T.primary : T.mutedFg}
+                color={activeTab === "today" ? "#fff" : T.mutedFg}
               />
               <Text
                 style={[tab.label, activeTab === "today" && tab.labelActive]}
@@ -1141,7 +1141,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
                     <Text
                       style={[
                         tab.badgeTxt,
-                        activeTab === "today" && { color: T.primary },
+                        activeTab === "today" && { color: "#fff" },
                       ]}
                     >
                       {cnt}
@@ -1157,7 +1157,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
               <Ionicons
                 name="megaphone-outline"
                 size={14}
-                color={activeTab === "opportunities" ? T.primary : T.mutedFg}
+                color={activeTab === "opportunities" ? "#fff" : T.mutedFg}
               />
               <Text
                 style={[
@@ -1179,7 +1179,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
                   <Text
                     style={[
                       tab.badgeTxt,
-                      activeTab === "opportunities" && { color: T.primary },
+                      activeTab === "opportunities" && { color: "#fff" },
                     ]}
                   >
                     {annTotal}
@@ -2160,25 +2160,9 @@ const s = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingBottom: 60 },
 
-  header: { paddingHorizontal: 22, paddingBottom: 32, overflow: "hidden" },
-  orbA: {
-    position: "absolute",
-    top: -70,
-    right: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: `${T.secondary}18`,
-  },
-  orbB: {
-    position: "absolute",
-    bottom: -40,
-    left: -40,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: `${T.primary}14`,
-  },
+  header: { paddingHorizontal: 22, paddingBottom: 48, overflow: "hidden" },
+  orbA: { position: "absolute", width: 0, height: 0 },
+  orbB: { position: "absolute", width: 0, height: 0 },
 
   topBar: {
     flexDirection: "row",
@@ -2217,14 +2201,14 @@ const s = StyleSheet.create({
   },
   avatarInitial: { color: "#fff", fontSize: 15, fontWeight: "700" },
 
-  greetBlock: { marginBottom: 22 },
-  greetSub: { color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 2 },
+  greetBlock: { marginBottom: 24 },
+  greetSub: { color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: "500", marginBottom: 3 },
   greetName: {
     color: "#fff",
-    fontSize: 26,
-    fontWeight: "700",
-    letterSpacing: -0.5,
-    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.7,
+    marginBottom: 10,
   },
   tutorBadge: {
     flexDirection: "row",
@@ -2254,72 +2238,72 @@ const s = StyleSheet.create({
   stripRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderRadius: T.radiusMd,
-    paddingVertical: 10,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 14,
+    paddingVertical: 13,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
-  stripItem: { flex: 1, alignItems: "center" },
+  stripItem: { flex: 1, alignItems: "center", gap: 3 },
   stripVal: {
     color: "#fff",
-    fontSize: 15,
-    fontWeight: "700",
-    letterSpacing: -0.3,
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
   stripLbl: {
-    color: "rgba(255,255,255,0.42)",
+    color: "rgba(255,255,255,0.45)",
     fontSize: 9,
-    fontWeight: "500",
+    fontWeight: "600",
     textAlign: "center",
-    marginTop: 2,
+    letterSpacing: 0.2,
   },
-  stripSep: { width: 1, height: 28, backgroundColor: "rgba(255,255,255,0.1)" },
+  stripSep: { width: 1, height: 30, backgroundColor: "rgba(255,255,255,0.12)" },
 
   card: {
     flexGrow: 1,
-    backgroundColor: T.paper,
-    borderTopLeftRadius: T.radiusXxl,
-    borderTopRightRadius: T.radiusXxl,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: T.border,
-    marginTop: -24,
+    backgroundColor: "#F4F7FB",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
     padding: 20,
-    paddingTop: 24,
-    shadowColor: "#000",
+    paddingTop: 14,
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 6,
   },
 
   sectionHead: {
     flexDirection: "row",
     alignItems: "center",
-    borderLeftWidth: 3,
-    paddingLeft: 10,
-    marginBottom: 16,
-    marginTop: 12,
+    marginBottom: 14,
+    marginTop: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
   },
   sectionIconBg: {
-    width: 26,
-    height: 26,
-    borderRadius: T.radiusSm,
+    width: 28,
+    height: 28,
+    borderRadius: 9,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 8,
+    marginRight: 9,
   },
   sectionHeadTxt: {
     flex: 1,
     fontSize: 14,
     fontWeight: "700",
     color: T.textPrimary,
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
   },
   sectionBadge: {
     backgroundColor: T.primary,
     borderRadius: T.radiusFull,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     marginLeft: 6,
   },
   sectionBadgeTxt: { color: "#fff", fontSize: 10, fontWeight: "700" },
@@ -2353,8 +2337,8 @@ const s = StyleSheet.create({
 const tab = StyleSheet.create({
   bar: {
     flexDirection: "row",
-    backgroundColor: T.muted,
-    borderRadius: T.radiusMd,
+    backgroundColor: "#DDE8F5",
+    borderRadius: 14,
     padding: 4,
     marginBottom: 20,
     gap: 4,
@@ -2365,19 +2349,19 @@ const tab = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingVertical: 9,
-    borderRadius: T.radiusSm,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
   btnActive: {
-    backgroundColor: T.paper,
-    shadowColor: "#000",
-    shadowOpacity: 0.07,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    backgroundColor: T.primary,
+    shadowColor: T.primary,
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
   },
   label: { fontSize: 12, fontWeight: "600", color: T.mutedFg },
-  labelActive: { color: T.primary, fontWeight: "700" },
+  labelActive: { color: "#fff", fontWeight: "700" },
   badge: {
     minWidth: 18,
     height: 18,
@@ -2386,7 +2370,7 @@ const tab = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 5,
   },
-  badgeActive: { backgroundColor: `${T.primary}15` },
+  badgeActive: { backgroundColor: "rgba(255,255,255,0.25)" },
   badgeInactive: { backgroundColor: T.border },
   badgeTxt: { fontSize: 10, fontWeight: "700", color: T.mutedFg },
 });
@@ -2397,26 +2381,21 @@ const kpi = StyleSheet.create({
   outer: { width: "48%" },
   card: {
     backgroundColor: T.paper,
-    borderRadius: T.radiusMd,
-    borderWidth: 1,
-    borderColor: T.border,
-    padding: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    borderRadius: T.radiusLg,
+    padding: 15,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
   },
   topRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 8,
-    marginBottom: 10,
+    gap: 9,
+    marginBottom: 12,
   },
   iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2426,13 +2405,14 @@ const kpi = StyleSheet.create({
     color: T.mutedFg,
     fontWeight: "600",
     lineHeight: 15,
+    marginTop: 2,
   },
   value: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 26,
+    fontWeight: "800",
     color: T.textPrimary,
-    letterSpacing: -0.5,
-    marginBottom: 4,
+    letterSpacing: -0.8,
+    marginBottom: 5,
   },
   subRow: { flexDirection: "row", alignItems: "center" },
   sub: { fontSize: 11, color: T.mutedFg, fontWeight: "500" },
@@ -2443,16 +2423,11 @@ const kpi = StyleSheet.create({
 const tc = StyleSheet.create({
   card: {
     backgroundColor: T.paper,
-    borderRadius: T.radiusMd,
-    borderWidth: 1,
-    borderColor: T.border,
-    padding: 14,
+    borderRadius: T.radiusLg,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
+    padding: 15,
     marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
   },
   liveCard: {
     borderColor: `${T.success}40`,
@@ -2635,16 +2610,11 @@ const am = StyleSheet.create({
 const ac = StyleSheet.create({
   card: {
     backgroundColor: T.paper,
-    borderRadius: T.radiusMd,
-    borderWidth: 1,
-    borderColor: T.border,
-    padding: 14,
+    borderRadius: T.radiusLg,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
+    padding: 15,
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
   },
   headerRow: {
     flexDirection: "row",
@@ -2723,16 +2693,11 @@ const ac = StyleSheet.create({
 const dc = StyleSheet.create({
   card: {
     backgroundColor: T.paper,
-    borderRadius: T.radiusMd,
-    borderWidth: 1,
-    borderColor: T.border,
-    padding: 14,
+    borderRadius: T.radiusLg,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
+    padding: 15,
     marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
   },
   cardDone: {
     borderColor: `${T.success}30`,
