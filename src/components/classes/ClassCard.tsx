@@ -93,9 +93,6 @@ const ClassCard: React.FC<Props> = ({
 
   return (
     <View style={s.card}>
-      {/* Accent bar */}
-      <View style={[s.accentBar, { backgroundColor: statusColor }]} />
-
       <View style={s.inner}>
         {/* ── Top row ─────────────────────────────────────────────────────── */}
         <View style={s.topRow}>
@@ -237,17 +234,12 @@ const ClassCard: React.FC<Props> = ({
           {/* View attendance */}
           <Pressable
             onPress={onViewAttendance}
-            style={({ pressed }) => [s.attendBtn, pressed && { opacity: 0.82 }]}
+            style={({ pressed }) => [s.attendBtn, pressed && { transform: [{ scale: 0.97 }] }]}
           >
-            <LinearGradient
-              colors={[T.primary, `${T.primary}CC`]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={s.attendBtnGrad}
-            >
+            <View style={s.attendBtnInner}>
               <Ionicons name="clipboard-outline" size={14} color="#fff" />
               <Text style={s.attendBtnTxt}>Attendance</Text>
-            </LinearGradient>
+            </View>
           </Pressable>
         </View>
       </View>
@@ -257,31 +249,26 @@ const ClassCard: React.FC<Props> = ({
 
 const s = StyleSheet.create({
   card: {
-    flexDirection: "row",
     backgroundColor: "#fff",
-    borderRadius: 16,
-    marginBottom: 14,
-    shadowColor: "#1A2540",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    borderRadius: 14,
+    marginBottom: 12,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
     overflow: "hidden",
   },
-  accentBar: { width: 4, borderTopLeftRadius: 16, borderBottomLeftRadius: 16 },
-  inner: { flex: 1, padding: 16, paddingLeft: 14 },
+  inner: { padding: 16 },
 
   topRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarTxt: {
     color: "#fff",
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "800",
     letterSpacing: -0.3,
   },
@@ -313,7 +300,7 @@ const s = StyleSheet.create({
     borderRadius: 100,
     borderWidth: 1,
   },
-  chipTxt: { fontSize: 10, fontWeight: "700" },
+  chipTxt: { fontSize: 11, fontWeight: "700" },
 
   progressSection: { marginBottom: 12 },
   progressHeader: {
@@ -327,12 +314,12 @@ const s = StyleSheet.create({
   progressCount: { fontSize: 11, color: "#94A3B8", fontWeight: "500" },
   progressPct: { fontSize: 12, fontWeight: "800" },
   progressTrack: {
-    height: 7,
-    borderRadius: 4,
+    height: 5,
+    borderRadius: 3,
     backgroundColor: "#F1F5F9",
     overflow: "hidden",
   },
-  progressFill: { height: "100%", borderRadius: 4 },
+  progressFill: { height: "100%", borderRadius: 3 },
 
   metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 12 },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 6 },
@@ -346,7 +333,7 @@ const s = StyleSheet.create({
   },
   metaTxt: { fontSize: 11, color: "#475569", fontWeight: "500" },
 
-  footerDivider: { height: 1, backgroundColor: "#F1F5F9", marginBottom: 12 },
+  footerDivider: { height: 1, backgroundColor: "#E2E8F0", marginBottom: 12 },
   footer: {
     flexDirection: "row",
     alignItems: "center",
@@ -374,12 +361,13 @@ const s = StyleSheet.create({
   },
 
   attendBtn: { borderRadius: 10, overflow: "hidden" },
-  attendBtnGrad: {
+  attendBtnInner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 10,
+    backgroundColor: T.primary,
   },
   attendBtnTxt: { fontSize: 12, fontWeight: "700", color: "#fff" },
 });
