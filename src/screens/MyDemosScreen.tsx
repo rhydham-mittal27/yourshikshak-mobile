@@ -126,18 +126,15 @@ const DemoCard = ({
           s.card,
           highlighted && {
             borderColor: meta.color,
-            borderWidth: 2,
+            borderWidth: 1.5,
             shadowColor: meta.color,
-            shadowOpacity: 0.25,
-            shadowRadius: 10,
-            elevation: 6,
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            elevation: 5,
           },
-          pressed && { opacity: 0.88 },
+          pressed && { transform: [{ scale: 0.98 }] },
         ]}
       >
-        {/* left accent bar */}
-        <View style={[s.accentBar, { backgroundColor: meta.color }]} />
-
         <View style={s.cardBody}>
           {/* top row: student + status badge */}
           <View style={s.cardTop}>
@@ -232,7 +229,7 @@ const DemoCard = ({
       {isSubmittable(demo.status) && !submitted && (
         <Pressable
           onPress={() => onSubmit(demo)}
-          style={({ pressed }) => [s.submitBar, pressed && { opacity: 0.82 }]}
+          style={({ pressed }) => [s.submitBar, pressed && { transform: [{ scale: 0.98 }] }]}
         >
           <Ionicons name="clipboard-outline" size={13} color="#fff" />
           <Text style={s.submitBarTxt}>Submit Demo Result</Text>
@@ -1296,27 +1293,11 @@ export default MyDemosScreen;
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F1F5F9" },
+  root: { flex: 1, backgroundColor: "#F4F7FB" },
 
   hero: { paddingHorizontal: 20, paddingBottom: 20, overflow: "hidden" },
-  orbA: {
-    position: "absolute",
-    top: -40,
-    right: -40,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: "#8B5CF628",
-  },
-  orbB: {
-    position: "absolute",
-    bottom: -30,
-    left: -30,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "#2D68C428",
-  },
+  orbA: { position: "absolute", width: 0, height: 0 },
+  orbB: { position: "absolute", width: 0, height: 0 },
 
   topBar: {
     flexDirection: "row",
@@ -1325,15 +1306,17 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
     alignItems: "center",
     justifyContent: "center",
   },
-  heroTitle: { fontSize: 20, fontWeight: "800", color: "#fff" },
-  heroSub: { fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 1 },
+  heroTitle: { fontSize: 22, fontWeight: "800", color: "#fff", letterSpacing: -0.5 },
+  heroSub: { fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 2 },
   countPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -1367,7 +1350,7 @@ const s = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: 12,
     padding: 32,
   },
   loadingTxt: { fontSize: 13, color: T.mutedFg },
@@ -1380,42 +1363,38 @@ const s = StyleSheet.create({
   },
   retryTxt: { color: "#fff", fontWeight: "700", fontSize: 13 },
   emptyIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#8B5CF630",
   },
-  emptyTitle: { fontSize: 16, fontWeight: "800", color: T.textPrimary },
-  emptyTxt: { fontSize: 13, color: T.mutedFg, textAlign: "center" },
+  emptyTitle: { fontSize: 18, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.3 },
+  emptyTxt: { fontSize: 13, color: T.mutedFg, textAlign: "center", lineHeight: 20 },
 
   // card
   card: {
     flexDirection: "row",
     backgroundColor: T.paper,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: T.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
     overflow: "hidden",
   },
-  accentBar: { width: 4, borderTopLeftRadius: 14, borderBottomLeftRadius: 14 },
-  cardBody: { flex: 1, padding: 14, gap: 8 },
+  cardBody: { flex: 1, padding: 16, gap: 8 },
   cardTop: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   studentRow: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
   avatarBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  studentName: { fontSize: 14, fontWeight: "800", color: T.textPrimary },
-  subjectTxt: { fontSize: 11, color: T.mutedFg, marginTop: 1 },
+  studentName: { fontSize: 15, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.2 },
+  subjectTxt: { fontSize: 11, color: T.mutedFg, marginTop: 2 },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -1437,7 +1416,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   metaChipTxt: { fontSize: 10, fontWeight: "700" },
-  locRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  locRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   locTxt: { fontSize: 11, color: T.mutedFg, flex: 1 },
   notesPreview: { fontSize: 11, color: T.mutedFg, fontStyle: "italic" },
 
@@ -1470,10 +1449,10 @@ const dm = StyleSheet.create({
     overflow: "hidden",
   },
   handle: {
-    width: 36,
+    width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: T.border,
+    backgroundColor: "#CBD5E1",
     alignSelf: "center",
     marginTop: 12,
     marginBottom: 0,
@@ -1483,13 +1462,13 @@ const dm = StyleSheet.create({
   headerGrad: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14 },
   headerTop: { flexDirection: "row", alignItems: "center", gap: 10 },
   headerAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerName: { fontSize: 15, fontWeight: "800", color: T.textPrimary },
+  headerName: { fontSize: 16, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.3 },
   headerSubject: { fontSize: 11, color: T.mutedFg },
   leadPill: {
     paddingHorizontal: 6,
@@ -1541,7 +1520,7 @@ const dm = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: "transparent",
   },
-  tabLabel: { fontSize: 10, fontWeight: "600", color: T.mutedFg },
+  tabLabel: { fontSize: 11, fontWeight: "600", color: T.mutedFg },
 
   // tab content
   tabContent: { flex: 1, overflow: "hidden" },
@@ -1564,12 +1543,12 @@ const dm = StyleSheet.create({
     justifyContent: "center",
   },
   rowLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "700",
     color: T.mutedFg,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 1,
+    letterSpacing: 0.4,
+    marginBottom: 2,
   },
   rowValue: { fontSize: 13, fontWeight: "600", color: T.textPrimary },
   mapsBtn: {
@@ -1611,23 +1590,23 @@ const sm = StyleSheet.create({
     overflow: "hidden",
   },
   handle: {
-    width: 36,
+    width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: T.border,
+    backgroundColor: "#CBD5E1",
     alignSelf: "center",
     marginTop: 12,
   },
   header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14 },
   headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   headerIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { fontSize: 15, fontWeight: "800", color: T.textPrimary },
+  headerTitle: { fontSize: 16, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.3 },
   headerSub: { fontSize: 12, color: T.mutedFg, marginTop: 1 },
   xBtn: {
     width: 30,
