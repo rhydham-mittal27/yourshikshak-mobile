@@ -336,7 +336,7 @@ export default function TimetableScreen({ navigation }: Props) {
               <Pressable
                 key={session._id}
                 onPress={() => navigation.navigate("MyClasses", { highlightClassId: String(session.finalClass?._id ?? "") })}
-                style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+                style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}
               >
                 <SessionCard session={session} index={index} onReschedule={() => setRescheduleTarget(session)} />
               </Pressable>
@@ -462,9 +462,6 @@ function SessionCard({ session, index, onReschedule }: {
 
   return (
     <View style={cc.card}>
-      {/* Color accent bar */}
-      <View style={[cc.accent, { backgroundColor: modeColor }]} />
-
       <View style={cc.body}>
         {/* Session chip */}
         <View style={[cc.sessionChip, { backgroundColor: modeColor + "18", borderColor: modeColor + "30" }]}>
@@ -747,12 +744,10 @@ function EmptyState({ isToday }: { isToday: boolean }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
 
-  // Hero gradient wrapper
   hero: {
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     paddingBottom: 4,
-    // Cast shadow so the white content below feels like it's "under" the hero
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
@@ -761,22 +756,20 @@ const s = StyleSheet.create({
     zIndex: 10,
   },
 
-  // Header (sits inside gradient)
   header: {
     flexDirection: "row", alignItems: "center",
     paddingHorizontal: 16, paddingVertical: 12,
-    gap: 0,
   },
   backWrap: { width: 74, alignItems: "flex-start", justifyContent: "center" },
   backBtn: {
-    width: 36, height: 36, borderRadius: 12,
+    width: 38, height: 38, borderRadius: 12,
     backgroundColor: "rgba(255,255,255,0.15)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
     alignItems: "center", justifyContent: "center",
   },
   titleWrap: { flex: 1, alignItems: "center" },
-  title:     { color: "#fff", fontSize: 16, fontWeight: "700", letterSpacing: -0.3 },
-  titleSub:  { color: "rgba(255,255,255,0.65)", fontSize: 11, marginTop: 1 },
+  title:     { color: "#fff", fontSize: 20, fontWeight: "800", letterSpacing: -0.5 },
+  titleSub:  { color: "rgba(255,255,255,0.55)", fontSize: 11, marginTop: 2 },
 
   viewToggle: {
     width: 74, flexDirection: "row",
@@ -787,7 +780,6 @@ const s = StyleSheet.create({
   toggleBtn:    { width: 30, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   toggleActive: { backgroundColor: "#fff" },
 
-  // Month navigator (inside gradient)
   navRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 20, paddingVertical: 8,
@@ -795,12 +787,8 @@ const s = StyleSheet.create({
   navBtn:   { width: 30, height: 30, alignItems: "center", justifyContent: "center" },
   navLabel: { color: "#fff", fontSize: 13, fontWeight: "700" },
 
-  // Calendar card (inside gradient — transparent background)
-  calendarCard: {
-    paddingTop: 8, paddingBottom: 12,
-  },
+  calendarCard: { paddingTop: 8, paddingBottom: 12 },
 
-  // Day bar
   dayBar: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 20, paddingVertical: 14,
@@ -808,7 +796,7 @@ const s = StyleSheet.create({
   dayBarLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
   todayPill:  { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
   todayPillTxt: { color: "#fff", fontSize: 9, fontWeight: "800", letterSpacing: 1 },
-  dayLabel:   { color: C.textPrimary, fontSize: 14, fontWeight: "700" },
+  dayLabel:   { color: C.textPrimary, fontSize: 15, fontWeight: "800", letterSpacing: -0.2 },
   countChip:  {
     backgroundColor: C.accent + "14", borderRadius: 20,
     paddingHorizontal: 10, paddingVertical: 4,
@@ -816,11 +804,10 @@ const s = StyleSheet.create({
   },
   countChipTxt: { color: C.accent, fontSize: 11, fontWeight: "700" },
 
-  // States
   center:     { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
   loadingTxt: { color: C.textMuted, fontSize: 13, marginTop: 4 },
-  errorIcon:  { width: 60, height: 60, borderRadius: 30, backgroundColor: "#FEF2F2", alignItems: "center", justifyContent: "center" },
-  errorTitle: { color: C.textPrimary, fontSize: 15, fontWeight: "700" },
+  errorIcon:  { width: 64, height: 64, borderRadius: 32, backgroundColor: "#FEF2F2", alignItems: "center", justifyContent: "center" },
+  errorTitle: { color: C.textPrimary, fontSize: 16, fontWeight: "800" },
   errorSub:   { color: C.textSecond, fontSize: 13, textAlign: "center", paddingHorizontal: 32 },
   retryBtn:   { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.accent, borderRadius: 20, paddingHorizontal: 20, paddingVertical: 10, marginTop: 4 },
   retryTxt:   { color: "#fff", fontWeight: "700", fontSize: 13 },
@@ -872,48 +859,41 @@ const mg = StyleSheet.create({
 
 const cc = StyleSheet.create({
   card: {
-    flexDirection: "row",
     backgroundColor: C.cardBg,
-    borderRadius: 16,
+    borderRadius: 14,
     marginBottom: 12,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
   },
-  accent: { width: 4 },
-  body:   { flex: 1, padding: 14 },
+  body: { padding: 16 },
 
   sessionChip: {
-    position: "absolute", top: 12, right: 12,
+    position: "absolute", top: 14, right: 14,
     borderRadius: 8, borderWidth: 1,
     paddingHorizontal: 8, paddingVertical: 3,
   },
   sessionChipTxt: { fontSize: 10, fontWeight: "800", letterSpacing: 0.3 },
 
-  topRow:  { flexDirection: "row", alignItems: "flex-start", gap: 8, paddingRight: 48 },
-  subject: { flex: 1, color: C.textPrimary, fontSize: 16, fontWeight: "800", letterSpacing: -0.3, lineHeight: 21 },
+  topRow:  { flexDirection: "row", alignItems: "flex-start", gap: 8, paddingRight: 52 },
+  subject: { flex: 1, color: C.textPrimary, fontSize: 16, fontWeight: "800", letterSpacing: -0.3, lineHeight: 22 },
 
   modeBadge: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 7, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 3, alignSelf: "flex-start" },
   modeDot:   { width: 5, height: 5, borderRadius: 3 },
-  modeTxt:   { fontSize: 9, fontWeight: "800", letterSpacing: 0.7 },
+  modeTxt:   { fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
 
-  timeRow:    { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
-  timeIconWrap: { width: 22, height: 22, borderRadius: 7, alignItems: "center", justifyContent: "center" },
-  timeTxt:    { fontSize: 13, fontWeight: "700" },
-  durationTxt:{ color: C.textMuted, fontSize: 12, marginLeft: 2 },
+  timeRow:     { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
+  timeIconWrap:{ width: 24, height: 24, borderRadius: 7, alignItems: "center", justifyContent: "center" },
+  timeTxt:     { fontSize: 13, fontWeight: "700" },
+  durationTxt: { color: C.textMuted, fontSize: 12, marginLeft: 2 },
 
-  divider: { height: 1, backgroundColor: C.border, marginVertical: 10 },
+  divider: { height: 1, backgroundColor: "#E2E8F0", marginVertical: 12 },
 
-  meta:    { gap: 5 },
+  meta:    { gap: 6 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   metaTxt: { color: C.textSecond, fontSize: 12, flex: 1 },
 
-  footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
+  footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
 
   statusBadge: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4 },
   statusDot:   { width: 5, height: 5, borderRadius: 3 },
@@ -922,7 +902,7 @@ const cc = StyleSheet.create({
   rescheduleBtn: {
     flexDirection: "row", alignItems: "center", gap: 5,
     borderRadius: 8, borderWidth: 1,
-    paddingHorizontal: 10, paddingVertical: 5,
+    paddingHorizontal: 10, paddingVertical: 6,
     backgroundColor: "#F8FAFC",
   },
   rescheduleTxt: { fontSize: 11, fontWeight: "700" },
@@ -938,13 +918,13 @@ const rm = StyleSheet.create({
     shadowOpacity: 0.08, shadowRadius: 20, elevation: 16,
   },
   handle: {
-    width: 36, height: 4, borderRadius: 2,
-    backgroundColor: C.border,
-    alignSelf: "center", marginBottom: 18,
+    width: 40, height: 4, borderRadius: 2,
+    backgroundColor: "#CBD5E1",
+    alignSelf: "center", marginBottom: 20,
   },
   header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20 },
-  iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  title: { color: C.textPrimary, fontSize: 15, fontWeight: "700" },
+  iconWrap: { width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  title: { color: C.textPrimary, fontSize: 16, fontWeight: "800", letterSpacing: -0.3 },
   sub:   { color: C.textSecond, fontSize: 12, marginTop: 2 },
   closeBtn: {
     width: 32, height: 32, borderRadius: 16,
@@ -1037,12 +1017,13 @@ const cal = StyleSheet.create({
 });
 
 const es = StyleSheet.create({
-  wrap:       { alignItems: "center", paddingTop: 56, gap: 12 },
+  wrap:       { alignItems: "center", paddingTop: 64, paddingHorizontal: 32, gap: 12 },
   iconCircle: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: T.primary + "0F",
-    alignItems: "center", justifyContent: "center", marginBottom: 4,
+    width: 88, height: 88, borderRadius: 44,
+    backgroundColor: T.primary + "10",
+    borderWidth: 1.5, borderColor: T.primary + "20",
+    alignItems: "center", justifyContent: "center", marginBottom: 8,
   },
-  title: { color: C.textPrimary, fontSize: 16, fontWeight: "700" },
-  sub:   { color: C.textSecond, fontSize: 13, textAlign: "center", paddingHorizontal: 40, lineHeight: 20 },
+  title: { color: C.textPrimary, fontSize: 18, fontWeight: "800", letterSpacing: -0.3 },
+  sub:   { color: C.textSecond, fontSize: 13, textAlign: "center", lineHeight: 21, maxWidth: 240 },
 });
