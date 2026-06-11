@@ -7,6 +7,7 @@ import {
   StatusBar,
   Pressable,
   Animated,
+  Easing,
   Image,
   RefreshControl,
   Linking,
@@ -110,7 +111,7 @@ const MiniStat = ({
   label: string;
   value: string | number;
 }) => (
-  <View style={[ms.card, { borderTopColor: color }]}>
+  <View style={ms.card}>
     <View style={[ms.iconBox, { backgroundColor: `${color}12` }]}>
       <Ionicons name={icon} size={16} color={color} />
     </View>
@@ -146,7 +147,6 @@ const IRow = ({
         pressed && { backgroundColor: `${accent}06` },
       ]}
     >
-      <View style={[ir.accentBar, { backgroundColor: accent }]} />
       <View style={[ir.iconBox, { backgroundColor: `${accent}12` }]}>
         <Ionicons name={icon} size={14} color={accent} />
       </View>
@@ -202,7 +202,7 @@ const DocCard = ({ doc, onView }: { doc: any; onView: (url: string, label: strin
   const meta = DOC_META[doc.documentType] ?? DOC_META.OTHER;
   const verified = !!doc.verifiedAt;
   return (
-    <View style={[dc.card, { borderLeftColor: meta.color, borderLeftWidth: 3, backgroundColor: meta.color + "08" }]}>
+    <View style={[dc.card, { borderColor: meta.color + "30", backgroundColor: meta.color + "06" }]}>
       <LinearGradient
         colors={meta.grad}
         start={{ x: 0, y: 0 }}
@@ -313,6 +313,28 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [vSubmitting, setVSubmitting] = useState(false);
   const [vError, setVError] = useState<string | null>(null);
   const [vSuccess, setVSuccess] = useState(false);
+
+  // Mount animation
+  const mountAnim = useRef(new Animated.Value(0)).current;
+  const tabAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(mountAnim, {
+      toValue: 1,
+      duration: 400,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const switchTab = (next: Tab) => {
+    if (next === tab) return;
+    Animated.sequence([
+      Animated.timing(tabAnim, { toValue: 0, duration: 100, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(tabAnim, { toValue: 1, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+    setTab(next);
+  };
 
   const load = useCallback(async () => {
     setError(null);
@@ -594,6 +616,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
         }
       >
         {/* ══ COMPACT HERO ═══════════════════════════════════════════════════ */}
+        <Animated.View style={{ opacity: mountAnim, transform: [{ translateY: mountAnim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }] }}>
         <LinearGradient
           colors={[T.darkBg, T.darkBgMid, "#162032"]}
           start={{ x: 0, y: 0 }}
@@ -633,7 +656,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
               disabled={uploading}
             >
               {loading ? (
-                <Sk w={68} h={68} r={34} />
+                <Sk w={80} h={80} r={40} />
               ) : profilePhoto && !photoError ? (
                 <Image
                   source={{ uri: profilePhoto }}
@@ -789,6 +812,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           </View>
         </LinearGradient>
+        </Animated.View>
 
         {/* ══ WHITE CARD ═════════════════════════════════════════════════════ */}
         <View style={s.card}>
@@ -816,7 +840,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Pressable
                 key={key}
                 style={[tb.tab, tab === key && tb.tabActive]}
-                onPress={() => setTab(key)}
+                onPress={() => switchTab(key)}
               >
                 <Ionicons
                   name={icon}
@@ -830,6 +854,8 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
             ))}
           </View>
 
+          {/* ══ TAB CONTENT ════════════════════════════════════════════════ */}
+          <Animated.View style={{ opacity: tabAnim }}>
           {/* ══ TAB: OVERVIEW ════════════════════════════════════════════════ */}
           {tab === "overview" && (
             <View>
@@ -1316,6 +1342,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
               )}
             </View>
           )}
+          </Animated.View>
         </View>
       </ScrollView>
 
@@ -2013,31 +2040,9 @@ const s = StyleSheet.create({
     paddingBottom: 50,
     overflow: "hidden",
   },
-  orbA: {
-    position: "absolute",
-    top: -80,
-    right: -80,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: "#7C3AED0D",
-  },
-  orbB: {
-    position: "absolute",
-    bottom: -60,
-    left: -60,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: "#2D68C40D",
-  },
-  orbC: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: 0,
-    height: 0,
-  },
+  orbA: { position: "absolute", width: 0, height: 0 },
+  orbB: { position: "absolute", width: 0, height: 0 },
+  orbC: { position: "absolute", width: 0, height: 0 },
 
   topBar: {
     flexDirection: "row",
@@ -2072,16 +2077,16 @@ const s = StyleSheet.create({
   },
   avatarWrap: { position: "relative" },
   avatar: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     borderWidth: 2.5,
     borderColor: "rgba(255,255,255,0.25)",
   },
   avatarFallback: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2.5,
@@ -2104,7 +2109,7 @@ const s = StyleSheet.create({
   uploadingOverlay: {
     position: "absolute",
     inset: 0,
-    borderRadius: 34,
+    borderRadius: 40,
     backgroundColor: "rgba(0,0,0,0.5)",
     alignItems: "center",
     justifyContent: "center",
@@ -2123,9 +2128,9 @@ const s = StyleSheet.create({
   identityInfo: { flex: 1 },
   heroName: {
     color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: -0.3,
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
     marginBottom: 2,
   },
   heroRole: { color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 6 },
@@ -2195,14 +2200,12 @@ const s = StyleSheet.create({
 
   // bio
   bioBox: {
-    backgroundColor: T.muted,
+    backgroundColor: `${T.primary}06`,
     borderRadius: T.radiusMd,
     padding: 12,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: T.border,
-    borderLeftWidth: 3,
-    borderLeftColor: T.primary,
+    borderColor: `${T.primary}20`,
   },
   bioTxt: {
     fontSize: 12,
@@ -2250,7 +2253,6 @@ const s = StyleSheet.create({
     padding: 12,
     borderWidth: 1,
     borderColor: T.border,
-    borderLeftWidth: 3,
   },
   addrTag: {
     fontSize: 9,
@@ -2369,11 +2371,10 @@ const sh = StyleSheet.create({
     marginRight: 8,
   },
   title: {
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: 13,
+    fontWeight: "700",
     color: T.textPrimary,
     letterSpacing: 0.1,
-    textTransform: "uppercase",
     flex: 1,
   },
   badge: {
@@ -2421,15 +2422,16 @@ const ms = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     borderRadius: T.radiusMd,
-    borderTopWidth: 3,
+    borderWidth: 1,
+    borderColor: T.border,
     padding: 10,
     alignItems: "center",
     gap: 4,
     shadowColor: "#1A2540",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   iconBox: {
     width: 30,
@@ -2473,12 +2475,6 @@ const ir = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 11,
     backgroundColor: T.paper,
-  },
-  accentBar: {
-    width: 3,
-    height: 28,
-    borderRadius: 2,
-    marginRight: -4,
   },
   border: { borderBottomWidth: 1, borderBottomColor: T.border },
   iconBox: {
