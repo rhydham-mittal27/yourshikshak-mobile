@@ -280,19 +280,18 @@ export default function MyClassesScreen({ navigation, route }: Props) {
         {/* ── White card body ──────────────────────────────────────────────── */}
         <View style={s.card}>
           {/* Status filter tabs */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={s.tabsScroll}
-            contentContainerStyle={s.tabsContent}
-          >
+          <View style={s.tabsContainer}>
             {STATUSES.map((st) => {
               const isActive = statusFilter === st;
               return (
                 <Pressable
                   key={st}
                   onPress={() => setStatusFilter(st)}
-                  style={[s.tab, isActive && s.tabActive]}
+                  style={({ pressed }) => [
+                    s.tab,
+                    isActive && s.tabActive,
+                    pressed && !isActive && { opacity: 0.7 },
+                  ]}
                 >
                   <Text style={[s.tabTxt, isActive && s.tabTxtActive]}>
                     {STATUS_LABEL[st]}
@@ -300,7 +299,7 @@ export default function MyClassesScreen({ navigation, route }: Props) {
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </View>
 
           {/* Section header */}
           <View style={s.sectionHead}>
@@ -406,53 +405,37 @@ export default function MyClassesScreen({ navigation, route }: Props) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F1F5F9" },
+  root: { flex: 1, backgroundColor: "#F4F7FB" },
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1 },
 
-  header: { paddingHorizontal: 22, paddingBottom: 32, overflow: "hidden" },
-  orbA: {
-    position: "absolute",
-    top: -70,
-    right: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: `${T.secondary}18`,
-  },
-  orbB: {
-    position: "absolute",
-    bottom: -40,
-    left: -40,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: `${T.primary}14`,
-  },
+  header: { paddingHorizontal: 22, paddingBottom: 44, overflow: "hidden" },
+  orbA: { position: "absolute", width: 0, height: 0 },
+  orbB: { position: "absolute", width: 0, height: 0 },
 
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    marginBottom: 22,
+    marginBottom: 24,
   },
   backCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: "rgba(255,255,255,0.1)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: "rgba(255,255,255,0.18)",
     alignItems: "center",
     justifyContent: "center",
   },
   headerTitle: {
     color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: -0.3,
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
-  headerSub: { color: "rgba(255,255,255,0.45)", fontSize: 11, marginTop: 1 },
+  headerSub: { color: "rgba(255,255,255,0.55)", fontSize: 11, marginTop: 2 },
 
   livePill: {
     flexDirection: "row",
@@ -466,72 +449,76 @@ const s = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.15)",
   },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: T.success },
-  liveTxt: { color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "700" },
+  liveTxt: { color: "rgba(255,255,255,0.9)", fontSize: 11, fontWeight: "700" },
 
   stripRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderRadius: T.radiusMd,
-    paddingVertical: 10,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 14,
+    paddingVertical: 13,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
   stripItem: { flex: 1, alignItems: "center" },
   stripVal: {
     color: "#fff",
-    fontSize: 15,
-    fontWeight: "700",
-    letterSpacing: -0.3,
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
   stripLbl: {
-    color: "rgba(255,255,255,0.42)",
+    color: "rgba(255,255,255,0.45)",
     fontSize: 9,
-    fontWeight: "500",
+    fontWeight: "600",
     textAlign: "center",
-    marginTop: 2,
+    marginTop: 3,
+    letterSpacing: 0.2,
   },
-  stripSep: { width: 1, height: 28, backgroundColor: "rgba(255,255,255,0.1)" },
+  stripSep: { width: 1, height: 30, backgroundColor: "rgba(255,255,255,0.12)" },
 
   card: {
     flexGrow: 1,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#F4F7FB",
     borderTopLeftRadius: T.radiusXxl,
     borderTopRightRadius: T.radiusXxl,
-    marginTop: -24,
+    marginTop: -28,
     padding: 20,
-    paddingTop: 22,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 4,
+    paddingTop: 24,
   },
 
-  tabsScroll: { marginBottom: 20, marginHorizontal: -4, flexGrow: 0 },
-  tabsContent: { gap: 8, paddingHorizontal: 4, alignItems: "flex-start" },
+  tabsContainer: {
+    flexDirection: "row",
+    backgroundColor: "#DDE8F5",
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 20,
+    gap: 4,
+  },
   tab: {
-    paddingHorizontal: 18,
+    flex: 1,
     paddingVertical: 9,
-    borderRadius: T.radiusFull,
-    backgroundColor: "#F1F5F9",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderRadius: 11,
+    alignItems: "center",
   },
   tabActive: {
     backgroundColor: T.primary,
-    borderColor: T.primary,
     shadowColor: T.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 4,
   },
-  tabTxt: { fontSize: 12, fontWeight: "600", color: "#64748B" },
+  tabTxt: { fontSize: 12, fontWeight: "600", color: T.mutedFg },
   tabTxtActive: { color: "#fff", fontWeight: "700" },
 
   sectionHead: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
     gap: 8,
   },
   sectionIconBg: {
@@ -557,7 +544,7 @@ const s = StyleSheet.create({
   },
   sectionBadgeTxt: { color: "#fff", fontSize: 11, fontWeight: "700" },
 
-  center: { alignItems: "center", paddingVertical: 40, gap: 10 },
+  center: { alignItems: "center", paddingVertical: 48, gap: 10 },
   centerTxt: { fontSize: 14, color: T.textSecondary, fontWeight: "600" },
   retryBtn: {
     backgroundColor: T.primary,
@@ -572,25 +559,33 @@ const s = StyleSheet.create({
 const es = StyleSheet.create({
   wrap: {
     alignItems: "center",
-    paddingVertical: 48,
-    paddingHorizontal: 28,
+    paddingVertical: 56,
+    paddingHorizontal: 32,
     gap: 12,
   },
   iconRing: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: `${T.primary}12`,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: `${T.primary}10`,
+    borderWidth: 1.5,
+    borderColor: `${T.primary}20`,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "800",
     color: T.textPrimary,
     textAlign: "center",
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
-  sub: { fontSize: 13, color: T.mutedFg, textAlign: "center", lineHeight: 20 },
+  sub: {
+    fontSize: 13,
+    color: T.mutedFg,
+    textAlign: "center",
+    lineHeight: 21,
+    maxWidth: 240,
+  },
 });
