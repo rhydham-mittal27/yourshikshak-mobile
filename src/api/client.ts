@@ -282,6 +282,7 @@ export interface AnnouncementsResponse {
     limit: number;
     pages: number;
   };
+  myInterestCount?: number;
 }
 
 export const getTutorAnnouncements = async (

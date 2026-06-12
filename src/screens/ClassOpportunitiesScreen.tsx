@@ -17,9 +17,7 @@ import {
   getTutorAnnouncements,
   expressInterest,
   LeadAnnouncement,
-  AUTH_STORAGE_KEY,
 } from "../api/client";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { T } from "../constants/colors";
 import OpportunityCard from "../components/opportunities/OpportunityCard";
 import OpportunityEmptyState from "../components/opportunities/OpportunityEmptyState";
@@ -85,17 +83,9 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [interestedIds, setInterestedIds] = useState<Set<string>>(new Set());
+  const [myInterestCount, setMyInterestCount] = useState(0);
   const [expressingId, setExpressingId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
   const fetchingRef = useRef(false);
-
-  // Load current user ID once on mount
-  useEffect(() => {
-    AsyncStorage.getItem(AUTH_STORAGE_KEY).then((raw) => {
-      const uid = raw ? JSON.parse(raw)?.user?.id : null;
-      setUserId(uid);
-    }).catch(() => {});
-  }, []);
 
   const loadPage = useCallback(async (pageNum = 1, append = false) => {
     if (fetchingRef.current) return;
@@ -108,25 +98,8 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
       setItems((prev) => (append ? [...prev, ...valid] : valid));
       setTotal(res.pagination.total);
       setPage(pageNum);
-
-      // Seed interestedIds from API — persist across reloads
-      const raw = await AsyncStorage.getItem(AUTH_STORAGE_KEY).catch(() => null);
-      const uid: string | null = raw ? JSON.parse(raw)?.user?.id : null;
-      if (uid) {
-        const alreadyInterested = new Set<string>(
-          valid
-            .filter((a) =>
-              (a.interestedTutors ?? []).some(
-                (t) => String(t.tutor) === uid,
-              ),
-            )
-            .map((a) => a._id),
-        );
-        setInterestedIds((prev) =>
-          append
-            ? new Set([...prev, ...alreadyInterested])
-            : alreadyInterested,
-        );
+      if (!append && res.myInterestCount !== undefined) {
+        setMyInterestCount(res.myInterestCount);
       }
     } catch {}
     setLoading(false);
@@ -150,6 +123,7 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
     try {
       await expressInterest(id);
       setInterestedIds((prev) => new Set(prev).add(id));
+      setMyInterestCount((prev) => prev + 1);
       setItems((prev) =>
         prev.map((a) =>
           a._id === id ? { ...a, interestCount: a.interestCount + 1 } : a,
@@ -159,8 +133,8 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
     setExpressingId(null);
   };
 
-  const interested = items.filter((i) => interestedIds.has(i._id)).length;
-  const available = total - interested;
+  const interested = myInterestCount;
+  const available = total;
 
   return (
     <View style={s.root}>
