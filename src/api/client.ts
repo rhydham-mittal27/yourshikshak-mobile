@@ -106,12 +106,12 @@ export interface Option {
 }
 
 /**
- * GET /api/options/:type
- * Returns dropdown options for a given type (CITY, AREA_*, EXTRACURRICULAR_ACTIVITY)
+ * GET /api/options/:type?parent=<id>
+ * Returns dropdown options for a given type (CITY, BOARD, GRADE, SUBJECT, etc.)
+ * Pass parentId to get child options in the hierarchy (e.g. grades for a board).
  */
-export const getOptions = async (type: string): Promise<{ data: Option[] }> => {
-  return apiClient.get(`/options/${type}`) as Promise<{ data: Option[] }>;
-};
+export const getOptions = (type: string, parentId?: string): Promise<{ data: Option[] }> =>
+  apiClient.get(`/options/${type}${parentId ? `?parent=${parentId}` : ''}`) as Promise<{ data: Option[] }>;
 
 // ─── Subjects (curriculum tree) ───────────────────────────────────────────────
 
@@ -146,6 +146,7 @@ export interface LoginResponse {
       name: string;
       email: string;
       role: string;
+      userType?: 'PARENT' | 'STUDENT';
       phone?: string;
       city?: string;
       isActive: boolean;
@@ -174,6 +175,7 @@ export interface ParentRegistrationPayload {
   email: string;
   password: string;
   phone: string;
+  userType?: 'PARENT' | 'STUDENT';
   city?: string;
   primaryStudentName?: string;
   primaryStudentGrade?: string;
@@ -190,6 +192,7 @@ export interface ParentRegistrationResponse {
       email: string;
       phone: string;
       role: string;
+      userType?: 'PARENT' | 'STUDENT';
     };
     parent: {
       id: string;
@@ -892,5 +895,127 @@ export const deleteAccount = (): Promise<void> =>
 
 export const restoreAccount = (email: string, password: string): Promise<any> =>
   apiClient.post('/auth/restore-account', { email, password }) as any;
+
+// ─── Parent Dashboard ─────────────────────────────────────────────────────────
+
+export interface ParentActiveClass {
+  _id: string;
+  studentName: string;
+  subject: string;
+  grade?: string;
+  board?: string;
+  mode: string;
+  status: string;
+  schedule?: { daysOfWeek?: string[]; timeSlot?: string };
+  tutor?: { _id: string; name: string; email?: string; phone?: string; rating?: number; photoUrl?: string };
+  attendanceThisMonth?: number;
+  totalSessionsThisMonth?: number;
+  attendancePercentage?: number;
+  completedSessions?: number;
+  classesPerMonth?: number;
+  nextSessionDate?: string;
+  nextSessionTime?: string;
+}
+
+export interface ParentLatestTest {
+  _id: string;
+  subject: string;
+  score: number;
+  totalMarks: number;
+  date: string;
+}
+
+export interface ParentActivity {
+  _id: string;
+  type: 'ATTENDANCE' | 'TEST' | 'MESSAGE' | 'RESCHEDULE' | 'GENERAL';
+  title: string;
+  description: string;
+  createdAt: string;
+}
+
+export interface ParentTutorRequest {
+  _id: string;
+  stage: 'REQUEST_RECEIVED' | 'LEAD_CREATED' | 'TEACHER_ASSIGNED_FOR_DEMO' | 'DEMO_SCHEDULED' | 'AWAITING_APPROVAL';
+  subject?: string;
+  grade?: string;
+  createdAt: string;
+}
+
+export interface ParentDashboardData {
+  hasActiveClass: boolean;
+  parentName: string;
+  activeClass?: ParentActiveClass;
+  upcomingSessions?: Array<{
+    _id: string;
+    sessionDate: string;
+    timeSlot: string;
+    sessionNumber: number;
+    status: string;
+  }>;
+  latestTest?: ParentLatestTest;
+  recentActivity?: ParentActivity[];
+  pendingRequest?: ParentTutorRequest;
+}
+
+export const getParentDashboard = (): Promise<{ data: ParentDashboardData }> =>
+  apiClient.get('/v1/parents/dashboard') as any;
+
+export const submitTutorRequest = (payload: {
+  subject: string;
+  grade: string;
+  board?: string;
+  mode?: string;
+  city?: string;
+  notes?: string;
+}): Promise<{ data: ParentTutorRequest }> =>
+  apiClient.post('/v1/parents/tutor-request', payload) as any;
+
+export const raiseParentConcern = (payload: {
+  finalClassId: string;
+  message: string;
+}): Promise<any> =>
+  apiClient.post('/v1/parents/concern', payload) as any;
+
+// ─── Teacher Requests ─────────────────────────────────────────────────────────
+
+/** Alias so new code can reference OptionItem — same shape as Option */
+export type OptionItem = Option;
+
+export interface TeacherRequestPayload {
+  studentName: string;
+  submitterType?: 'PARENT' | 'STUDENT';
+  board: string;          // Option _id
+  grade: string;          // Option _id
+  subjects: string[];     // Option _id[]
+  mode: 'ONLINE' | 'OFFLINE' | 'HYBRID';
+  preferredDays?: string[];
+  preferredTimeSlot?: string;
+  address?: string;
+  city?: string;
+  budgetRange?: string;
+  notes?: string;
+}
+
+export interface TeacherRequestResult {
+  _id: string;
+  requestId: string;
+  studentName: string;
+  board: OptionItem;
+  grade: OptionItem;
+  subjects: OptionItem[];
+  mode: string;
+  status: 'NEW' | 'CONTACTED' | 'DEMO_SCHEDULED' | 'DEMO_COMPLETED' | 'CONVERTED' | 'CLOSED';
+  createdAt: string;
+}
+
+/** POST /api/v1/teacher-requests */
+export const submitTeacherRequest = (
+  payload: TeacherRequestPayload,
+): Promise<{ data: TeacherRequestResult }> =>
+  apiClient.post('/v1/teacher-requests', payload) as any;
+
+/** GET /api/v1/teacher-requests/my */
+export const getMyTeacherRequests = (): Promise<{ data: TeacherRequestResult[] }> =>
+  apiClient.get('/v1/teacher-requests/my') as any;
 
 export default apiClient;

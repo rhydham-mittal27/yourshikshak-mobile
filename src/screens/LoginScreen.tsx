@@ -171,7 +171,7 @@ const SectionHead = ({
 // ─── Role segmented control (matches GenderPicker pattern) ───────────────────
 
 const ROLES: { value: Role; label: string; icon: any }[] = [
-  { value: "PARENT", label: "Parent", icon: "people-outline" },
+  { value: "PARENT", label: "Parent / Student", icon: "people-outline" },
   { value: "TUTOR", label: "Tutor", icon: "school-outline" },
 ];
 
@@ -301,12 +301,12 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
       if (user.role === "TUTOR") {
         navigation.reset({
           index: 0,
-          routes: [
-            {
-              name: "TutorDashboard",
-              params: { userId: user.id, name: user.name, role: user.role },
-            },
-          ],
+          routes: [{ name: "TutorDashboard", params: { userId: user.id, name: user.name, role: user.role } }],
+        });
+      } else if (user.role === "PARENT") {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "ParentDashboard", params: { userId: user.id, name: user.name, role: user.role } }],
         });
       } else {
         navigation.reset({ index: 0, routes: [{ name: "Intro" }] });
@@ -336,6 +336,8 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
       setRestoreModal(false);
       if (user.role === "TUTOR") {
         navigation.reset({ index: 0, routes: [{ name: "TutorDashboard", params: { userId: user.id, name: user.name, role: user.role } }] });
+      } else if (user.role === "PARENT") {
+        navigation.reset({ index: 0, routes: [{ name: "ParentDashboard", params: { userId: user.id, name: user.name, role: user.role } }] });
       } else {
         navigation.reset({ index: 0, routes: [{ name: "Intro" }] });
       }
@@ -507,7 +509,7 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text style={s.signinTxt}>Don't have an account? </Text>
               <Pressable hitSlop={8} onPress={goRegister}>
                 <Text style={s.signinLink}>
-                  {role === "PARENT" ? "Register as Parent" : "Join as Tutor"}
+                  {role === "PARENT" ? "Register as Parent / Student" : "Join as Tutor"}
                 </Text>
               </Pressable>
             </View>

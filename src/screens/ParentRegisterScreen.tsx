@@ -27,7 +27,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { registerParent, setAuthToken } from "../api/client";
+import { registerParent, setAuthToken, AUTH_STORAGE_KEY } from "../api/client";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useModal } from "../context/ModalContext";
 import { T } from "../constants/colors";
 
@@ -238,7 +239,7 @@ const ChipRow = ({
 
 // ─── Success view ─────────────────────────────────────────────────────────────
 
-const SuccessView = ({ onBack }: { onBack: () => void }) => {
+const SuccessView = ({ onBack, userType }: { onBack: () => void; userType: "PARENT" | "STUDENT" }) => {
   const scale = useRef(new Animated.Value(0.7)).current;
   const op = useRef(new Animated.Value(0)).current;
 
@@ -267,8 +268,9 @@ const SuccessView = ({ onBack }: { onBack: () => void }) => {
         </LinearGradient>
         <Text style={sv.title}>Account Created! 🎉</Text>
         <Text style={sv.body}>
-          Welcome! Your parent account is ready.{"\n\n"}
-          You can now sign in and browse verified tutors for your child.
+          {userType === "PARENT"
+            ? "Welcome! Your parent account is ready.\n\nYou can now sign in and browse verified tutors for your child."
+            : "Welcome! Your student account is ready.\n\nYou can now sign in and browse verified tutors for yourself."}
         </Text>
         <View style={sv.featureRow}>
           {["Verified Tutor", "Free Demo", "Instant Login"].map((f) => (
@@ -312,6 +314,7 @@ const ParentRegisterScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { showError } = useModal();
 
+  const [userType, setUserType] = useState<"PARENT" | "STUDENT">("PARENT");
   const [parentName, setParentName] = useState("");
   const [parentEmail, setParentEmail] = useState("");
   const [parentPhone, setParentPhone] = useState("");
@@ -375,11 +378,19 @@ const ParentRegisterScreen: React.FC<Props> = ({ navigation }) => {
         email: parentEmail.trim(),
         password,
         phone: parentPhone.trim(),
+        userType,
         city: city || undefined,
         notes: notes.trim() || undefined,
       });
-      if (res.data?.accessToken) {
+      if (res.data?.accessToken && res.data?.user) {
         setAuthToken(res.data.accessToken);
+        await AsyncStorage.setItem(
+          AUTH_STORAGE_KEY,
+          JSON.stringify({
+            accessToken: res.data.accessToken,
+            user: { ...res.data.user, userType },
+          }),
+        );
       }
       setSucceeded(true);
     } catch (err: any) {
@@ -445,13 +456,14 @@ const ParentRegisterScreen: React.FC<Props> = ({ navigation }) => {
             {/* Hero text */}
             <View style={s.heroTextBlock}>
               <View style={s.heroBadge}>
-                <Ionicons name="people" size={13} color="#fff" />
-                <Text style={s.heroBadgeTxt}>For Parents</Text>
+                <Ionicons name={userType === "PARENT" ? "people" : "person"} size={13} color="#fff" />
+                <Text style={s.heroBadgeTxt}>{userType === "PARENT" ? "For Parents" : "For Students"}</Text>
               </View>
               <Text style={s.heroTitle}>{"Find the Perfect\nTutor Today"}</Text>
               <Text style={s.heroSub}>
-                Tell us about your child and we'll match you with a verified
-                expert within 24 hours.
+                {userType === "PARENT"
+                  ? "Tell us about your child and we'll match you with a verified expert within 24 hours."
+                  : "Tell us about yourself and we'll match you with a verified expert within 24 hours."}
               </Text>
             </View>
 
@@ -483,19 +495,54 @@ const ParentRegisterScreen: React.FC<Props> = ({ navigation }) => {
             ]}
           >
             {succeeded ? (
-              <SuccessView onBack={() => navigation.navigate("Intro")} />
+              <SuccessView onBack={() => navigation.navigate("Intro")} userType={userType} />
             ) : (
               <>
-                {/* ── Parent details ── */}
+                {/* ── Role selector ── */}
+                <View style={rc.row}>
+                  <Pressable
+                    style={[rc.card, userType === "PARENT" && { borderColor: C.tealDark, backgroundColor: `${C.tealDark}08` }]}
+                    onPress={() => setUserType("PARENT")}
+                  >
+                    <View style={[rc.iconWrap, { backgroundColor: userType === "PARENT" ? `${C.tealDark}18` : T.muted }]}>
+                      <Ionicons name="people-outline" size={20} color={userType === "PARENT" ? C.tealDark : T.mutedFg} />
+                    </View>
+                    <Text style={[rc.title, { color: userType === "PARENT" ? C.tealDark : T.textPrimary }]}>Parent</Text>
+                    <Text style={rc.desc}>Registering for my child</Text>
+                    {userType === "PARENT" && (
+                      <View style={[rc.check, { backgroundColor: C.tealDark }]}>
+                        <Ionicons name="checkmark" size={10} color="#fff" />
+                      </View>
+                    )}
+                  </Pressable>
+
+                  <Pressable
+                    style={[rc.card, userType === "STUDENT" && { borderColor: C.indigo, backgroundColor: `${C.indigo}08` }]}
+                    onPress={() => setUserType("STUDENT")}
+                  >
+                    <View style={[rc.iconWrap, { backgroundColor: userType === "STUDENT" ? `${C.indigo}18` : T.muted }]}>
+                      <Ionicons name="person-outline" size={20} color={userType === "STUDENT" ? C.indigo : T.mutedFg} />
+                    </View>
+                    <Text style={[rc.title, { color: userType === "STUDENT" ? C.indigo : T.textPrimary }]}>Student</Text>
+                    <Text style={rc.desc}>Registering for myself</Text>
+                    {userType === "STUDENT" && (
+                      <View style={[rc.check, { backgroundColor: C.indigo }]}>
+                        <Ionicons name="checkmark" size={10} color="#fff" />
+                      </View>
+                    )}
+                  </Pressable>
+                </View>
+
+                {/* ── Account details ── */}
                 <SectionBadge
                   icon="person"
-                  label="Parent Details"
+                  label={userType === "PARENT" ? "Parent Details" : "Your Details"}
                   color={T.primary}
                   gradColors={[T.primaryDark, T.primary]}
                 />
 
                 <Field
-                  label="Parent / Guardian Name"
+                  label={userType === "PARENT" ? "Parent / Guardian Name" : "Your Full Name"}
                   value={parentName}
                   onChange={(v) => {
                     setParentName(v);
@@ -887,6 +934,16 @@ const ch = StyleSheet.create({
   },
   chipTxt: { color: T.textSecondary, fontSize: 12, fontWeight: "600" },
   chipTxtActive: { color: "#fff", fontSize: 12, fontWeight: "700" },
+});
+
+// ─── Role card styles ─────────────────────────────────────────────────────────
+const rc = StyleSheet.create({
+  row:     { flexDirection: "row", gap: 10, marginBottom: 18 },
+  card:    { flex: 1, backgroundColor: T.paper, borderRadius: 16, borderWidth: 1.5, borderColor: T.border, padding: 14, alignItems: "center", gap: 6, position: "relative", overflow: "hidden" } as any,
+  iconWrap:{ width: 46, height: 46, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  title:   { fontSize: 13, fontWeight: "700", textAlign: "center" },
+  desc:    { fontSize: 11, color: T.textSecondary, textAlign: "center", lineHeight: 15 },
+  check:   { position: "absolute", top: 8, right: 8, width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" } as any,
 });
 
 // ─── Success view styles ──────────────────────────────────────────────────────

@@ -21,11 +21,18 @@ import MyClassesScreen from "../screens/MyClassesScreen";
 import TimetableScreen from "../screens/TimetableScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import PaymentsScreen from "../screens/PaymentsScreen";
+import ParentDashboardScreen from "../screens/ParentDashboardScreen";
+import RequestTutorScreen from "../screens/RequestTutorScreen";
+import RequestConfirmationScreen from "../screens/RequestConfirmationScreen";
 import { ModalProvider } from "../context/ModalContext";
 import AppSplashScreen from "../components/AppSplashScreen";
 import { setAuthToken, AUTH_STORAGE_KEY, expressInterest, getPendingCycleStarts, PendingCycleClass } from "../api/client";
 import { registerForPushNotifications } from "../services/pushNotifications";
 import CycleStartModal from "../components/classes/CycleStartModal";
+import ClassDetailsScreen from "../screens/ClassDetailsScreen";
+import RescheduleClassScreen from "../screens/RescheduleClassScreen";
+import PauseClassScreen from "../screens/PauseClassScreen";
+import ClassCalendarScreen from "../screens/ClassCalendarScreen";
 
 export type RootStackParamList = {
   Intro: undefined;
@@ -34,6 +41,13 @@ export type RootStackParamList = {
   Login: { email?: string; teacherId?: string } | undefined;
   RegisterSuccess: { teacherId: string; email: string };
   TutorDashboard: { userId: string; name: string; role: string };
+  ParentDashboard: { userId: string; name: string; role: string };
+  RequestTutor: { fromDashboard?: boolean } | undefined;
+  RequestConfirmation: { requestId: string; subject: string; grade: string };
+  ClassDetails: { classId: string };
+  RescheduleClass: { classId: string; subject?: string };
+  PauseClass: { classId: string; subject?: string };
+  ClassCalendar: { classId?: string };
   TutorProfile: undefined;
   Notifications: undefined;
   ClassOpportunities: undefined;
@@ -77,6 +91,11 @@ const AppNavigator = () => {
               .then((res) => { if (res.data?.length) setPendingCycles(res.data); })
               .catch(() => {});
             return;
+          } else if (user.role === "PARENT") {
+            setSavedParams({ userId: user.id, name: user.name, role: user.role });
+            setInitialRoute("ParentDashboard");
+            registerForPushNotifications().catch(() => {});
+            return;
           }
         }
       } catch (_) {}
@@ -116,6 +135,11 @@ const AppNavigator = () => {
         if (data?.type === "VERIFICATION") {
           navRef.current?.navigate("TutorProfile");
         }
+
+        if (data?.type === "LEAD_UPDATE") {
+          // Refresh the parent dashboard so the stepper shows the new stage
+          navRef.current?.navigate("ParentDashboard", savedParams ?? {});
+        }
       },
     );
     return () => sub.remove();
@@ -154,6 +178,11 @@ const AppNavigator = () => {
             component={TutorDashboardScreen}
             initialParams={savedParams ?? undefined}
           />
+          <Stack.Screen
+            name="ParentDashboard"
+            component={ParentDashboardScreen}
+            initialParams={savedParams ?? undefined}
+          />
           <Stack.Screen name="TutorProfile" component={TutorProfileScreen} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
           <Stack.Screen
@@ -166,6 +195,12 @@ const AppNavigator = () => {
           <Stack.Screen name="Timetable" component={TimetableScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Payments" component={PaymentsScreen} />
+          <Stack.Screen name="RequestTutor" component={RequestTutorScreen} />
+          <Stack.Screen name="RequestConfirmation" component={RequestConfirmationScreen} />
+          <Stack.Screen name="ClassDetails" component={ClassDetailsScreen} />
+          <Stack.Screen name="RescheduleClass" component={RescheduleClassScreen} />
+          <Stack.Screen name="PauseClass" component={PauseClassScreen} />
+          <Stack.Screen name="ClassCalendar" component={ClassCalendarScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </ModalProvider>
