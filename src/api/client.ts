@@ -392,6 +392,14 @@ export interface TutorProfile {
 export const getTutorProfile = async (): Promise<{ data: TutorProfile }> =>
   apiClient.get("/tutors/my-profile") as Promise<{ data: TutorProfile }>;
 
+export const updateTutorAvailabilitySettings = async (
+  tutorId: string,
+  availability: { daysAvailable: string[]; timeSlots: string[] },
+): Promise<any> =>
+  apiClient.patch(`/tutors/${tutorId}/settings`, {
+    availabilityPreferences: availability,
+  });
+
 export const uploadTutorDocument = async (
   tutorId: string,
   documentType: string,
