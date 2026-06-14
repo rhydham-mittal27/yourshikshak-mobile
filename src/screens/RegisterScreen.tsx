@@ -34,6 +34,8 @@ import {
   loginUser,
   setAuthToken,
   AUTH_STORAGE_KEY,
+  getTutorProfile,
+  updateTutorAvailabilitySettings,
   Option,
   sendRegistrationOtp,
   verifyRegistrationOtp,
@@ -74,6 +76,8 @@ interface FormData {
   bio: string;
   languagesKnown: string[];
   skills: string[];
+  daysAvailable: string[];
+  timeSlots: string[];
 }
 
 const INIT: FormData = {
@@ -96,13 +100,28 @@ const INIT: FormData = {
   bio: "",
   languagesKnown: [],
   skills: [],
+  daysAvailable: [],
+  timeSlots: [],
 };
 
 const STEPS = [
   { id: 0, label: "Personal", icon: "person-circle-outline" as const },
   { id: 1, label: "Education", icon: "school-outline" as const },
   { id: 2, label: "Location", icon: "location-outline" as const },
-  { id: 3, label: "Security", icon: "shield-checkmark-outline" as const },
+  { id: 3, label: "Availability", icon: "calendar-outline" as const },
+  { id: 4, label: "Security", icon: "shield-checkmark-outline" as const },
+];
+
+const DAY_OPTS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const TIME_SLOT_OPTS = [
+  "6:00 AM - 8:00 AM",
+  "8:00 AM - 10:00 AM",
+  "10:00 AM - 12:00 PM",
+  "12:00 PM - 2:00 PM",
+  "2:00 PM - 4:00 PM",
+  "4:00 PM - 6:00 PM",
+  "6:00 PM - 8:00 PM",
+  "8:00 PM - 10:00 PM",
 ];
 
 const EXP_OPTS: Exp[] = [
@@ -657,7 +676,9 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       | "extracurricularActivities"
       | "preferredAreas"
       | "languagesKnown"
-      | "skills",
+      | "skills"
+      | "daysAvailable"
+      | "timeSlots",
     v: string,
   ) => {
     setForm((p) => {
@@ -736,7 +757,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       )
         e.preferredAreas = "Select at least one preferred area";
     }
-    if (step === 3) {
+    if (step === 4) {
       if (form.password.length < 6) e.password = "Minimum 6 characters";
       if (form.password !== form.confirmPassword)
         e.confirmPassword = "Passwords do not match";
@@ -768,6 +789,23 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         JSON.stringify({ token, user: loginRes.data.user }),
       );
       setAuthToken(token);
+
+      // Save availability preferences if tutor selected any
+      if (form.daysAvailable.length > 0 || form.timeSlots.length > 0) {
+        try {
+          const profileRes = await getTutorProfile();
+          const tutorId = (profileRes?.data as any)?._id || (profileRes?.data as any)?.id;
+          if (tutorId) {
+            await updateTutorAvailabilitySettings(tutorId, {
+              daysAvailable: form.daysAvailable,
+              timeSlots: form.timeSlots,
+            });
+          }
+        } catch {
+          // Non-blocking — availability can be set later from profile
+        }
+      }
+
       navigation.reset({ index: 0, routes: [{ name: "TutorDashboard" }] });
     } catch (err: any) {
       showError(
@@ -1183,8 +1221,30 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
               </>
             )}
 
-            {/* ── Step 3: Security ── */}
+            {/* ── Step 3: Availability ── */}
             {step === 3 && (
+              <>
+                <SectionHead icon="calendar-outline" title="Availability" />
+                <Text style={s.availHint}>
+                  Help students find you at the right time. Select the days and time slots you're generally available to teach.
+                </Text>
+                <ChipSelect
+                  label="Available Days"
+                  options={DAY_OPTS}
+                  selected={form.daysAvailable}
+                  onToggle={(v) => toggle("daysAvailable", v)}
+                />
+                <ChipSelect
+                  label="Preferred Time Slots"
+                  options={TIME_SLOT_OPTS}
+                  selected={form.timeSlots}
+                  onToggle={(v) => toggle("timeSlots", v)}
+                />
+              </>
+            )}
+
+            {/* ── Step 4: Security ── */}
+            {step === 4 && (
               <>
                 <View style={s.secCard}>
                   <LinearGradient
@@ -1690,6 +1750,12 @@ const s = StyleSheet.create({
     paddingLeft: 10,
     marginBottom: 18,
     marginTop: 4,
+  },
+  availHint: {
+    fontSize: 13,
+    color: T.textSecondary,
+    marginBottom: 16,
+    lineHeight: 19,
   },
   sectionIconBg: {
     width: 28,
