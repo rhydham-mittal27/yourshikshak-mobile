@@ -262,6 +262,7 @@ export interface LeadAnnouncement {
   postedAt: string;
   isActive: boolean;
   interestCount: number;
+  matchPercentage?: number;
   interestedTutors?: Array<{ tutor: string; [key: string]: any }>;
   classLead: {
     _id: string;

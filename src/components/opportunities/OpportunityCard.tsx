@@ -40,21 +40,32 @@ const OpportunityCard: React.FC<Props> = ({
         ? "#7C3AED"
         : T.secondary;
 
+  const pct = item.matchPercentage ?? 0;
+  const matchColor = pct === 100 ? "#16A34A" : pct >= 75 ? T.primary : pct >= 50 ? "#D97706" : T.mutedFg;
+  const matchLabel = pct === 100 ? "⭐ Perfect Match" : `${pct}% match`;
+
   return (
-    <View style={s.card}>
+    <View style={[s.card, pct === 100 && s.perfectCard]}>
       {/* Header row */}
       <View style={s.headerRow}>
-        <View
-          style={[
-            s.modePill,
-            {
-              backgroundColor: `${modeColor}15`,
-              borderColor: `${modeColor}30`,
-            },
-          ]}
-        >
-          <Ionicons name={modeIcon} size={11} color={modeColor} />
-          <Text style={[s.modeTxt, { color: modeColor }]}>{lead.mode}</Text>
+        <View style={s.headerLeft}>
+          <View
+            style={[
+              s.modePill,
+              {
+                backgroundColor: `${modeColor}15`,
+                borderColor: `${modeColor}30`,
+              },
+            ]}
+          >
+            <Ionicons name={modeIcon} size={11} color={modeColor} />
+            <Text style={[s.modeTxt, { color: modeColor }]}>{lead.mode}</Text>
+          </View>
+          {pct > 0 && (
+            <View style={[s.matchPill, { backgroundColor: `${matchColor}15`, borderColor: `${matchColor}30` }]}>
+              <Text style={[s.matchTxt, { color: matchColor }]}>{matchLabel}</Text>
+            </View>
+          )}
         </View>
         <Text style={s.timeAgo}>{timeAgo(item.postedAt)}</Text>
       </View>
@@ -146,12 +157,33 @@ const s = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
   },
+  perfectCard: {
+    borderColor: "#16A34A",
+    borderWidth: 1.5,
+  },
   headerRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     marginBottom: 10,
+    gap: 8,
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+    flex: 1,
+  },
+  matchPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: T.radiusFull,
+    borderWidth: 1,
+  },
+  matchTxt: { fontSize: 10, fontWeight: "700" },
   modePill: {
     flexDirection: "row",
     alignItems: "center",
