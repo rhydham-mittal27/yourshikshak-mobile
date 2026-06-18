@@ -51,11 +51,12 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
   }, []);
 
   const videoId = videoUrl ? extractYouTubeId(videoUrl) : null;
+  // Use m.youtube.com watch page — bypasses embed restrictions (error 153)
   const embedUri = videoId
-    ? `https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1`
+    ? `https://m.youtube.com/watch?v=${videoId}`
     : null;
 
-  const VIDEO_H = Math.round(SCREEN_W * 9 / 16);
+  const VIDEO_H = Math.round(SCREEN_W * 9 / 16) + 60; // extra room for YouTube mobile UI
 
   return (
     <View style={[s.root, { paddingTop: Math.max(insets.top, 16) }]}>
@@ -88,9 +89,11 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
                   source={{ uri: embedUri }}
                   style={{ flex: 1, backgroundColor: "#000" }}
                   allowsFullscreenVideo
+                  allowsInlineMediaPlayback
                   mediaPlaybackRequiresUserAction={false}
                   javaScriptEnabled
                   originWhitelist={["*"]}
+                  userAgent="Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
                 />
               </View>
             )}
