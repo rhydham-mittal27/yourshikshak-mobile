@@ -14,6 +14,7 @@ import {
   Modal,
   ActivityIndicator,
   Dimensions,
+  Share,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { LinearGradient } from "expo-linear-gradient";
@@ -582,6 +583,17 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
     .map((s: any) => (typeof s === "string" ? s : (s?.label ?? s?.name ?? "")))
     .filter(Boolean);
 
+  // Shares the public tutor profile link — same /ourtutor/:teacherId page the
+  // frontend "Share Profile" button links to.
+  const shareProfile = async () => {
+    const teacherId = tutor?.teacherId;
+    if (!teacherId) return;
+    const url = `https://app.yourshikshak.in/ourtutor/${teacherId}`;
+    try {
+      await Share.share({ message: url, url, title: "Tutor Profile" });
+    } catch {}
+  };
+
   const modeColor: Record<string, string> = {
     ONLINE: T.primary,
     OFFLINE: T.secondary,
@@ -640,14 +652,24 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Ionicons name="chevron-back" size={20} color="#fff" />
             </Pressable>
             <Text style={s.topTitle}>My Profile</Text>
-            <Pressable
-              onPress={() => navigation.navigate("EditProfile")}
-              style={s.editBtn}
-              hitSlop={8}
-            >
-              <Ionicons name="pencil-outline" size={14} color="#fff" />
-              <Text style={s.editBtnTxt}>Edit</Text>
-            </Pressable>
+            <View style={s.topActions}>
+              <Pressable
+                onPress={shareProfile}
+                style={s.shareBtn}
+                hitSlop={8}
+                disabled={loading || !tutor?.teacherId}
+              >
+                <Ionicons name="share-social-outline" size={16} color="#fff" />
+              </Pressable>
+              <Pressable
+                onPress={() => navigation.navigate("EditProfile")}
+                style={s.editBtn}
+                hitSlop={8}
+              >
+                <Ionicons name="pencil-outline" size={14} color="#fff" />
+                <Text style={s.editBtnTxt}>Edit</Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* horizontal identity row */}
@@ -865,6 +887,13 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
           {/* ══ TAB: OVERVIEW ════════════════════════════════════════════════ */}
           {tab === "overview" && (
             <View>
+              {/* bio at the top */}
+              {!loading && tutor?.bio && (
+                <View style={s.bioBox}>
+                  <Text style={s.bioTxt} numberOfLines={4}>"{tutor.bio}"</Text>
+                </View>
+              )}
+
               {/* mini stats row */}
               <SH icon="bar-chart-outline" title="Performance" />
               {loading ? (
@@ -950,13 +979,6 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                     accent={T.mutedFg}
                     last
                   />
-                </View>
-              )}
-
-              {/* bio if available */}
-              {!loading && tutor?.bio && (
-                <View style={s.bioBox}>
-                  <Text style={s.bioTxt} numberOfLines={4}>"{tutor.bio}"</Text>
                 </View>
               )}
             </View>
@@ -2073,6 +2095,12 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.15)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
   },
   editBtnTxt: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  topActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+  shareBtn: {
+    width: 32, height: 32, borderRadius: 8,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.15)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
+  },
 
   // horizontal identity row
   identityRow: {
