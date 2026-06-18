@@ -558,18 +558,40 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
 
   const isVerified = data?.verificationStatus === "VERIFIED";
 
-  // Resolve a subject to its full "Board · Class · Subject" path
-  const subjectFullLabel = (sub: Option): string => {
-    const gradeId = typeof sub.parent === "object" ? (sub.parent as any)?._id : sub.parent;
-    const grade = grades.find((g) => g._id === gradeId);
-    const boardId = grade
-      ? typeof grade.parent === "object"
-        ? (grade.parent as any)?._id
-        : grade.parent
-      : undefined;
-    const board = boardId ? boards.find((b) => b._id === boardId) : undefined;
-    return [board?.label, grade?.label, sub.label].filter(Boolean).join(" · ");
-  };
+  const parentId = (o?: Option): string | undefined =>
+    o ? (typeof o.parent === "object" ? (o.parent as any)?._id : o.parent) : undefined;
+
+  // Group the selected subjects into a Board → Class → Subjects tree
+  const subjectTree = (() => {
+    const boardMap = new Map<
+      string,
+      { board: Option; grades: Map<string, { grade: Option; subs: Option[] }> }
+    >();
+    selectedSubjects.forEach((id) => {
+      const sub = subjectOpts.find((s) => s._id === id);
+      if (!sub) return;
+      const grade = grades.find((g) => g._id === parentId(sub));
+      const board = grade ? boards.find((b) => b._id === parentId(grade)) : undefined;
+      const bKey = board?._id ?? "_";
+      const gKey = grade?._id ?? "_";
+      if (!boardMap.has(bKey))
+        boardMap.set(bKey, {
+          board: board ?? ({ _id: bKey, label: "Other" } as Option),
+          grades: new Map(),
+        });
+      const bEntry = boardMap.get(bKey)!;
+      if (!bEntry.grades.has(gKey))
+        bEntry.grades.set(gKey, {
+          grade: grade ?? ({ _id: gKey, label: "—" } as Option),
+          subs: [],
+        });
+      bEntry.grades.get(gKey)!.subs.push(sub);
+    });
+    return Array.from(boardMap.values()).map((b) => ({
+      board: b.board,
+      grades: Array.from(b.grades.values()),
+    }));
+  })();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -817,16 +839,28 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
               )}
             </Pressable>
             {selectedSubjects.length > 0 && (
-              <View style={styles.pillRow}>
-                {selectedSubjects.map((id) => {
-                  const sub = subjectOpts.find((s) => s._id === id);
-                  return sub ? (
-                    <View key={id}
-                      style={[styles.pill, { backgroundColor: `${T.primary}15`, borderColor: `${T.primary}30` }]}>
-                      <Text style={[styles.pillTxt, { color: T.primary }]}>{subjectFullLabel(sub)}</Text>
+              <View style={styles.subjTree}>
+                {subjectTree.map(({ board, grades: gs }) => (
+                  <View key={board._id} style={styles.subjBoard}>
+                    <View style={styles.subjBoardHead}>
+                      <Ionicons name="school-outline" size={13} color={T.primary} />
+                      <Text style={styles.subjBoardTxt}>{board.label}</Text>
                     </View>
-                  ) : null;
-                })}
+                    {gs.map(({ grade, subs }) => (
+                      <View key={grade._id} style={styles.subjGrade}>
+                        <Text style={styles.subjGradeTxt}>{grade.label}</Text>
+                        <View style={styles.subjChips}>
+                          {subs.map((sub) => (
+                            <View key={sub._id}
+                              style={[styles.pill, { backgroundColor: `${T.primary}15`, borderColor: `${T.primary}30` }]}>
+                              <Text style={[styles.pillTxt, { color: T.primary }]}>{sub.label}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ))}
               </View>
             )}
           </View>
@@ -1185,6 +1219,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   subjectCountTxt: { fontSize: 11, color: "#fff", fontWeight: "700" },
+
+  // ── Selected subjects tree (Board → Class → Subjects) ──────────────────────
+  subjTree: { marginTop: 10, gap: 10 },
+  subjBoard: {
+    borderWidth: 1,
+    borderColor: "#e6e8ec",
+    borderRadius: 12,
+    backgroundColor: "#fbfbfc",
+    padding: 12,
+    gap: 10,
+  },
+  subjBoardHead: { flexDirection: "row", alignItems: "center", gap: 6 },
+  subjBoardTxt: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: T.textPrimary,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+  },
+  subjGrade: {
+    borderLeftWidth: 2,
+    borderLeftColor: `${T.primary}30`,
+    paddingLeft: 10,
+    gap: 6,
+  },
+  subjGradeTxt: { fontSize: 12, fontWeight: "700", color: "#5b616e" },
+  subjChips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
 
   // ── LabeledField ──────────────────────────────────────────────────────────
   labeledBox: {
