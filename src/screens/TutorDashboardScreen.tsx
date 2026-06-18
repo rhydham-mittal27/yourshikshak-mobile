@@ -510,8 +510,8 @@ const CarouselBanner: React.FC = () => {
     (async () => {
       try {
         const res = await apiClient.get("/v1/banners/active");
-        const data: BannerItem[] = res.data?.data ?? [];
-        if (data.length > 0) setBanners(data);
+        const data: BannerItem[] = (res as any)?.data ?? res ?? [];
+        if (Array.isArray(data) && data.length > 0) setBanners(data);
       } catch {
         // silently skip — no banners shown
       }
