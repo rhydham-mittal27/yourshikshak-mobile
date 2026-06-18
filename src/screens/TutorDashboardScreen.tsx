@@ -60,6 +60,7 @@ import {
   TutorDemo,
   markWhatsappCommunityJoined,
 } from "../api/client";
+import apiClient from "../api/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useModal } from "../context/ModalContext";
 import { T } from "../constants/colors";
@@ -493,63 +494,50 @@ const emp = StyleSheet.create({
 const BANNER_W = SCREEN_W - 40;
 const BANNER_H = 110;
 
-const BANNERS = [
-  {
-    id: "1",
-    title: "Get More Students",
-    sub: "Express interest in new class leads daily",
-    gradient: ["#1E40AF", "#3B82F6"] as [string, string],
-    icon: "school-outline" as const,
-    accent: "#93C5FD",
-  },
-  {
-    id: "2",
-    title: "Complete Your Profile",
-    sub: "100% profile gets 3× more leads matched",
-    gradient: ["#065F46", "#10B981"] as [string, string],
-    icon: "person-circle-outline" as const,
-    accent: "#6EE7B7",
-  },
-  {
-    id: "3",
-    title: "Demo Classes = Conversions",
-    sub: "Tutors who give demos close 80% of leads",
-    gradient: ["#7C3AED", "#A78BFA"] as [string, string],
-    icon: "videocam-outline" as const,
-    accent: "#DDD6FE",
-  },
-  {
-    id: "4",
-    title: "Earn More This Month",
-    sub: "Top tutors earn ₹40,000+ per month",
-    gradient: ["#92400E", "#F59E0B"] as [string, string],
-    icon: "cash-outline" as const,
-    accent: "#FDE68A",
-  },
-];
+interface BannerItem {
+  _id: string;
+  imageUrl: string;
+  uploaderName: string;
+}
 
 const CarouselBanner: React.FC = () => {
+  const [banners, setBanners] = useState<BannerItem[]>([]);
   const [active, setActive] = useState(0);
   const flatRef = useRef<FlatList>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiClient.get("/v1/banners/active");
+        const data: BannerItem[] = res.data?.data ?? [];
+        if (data.length > 0) setBanners(data);
+      } catch {
+        // silently skip — no banners shown
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (banners.length < 2) return;
     timerRef.current = setInterval(() => {
       setActive((prev) => {
-        const next = (prev + 1) % BANNERS.length;
+        const next = (prev + 1) % banners.length;
         flatRef.current?.scrollToIndex({ index: next, animated: true });
         return next;
       });
     }, 3500);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
+  }, [banners]);
+
+  if (banners.length === 0) return null;
 
   return (
     <View style={cb.wrapper}>
       <FlatList
         ref={flatRef}
-        data={BANNERS}
-        keyExtractor={(b) => b.id}
+        data={banners}
+        keyExtractor={(b) => b._id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -560,32 +548,22 @@ const CarouselBanner: React.FC = () => {
           setActive(idx);
         }}
         renderItem={({ item }) => (
-          <LinearGradient
-            colors={item.gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={cb.slide}
-          >
-            <View style={cb.slideInner}>
-              <View style={cb.iconWrap}>
-                <Ionicons name={item.icon} size={28} color={item.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={cb.title}>{item.title}</Text>
-                <Text style={cb.sub}>{item.sub}</Text>
-              </View>
+          <View style={cb.slide}>
+            <Image source={{ uri: item.imageUrl }} style={cb.slideImage} resizeMode="cover" />
+            <View style={cb.uploaderBadge}>
+              <Text style={cb.uploaderText}>{item.uploaderName}</Text>
             </View>
-            <View style={cb.decorCircle1} />
-            <View style={cb.decorCircle2} />
-          </LinearGradient>
+          </View>
         )}
         contentContainerStyle={{ gap: 10 }}
       />
-      <View style={cb.dots}>
-        {BANNERS.map((_, i) => (
-          <View key={i} style={[cb.dot, i === active && cb.dotActive]} />
-        ))}
-      </View>
+      {banners.length > 1 && (
+        <View style={cb.dots}>
+          {banners.map((_, i) => (
+            <View key={i} style={[cb.dot, i === active && cb.dotActive]} />
+          ))}
+        </View>
+      )}
     </View>
   );
 };
@@ -596,29 +574,19 @@ const cb = StyleSheet.create({
     width: BANNER_W,
     height: BANNER_H,
     borderRadius: 14,
-    padding: 16,
     overflow: "hidden",
-    justifyContent: "center",
   },
-  slideInner: { flexDirection: "row", alignItems: "center", gap: 12, zIndex: 2 },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
+  slideImage: { width: BANNER_W, height: BANNER_H },
+  uploaderBadge: {
+    position: "absolute",
+    bottom: 8,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  title: { color: "#fff", fontSize: 14, fontWeight: "800", letterSpacing: -0.2, marginBottom: 4 },
-  sub: { color: "rgba(255,255,255,0.78)", fontSize: 11, lineHeight: 15, fontWeight: "500" },
-  decorCircle1: {
-    position: "absolute", width: 100, height: 100, borderRadius: 50,
-    backgroundColor: "rgba(255,255,255,0.07)", top: -30, right: -20,
-  },
-  decorCircle2: {
-    position: "absolute", width: 70, height: 70, borderRadius: 35,
-    backgroundColor: "rgba(255,255,255,0.06)", bottom: -20, right: 50,
-  },
+  uploaderText: { color: "#fff", fontSize: 10, fontWeight: "600" },
   dots: { flexDirection: "row", justifyContent: "center", gap: 4, marginTop: 8 },
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: "#CBD5E1" },
   dotActive: { width: 14, backgroundColor: T.primary },
