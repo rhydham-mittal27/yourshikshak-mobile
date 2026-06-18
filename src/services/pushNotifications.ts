@@ -4,8 +4,6 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { registerPushToken } from "../api/client";
 
-const isExpoGo = Constants.appOwnership === "expo";
-
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -17,7 +15,7 @@ Notifications.setNotificationHandler({
 export const registerForPushNotifications = async (): Promise<
   string | null
 > => {
-  if (isExpoGo || !Device.isDevice) return null;
+  if (!Device.isDevice) return null; // simulators/emulators can't receive push
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
@@ -55,8 +53,13 @@ export const registerForPushNotifications = async (): Promise<
     ]);
   }
 
-  const tokenData = await Notifications.getDevicePushTokenAsync();
-  const token = tokenData.data as string;
+  const projectId =
+    Constants.expoConfig?.extra?.eas?.projectId ??
+    Constants.easConfig?.projectId;
+  const tokenData = await Notifications.getExpoPushTokenAsync(
+    projectId ? { projectId } : undefined,
+  );
+  const token = tokenData.data;
 
   try {
     await registerPushToken(token);

@@ -1,9 +1,11 @@
 import axios from "axios";
+import { installMockAdapter } from "./dummy";
 
 // Switch between real API and dummy data by changing BASE_URL:
 //   "static"                        → dummy data (no network calls)
 //   "https://api.yourshikshak.in/api" → live backend
-const BASE_URL = "https://api.yourshikshak.in/api";
+// const BASE_URL: string = "http://192.168.1.5:5000/api";
+const BASE_URL: string = "https://api.yourshikshak.in/api";
 
 export const IS_STATIC = BASE_URL === "static";
 
@@ -15,6 +17,9 @@ const apiClient = axios.create({
     Accept: "application/json",
   },
 });
+
+// Install mock adapter in static mode (must run before other interceptors)
+if (IS_STATIC) installMockAdapter(apiClient);
 
 // Request interceptor — attach auth token if available
 apiClient.interceptors.request.use(

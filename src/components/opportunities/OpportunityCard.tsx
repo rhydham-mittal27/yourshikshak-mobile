@@ -102,10 +102,26 @@ const OpportunityCard: React.FC<Props> = ({
         {lead.paymentAmount ? (
           <View style={[s.detailChip, { backgroundColor: `${T.success}10` }]}>
             <Ionicons name="cash-outline" size={11} color={T.success} />
-            <Text
-              style={[s.detailTxt, { color: T.success, fontWeight: "700" }]}
-            >
+            <Text style={[s.detailTxt, { color: T.success, fontWeight: "700" }]}>
               {fmtRupee(lead.paymentAmount)}/mo
+            </Text>
+          </View>
+        ) : null}
+        {lead.timing ? (
+          <View style={s.detailChip}>
+            <Ionicons name="alarm-outline" size={11} color={T.mutedFg} />
+            <Text style={s.detailTxt}>{lead.timing}</Text>
+          </View>
+        ) : null}
+        {lead.preferredTutorGender && lead.preferredTutorGender !== "ANY" ? (
+          <View style={s.detailChip}>
+            <Ionicons name="person-outline" size={11} color={T.mutedFg} />
+            <Text style={s.detailTxt}>
+              {lead.preferredTutorGender === "MALE"
+                ? "Male tutor"
+                : lead.preferredTutorGender === "FEMALE"
+                  ? "Female tutor"
+                  : lead.preferredTutorGender}
             </Text>
           </View>
         ) : null}
