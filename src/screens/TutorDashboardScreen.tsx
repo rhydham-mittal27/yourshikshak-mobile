@@ -510,10 +510,13 @@ const CarouselBanner: React.FC = () => {
     (async () => {
       try {
         const res = await apiClient.get("/v1/banners/active");
-        const data: BannerItem[] = (res as any)?.data ?? res ?? [];
-        if (Array.isArray(data) && data.length > 0) setBanners(data);
-      } catch {
-        // silently skip — no banners shown
+        console.log("[Banner] raw res:", JSON.stringify(res));
+        const body = res as any;
+        const data: BannerItem[] = Array.isArray(body) ? body : (body?.data ?? []);
+        console.log("[Banner] parsed data:", JSON.stringify(data));
+        if (data.length > 0) setBanners(data);
+      } catch (err) {
+        console.log("[Banner] fetch error:", JSON.stringify(err));
       }
     })();
   }, []);
@@ -549,7 +552,12 @@ const CarouselBanner: React.FC = () => {
         }}
         renderItem={({ item }) => (
           <View style={cb.slide}>
-            <Image source={{ uri: item.imageUrl }} style={cb.slideImage} resizeMode="cover" />
+            <Image
+              source={{ uri: item.imageUrl }}
+              style={cb.slideImage}
+              resizeMode="cover"
+              onError={(e) => console.log("[Banner] image error:", item.imageUrl, e.nativeEvent.error)}
+            />
             <View style={cb.uploaderBadge}>
               <Text style={cb.uploaderText}>{item.uploaderName}</Text>
             </View>
