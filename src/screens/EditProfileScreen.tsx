@@ -558,6 +558,19 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
 
   const isVerified = data?.verificationStatus === "VERIFIED";
 
+  // Resolve a subject to its full "Board · Class · Subject" path
+  const subjectFullLabel = (sub: Option): string => {
+    const gradeId = typeof sub.parent === "object" ? (sub.parent as any)?._id : sub.parent;
+    const grade = grades.find((g) => g._id === gradeId);
+    const boardId = grade
+      ? typeof grade.parent === "object"
+        ? (grade.parent as any)?._id
+        : grade.parent
+      : undefined;
+    const board = boardId ? boards.find((b) => b._id === boardId) : undefined;
+    return [board?.label, grade?.label, sub.label].filter(Boolean).join(" · ");
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -808,11 +821,10 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
                 {selectedSubjects.map((id) => {
                   const sub = subjectOpts.find((s) => s._id === id);
                   return sub ? (
-                    <Pressable key={id} onPress={() => toggleSubject(id)}
+                    <View key={id}
                       style={[styles.pill, { backgroundColor: `${T.primary}15`, borderColor: `${T.primary}30` }]}>
-                      <Text style={[styles.pillTxt, { color: T.primary }]}>{sub.label}</Text>
-                      <Ionicons name="close" size={10} color={T.primary} style={{ marginLeft: 3 }} />
-                    </Pressable>
+                      <Text style={[styles.pillTxt, { color: T.primary }]}>{subjectFullLabel(sub)}</Text>
+                    </View>
                   ) : null;
                 })}
               </View>
