@@ -75,6 +75,21 @@ export default function SettingsScreen({ navigation }: Props) {
           chevron: true,
           onPress: () => navigation.navigate("EditProfile"),
         },
+      ],
+    },
+    {
+      title: "Support",
+      rows: [
+        {
+          id: "faq",
+          icon: "help-circle-outline",
+          iconColor: T.primary,
+          iconBg: T.primary + "15",
+          label: "Help & FAQ",
+          subtitle: "Answers to common questions",
+          chevron: true,
+          onPress: () => navigation.navigate("FAQ"),
+        },
         {
           id: "delete-account",
           icon: "trash-outline",
