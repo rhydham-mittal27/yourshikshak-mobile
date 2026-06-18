@@ -288,6 +288,7 @@ const RequestTutorScreen = () => {
   // ── Submitter identity (read from stored auth) ──────────────────────────
   const [userType,      setUserType]      = useState<"PARENT" | "STUDENT">("PARENT");
   const [lockedName,    setLockedName]    = useState<string | null>(null);
+  const [profileCity,   setProfileCity]   = useState<string | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem(AUTH_STORAGE_KEY).then((raw) => {
@@ -299,6 +300,7 @@ const RequestTutorScreen = () => {
           setLockedName(user.name ?? "");
           setStudentName(user.name ?? "");
         }
+        if (user?.city) setProfileCity(user.city);
       } catch (_) {}
     });
   }, []);

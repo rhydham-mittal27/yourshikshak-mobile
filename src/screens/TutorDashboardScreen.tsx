@@ -15,6 +15,7 @@ import {
   View,
   Text,
   ScrollView,
+  FlatList,
   StyleSheet,
   StatusBar,
   Pressable,
@@ -282,8 +283,13 @@ const AnnouncementCard = ({
         ? "#7C3AED"
         : T.secondary;
 
+  const pct = item.matchPercentage ?? 0;
+  const matchColor =
+    pct === 100 ? "#16A34A" : pct >= 75 ? T.primary : pct >= 50 ? "#D97706" : T.mutedFg;
+  const matchLabel = pct === 100 ? "⭐ Perfect Match" : `${pct}% match`;
+
   return (
-    <View style={ac.card}>
+    <View style={[ac.card, pct === 100 && { borderColor: "#16A34A", borderWidth: 1.5 }]}>
       {/* Header row */}
       <View style={ac.headerRow}>
         <View
@@ -298,7 +304,14 @@ const AnnouncementCard = ({
           <Ionicons name={modeIcon} size={11} color={modeColor} />
           <Text style={[ac.modeTxt, { color: modeColor }]}>{lead.mode}</Text>
         </View>
-        <Text style={ac.timeAgo}>{timeAgo(item.postedAt)}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {pct > 0 && (
+            <View style={[ac.matchPill, { backgroundColor: `${matchColor}15`, borderColor: `${matchColor}30` }]}>
+              <Text style={[ac.matchTxt, { color: matchColor }]}>{matchLabel}</Text>
+            </View>
+          )}
+          <Text style={ac.timeAgo}>{timeAgo(item.postedAt)}</Text>
+        </View>
       </View>
 
       {/* Subject + grade */}
@@ -332,6 +345,20 @@ const AnnouncementCard = ({
           <View style={ac.detailChip}>
             <Ionicons name="cash-outline" size={11} color={T.mutedFg} />
             <Text style={ac.detailTxt}>{fmtRupee(lead.paymentAmount)}/mo</Text>
+          </View>
+        ) : null}
+        {lead.timing ? (
+          <View style={ac.detailChip}>
+            <Ionicons name="alarm-outline" size={11} color={T.mutedFg} />
+            <Text style={ac.detailTxt}>{lead.timing}</Text>
+          </View>
+        ) : null}
+        {lead.preferredTutorGender && lead.preferredTutorGender !== "ANY" ? (
+          <View style={ac.detailChip}>
+            <Ionicons name="person-outline" size={11} color={T.mutedFg} />
+            <Text style={ac.detailTxt}>
+              {lead.preferredTutorGender === "MALE" ? "Male tutor" : lead.preferredTutorGender === "FEMALE" ? "Female tutor" : lead.preferredTutorGender}
+            </Text>
           </View>
         ) : null}
       </View>
@@ -460,6 +487,141 @@ const emp = StyleSheet.create({
     letterSpacing: -0.3,
   },
   sub: { fontSize: 13, color: T.mutedFg, textAlign: "center", lineHeight: 20 },
+});
+
+// ─── Carousel Banner ──────────────────────────────────────────────────────────
+const BANNER_W = SCREEN_W - 40;
+const BANNER_H = 110;
+
+const BANNERS = [
+  {
+    id: "1",
+    title: "Get More Students",
+    sub: "Express interest in new class leads daily",
+    gradient: ["#1E40AF", "#3B82F6"] as [string, string],
+    icon: "school-outline" as const,
+    accent: "#93C5FD",
+  },
+  {
+    id: "2",
+    title: "Complete Your Profile",
+    sub: "100% profile gets 3× more leads matched",
+    gradient: ["#065F46", "#10B981"] as [string, string],
+    icon: "person-circle-outline" as const,
+    accent: "#6EE7B7",
+  },
+  {
+    id: "3",
+    title: "Demo Classes = Conversions",
+    sub: "Tutors who give demos close 80% of leads",
+    gradient: ["#7C3AED", "#A78BFA"] as [string, string],
+    icon: "videocam-outline" as const,
+    accent: "#DDD6FE",
+  },
+  {
+    id: "4",
+    title: "Earn More This Month",
+    sub: "Top tutors earn ₹40,000+ per month",
+    gradient: ["#92400E", "#F59E0B"] as [string, string],
+    icon: "cash-outline" as const,
+    accent: "#FDE68A",
+  },
+];
+
+const CarouselBanner: React.FC = () => {
+  const [active, setActive] = useState(0);
+  const flatRef = useRef<FlatList>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setActive((prev) => {
+        const next = (prev + 1) % BANNERS.length;
+        flatRef.current?.scrollToIndex({ index: next, animated: true });
+        return next;
+      });
+    }, 3500);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
+
+  return (
+    <View style={cb.wrapper}>
+      <FlatList
+        ref={flatRef}
+        data={BANNERS}
+        keyExtractor={(b) => b.id}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={BANNER_W + 10}
+        decelerationRate="fast"
+        onMomentumScrollEnd={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / (BANNER_W + 12));
+          setActive(idx);
+        }}
+        renderItem={({ item }) => (
+          <LinearGradient
+            colors={item.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={cb.slide}
+          >
+            <View style={cb.slideInner}>
+              <View style={cb.iconWrap}>
+                <Ionicons name={item.icon} size={28} color={item.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={cb.title}>{item.title}</Text>
+                <Text style={cb.sub}>{item.sub}</Text>
+              </View>
+            </View>
+            <View style={cb.decorCircle1} />
+            <View style={cb.decorCircle2} />
+          </LinearGradient>
+        )}
+        contentContainerStyle={{ gap: 10 }}
+      />
+      <View style={cb.dots}>
+        {BANNERS.map((_, i) => (
+          <View key={i} style={[cb.dot, i === active && cb.dotActive]} />
+        ))}
+      </View>
+    </View>
+  );
+};
+
+const cb = StyleSheet.create({
+  wrapper: { marginBottom: 12 },
+  slide: {
+    width: BANNER_W,
+    height: BANNER_H,
+    borderRadius: 14,
+    padding: 16,
+    overflow: "hidden",
+    justifyContent: "center",
+  },
+  slideInner: { flexDirection: "row", alignItems: "center", gap: 12, zIndex: 2 },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: { color: "#fff", fontSize: 14, fontWeight: "800", letterSpacing: -0.2, marginBottom: 4 },
+  sub: { color: "rgba(255,255,255,0.78)", fontSize: 11, lineHeight: 15, fontWeight: "500" },
+  decorCircle1: {
+    position: "absolute", width: 100, height: 100, borderRadius: 50,
+    backgroundColor: "rgba(255,255,255,0.07)", top: -30, right: -20,
+  },
+  decorCircle2: {
+    position: "absolute", width: 70, height: 70, borderRadius: 35,
+    backgroundColor: "rgba(255,255,255,0.06)", bottom: -20, right: 50,
+  },
+  dots: { flexDirection: "row", justifyContent: "center", gap: 4, marginTop: 8 },
+  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: "#CBD5E1" },
+  dotActive: { width: 14, backgroundColor: T.primary },
 });
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -903,7 +1065,10 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
                   style={s.logoImg}
                 />
               </View>
-              <Text style={s.brandName}>YourShikshak</Text>
+              <View style={{ justifyContent: "center" }}>
+                <Text style={s.brandName}>YourShikshak</Text>
+                <Text style={s.brandTagline}>Your Learning Partner</Text>
+              </View>
             </View>
             <Pressable onPress={openSidebar} style={s.avatarBtn} hitSlop={8}>
               {profilePhotoUrl && !photoError ? (
@@ -969,6 +1134,9 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {/* ── White card ───────────────────────────────────────────────────── */}
         <View style={s.card}>
+          {/* ── Carousel Banner ──────────────────────────────────────────── */}
+          <CarouselBanner />
+
           {/* ── Upcoming Demos (shown only when demos exist) ──────────────── */}
           {!demosLoading && demos.length > 0 && (
             <>
@@ -2170,17 +2338,20 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 20,
   },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   logoRing: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 42,
+    height: 42,
+    borderRadius: 10,
     overflow: "hidden",
-    borderWidth: 1.2,
-    borderColor: "rgba(255,255,255,0.22)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.28)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  logoImg: { width: 32, height: 32 },
-  brandName: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  logoImg: { width: 42, height: 42 },
+  brandName: { color: "#fff", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
+  brandTagline: { color: "rgba(255,255,255,0.65)", fontSize: 10, fontWeight: "500", marginTop: 1, letterSpacing: 0.2 },
   avatarBtn: { width: 38, height: 38, borderRadius: 19, overflow: "hidden" },
   avatarImg: {
     width: 38,
@@ -2633,6 +2804,15 @@ const ac = StyleSheet.create({
   },
   modeTxt: { fontSize: 10, fontWeight: "700", letterSpacing: 0.5 },
   timeAgo: { fontSize: 11, color: T.textDisabled },
+  matchPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  matchTxt: { fontSize: 10, fontWeight: "700" },
 
   subjectTxt: {
     fontSize: 15,
