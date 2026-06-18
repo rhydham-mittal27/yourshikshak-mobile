@@ -583,20 +583,14 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
     .map((s: any) => (typeof s === "string" ? s : (s?.label ?? s?.name ?? "")))
     .filter(Boolean);
 
+  // Shares the public tutor profile link — same /ourtutor/:teacherId page the
+  // frontend "Share Profile" button links to.
   const shareProfile = async () => {
-    if (!tutor) return;
-    const lines = [
-      `${tutor.user?.name ?? "Tutor"} — YourShikshak`,
-      tutor.teacherId ? `Tutor ID: ${tutor.teacherId}` : null,
-      qualifications[0] ? `Qualification: ${qualifications[0]}` : null,
-      tutor.user?.city ? `City: ${tutor.user.city}` : null,
-      tutor.yearsOfExperience != null ? `Experience: ${tutor.yearsOfExperience} yrs` : null,
-      tutor.preferredMode ? `Teaching mode: ${tutor.preferredMode}` : null,
-      allSubjects.length ? `Subjects: ${allSubjects.slice(0, 8).join(", ")}` : null,
-      tutor.bio ? `\n"${tutor.bio}"` : null,
-    ].filter(Boolean);
+    const teacherId = tutor?.teacherId;
+    if (!teacherId) return;
+    const url = `https://app.yourshikshak.in/ourtutor/${teacherId}`;
     try {
-      await Share.share({ message: lines.join("\n"), title: "Tutor Profile" });
+      await Share.share({ message: url, url, title: "Tutor Profile" });
     } catch {}
   };
 
@@ -663,7 +657,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                 onPress={shareProfile}
                 style={s.shareBtn}
                 hitSlop={8}
-                disabled={loading || !tutor}
+                disabled={loading || !tutor?.teacherId}
               >
                 <Ionicons name="share-social-outline" size={16} color="#fff" />
               </Pressable>
