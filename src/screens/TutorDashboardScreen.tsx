@@ -1068,9 +1068,18 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text style={s.greetName} numberOfLines={1}>
               {name} 👋
             </Text>
-            <View style={s.tutorBadge}>
-              <View style={s.badgeDot} />
-              <Text style={s.badgeTxt}>TUTOR</Text>
+            <View style={s.greetRow}>
+              <View style={s.tutorBadge}>
+                <View style={s.badgeDot} />
+                <Text style={s.badgeTxt}>TUTOR</Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [s.getStartedBtn, pressed && { opacity: 0.8 }]}
+                onPress={() => navigation.navigate("GetStarted")}
+              >
+                <Ionicons name="play-circle-outline" size={14} color={T.primary} />
+                <Text style={s.getStartedTxt}>Get Started</Text>
+              </Pressable>
             </View>
           </View>
 
@@ -2348,7 +2357,23 @@ const s = StyleSheet.create({
   },
   avatarInitial: { color: "#fff", fontSize: 15, fontWeight: "700" },
 
-  greetBlock: { marginBottom: 24 },
+  greetBlock: { marginBottom: 24, gap: 0 },
+  greetRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 0 },
+  getStartedBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.92)",
+  },
+  getStartedTxt: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: T.primary,
+    letterSpacing: 0.2,
+  },
   greetSub: { color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: "500", marginBottom: 3 },
   greetName: {
     color: "#fff",

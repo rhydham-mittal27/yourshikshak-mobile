@@ -33,6 +33,7 @@ import ClassDetailsScreen from "../screens/ClassDetailsScreen";
 import RescheduleClassScreen from "../screens/RescheduleClassScreen";
 import PauseClassScreen from "../screens/PauseClassScreen";
 import ClassCalendarScreen from "../screens/ClassCalendarScreen";
+import GetStartedScreen from "../screens/GetStartedScreen";
 
 export type RootStackParamList = {
   Intro: undefined;
@@ -57,6 +58,7 @@ export type RootStackParamList = {
   Timetable: undefined;
   Settings: undefined;
   Payments: undefined;
+  GetStarted: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -201,6 +203,7 @@ const AppNavigator = () => {
           <Stack.Screen name="RescheduleClass" component={RescheduleClassScreen} />
           <Stack.Screen name="PauseClass" component={PauseClassScreen} />
           <Stack.Screen name="ClassCalendar" component={ClassCalendarScreen} />
+          <Stack.Screen name="GetStarted" component={GetStartedScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </ModalProvider>
