@@ -51,8 +51,8 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
   }, []);
 
   const videoId = videoUrl ? extractYouTubeId(videoUrl) : null;
-  const embedHtml = videoId
-    ? `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"/><style>*{margin:0;padding:0;background:#000}iframe{width:100%;height:100%;border:none;display:block}</style></head><body><iframe src="https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1" allowfullscreen allow="autoplay;encrypted-media"></iframe></body></html>`
+  const embedUri = videoId
+    ? `https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1`
     : null;
 
   const VIDEO_H = Math.round(SCREEN_W * 9 / 16);
@@ -82,14 +82,15 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         ) : (
           <>
-            {embedHtml && (
+            {embedUri && (
               <View style={[s.videoBox, { height: VIDEO_H }]}>
                 <WebView
-                  source={{ html: embedHtml }}
+                  source={{ uri: embedUri }}
                   style={{ flex: 1, backgroundColor: "#000" }}
                   allowsFullscreenVideo
                   mediaPlaybackRequiresUserAction={false}
                   javaScriptEnabled
+                  originWhitelist={["*"]}
                 />
               </View>
             )}
