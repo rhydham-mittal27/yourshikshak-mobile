@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Dimensions,
 } from "react-native";
-import { WebView } from "react-native-webview";
+import YoutubePlayer from "react-native-youtube-iframe";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -51,12 +51,7 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
   }, []);
 
   const videoId = videoUrl ? extractYouTubeId(videoUrl) : null;
-  // Use m.youtube.com watch page — bypasses embed restrictions (error 153)
-  const embedUri = videoId
-    ? `https://m.youtube.com/watch?v=${videoId}`
-    : null;
-
-  const VIDEO_H = Math.round(SCREEN_W * 9 / 16) + 60; // extra room for YouTube mobile UI
+  const VIDEO_H = Math.round(SCREEN_W * 9 / 16);
 
   return (
     <View style={[s.root, { paddingTop: Math.max(insets.top, 16) }]}>
@@ -83,17 +78,13 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         ) : (
           <>
-            {embedUri && (
-              <View style={[s.videoBox, { height: VIDEO_H }]}>
-                <WebView
-                  source={{ uri: embedUri }}
-                  style={{ flex: 1, backgroundColor: "#000" }}
-                  allowsFullscreenVideo
-                  allowsInlineMediaPlayback
-                  mediaPlaybackRequiresUserAction={false}
-                  javaScriptEnabled
-                  originWhitelist={["*"]}
-                  userAgent="Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+            {videoId && (
+              <View style={s.videoBox}>
+                <YoutubePlayer
+                  height={VIDEO_H}
+                  width={SCREEN_W}
+                  videoId={videoId}
+                  play={false}
                 />
               </View>
             )}
@@ -154,7 +145,6 @@ const s = StyleSheet.create({
   videoBox: {
     width: SCREEN_W,
     backgroundColor: "#000",
-    overflow: "hidden",
   },
   descBox: {
     margin: 16,
