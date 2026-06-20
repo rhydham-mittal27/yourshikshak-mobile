@@ -11,14 +11,28 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import YoutubePlayer from "react-native-youtube-iframe";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { getOptions } from "../api/client";
 import { T } from "../constants/colors";
+
+const SCREEN_W = Dimensions.get("window").width;
+// content padding (16) + faq card body padding (16) on each side
+const FAQ_VIDEO_W = SCREEN_W - 32 - 32;
+const FAQ_VIDEO_H = Math.round(FAQ_VIDEO_W * 9 / 16);
+
+const extractYouTubeId = (url: string): string | null => {
+  const m = url.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
+  );
+  return m ? m[1] : null;
+};
 
 if (
   Platform.OS === "android" &&
@@ -33,7 +47,9 @@ interface Props { navigation: Nav }
 interface FaqItem {
   id: string;
   question: string;
+  answerType: "text" | "video";
   answer: string;
+  videoId: string | null;
   sortOrder: number;
 }
 
@@ -101,14 +117,36 @@ const FaqRow: React.FC<{ item: FaqItem; open: boolean; onToggle: () => void }> =
         onPress={onToggle}
         style={({ pressed }) => [s.faqHeader, pressed && { opacity: 0.7 }]}
       >
-        <Text style={[s.faqQuestion, open && s.faqQuestionOpen]}>{item.question}</Text>
+        <View style={s.qWrap}>
+          {item.answerType === "video" ? (
+            <View style={s.videoTag}>
+              <Ionicons name="play" size={9} color={T.primary} />
+              <Text style={s.videoTagTxt}>VIDEO</Text>
+            </View>
+          ) : null}
+          <Text style={[s.faqQuestion, open && s.faqQuestionOpen]}>{item.question}</Text>
+        </View>
         <Animated.View style={[s.chev, { transform: [{ rotate: spin }] }]}>
           <Ionicons name="chevron-down" size={16} color={open ? T.primary : T.mutedFg} />
         </Animated.View>
       </Pressable>
       {open ? (
         <View style={s.faqBody}>
-          <Text style={s.faqAnswer}>{item.answer}</Text>
+          {item.answerType === "video" && item.videoId ? (
+            <>
+              <View style={s.videoFrame}>
+                <YoutubePlayer
+                  height={FAQ_VIDEO_H}
+                  width={FAQ_VIDEO_W}
+                  videoId={item.videoId}
+                  play={false}
+                />
+              </View>
+              {item.answer ? <Text style={s.faqAnswer}>{item.answer}</Text> : null}
+            </>
+          ) : (
+            <Text style={s.faqAnswer}>{item.answer}</Text>
+          )}
         </View>
       ) : null}
     </View>
@@ -129,13 +167,26 @@ const FAQScreen: React.FC<Props> = ({ navigation }) => {
         const opts = await getOptions("FAQ");
         const list = (opts as any)?.data ?? (Array.isArray(opts) ? opts : []);
         const mapped: FaqItem[] = (list as any[])
-          .map((o) => ({
-            id: String(o._id),
-            question: String(o.label ?? ""),
-            answer: String(o.metadata?.answer ?? ""),
-            sortOrder: Number(o.sortOrder ?? 0),
-          }))
-          .filter((f) => f.question && f.answer)
+          .map((o) => {
+            const answerType: "text" | "video" =
+              o.metadata?.answerType === "video" ? "video" : "text";
+            const videoId =
+              answerType === "video"
+                ? extractYouTubeId(String(o.metadata?.videoUrl ?? ""))
+                : null;
+            return {
+              id: String(o._id),
+              question: String(o.label ?? ""),
+              answerType,
+              answer: String(o.metadata?.answer ?? ""),
+              videoId,
+              sortOrder: Number(o.sortOrder ?? 0),
+            };
+          })
+          // text answers need an answer body; video answers need a valid video
+          .filter((f) =>
+            f.question && (f.answerType === "video" ? !!f.videoId : !!f.answer)
+          )
           .sort((a, b) => a.sortOrder - b.sortOrder);
         setFaqs(mapped);
       } catch {}
@@ -340,8 +391,8 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 15,
   },
+  qWrap: { flex: 1, gap: 5 },
   faqQuestion: {
-    flex: 1,
     fontSize: 14,
     fontWeight: "700",
     color: T.textPrimary,
@@ -349,6 +400,31 @@ const s = StyleSheet.create({
     lineHeight: 20,
   },
   faqQuestionOpen: { color: T.primary },
+  videoTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: T.radiusFull,
+    backgroundColor: `${T.primary}14`,
+  },
+  videoTagTxt: {
+    color: T.primary,
+    fontSize: 8.5,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+  },
+  videoFrame: {
+    width: FAQ_VIDEO_W,
+    height: FAQ_VIDEO_H,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#000",
+    marginTop: 12,
+    marginBottom: 4,
+  },
   chev: {
     width: 26,
     height: 26,
