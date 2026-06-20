@@ -1876,6 +1876,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
             { icon: "calendar-outline", label: "Timetable", color: T.primary, bg: `${T.primary}15`, route: "Timetable" as const },
             { icon: "school-outline", label: "Class Opportunities", color: T.secondary, bg: `${T.secondary}15`, route: "ClassOpportunities" as const },
             { icon: "cash-outline", label: "Payments", color: "#10B981", bg: "#10B98115", route: "Payments" as const },
+            { icon: "help-circle-outline", label: "FAQ", color: "#F59E0B", bg: "#F59E0B15", route: "FAQ" as const },
             { icon: "settings-outline", label: "Settings", color: "#94A3B8", bg: "#64748B15", route: "Settings" as const },
           ].map(({ icon, label, color, bg, route }) => (
             <Pressable
