@@ -549,7 +549,9 @@ const CarouselBanner: React.FC = () => {
         const res  = await apiClient.get("/v1/banners/active");
         const body = res as any;
         const data: BannerItem[] = Array.isArray(body) ? body : (body?.data ?? []);
+        console.log("[Banner] API returned", data.length, "banners:", JSON.stringify(data.map(b => ({ id: b._id, expiresAt: b.expiresAt, name: b.uploaderName }))));
         const valid = data.filter(notExpired);
+        console.log("[Banner] after notExpired filter:", valid.length);
         if (valid.length > 0) setBanners(valid);
       } catch {}
     })();
@@ -620,16 +622,6 @@ const CarouselBanner: React.FC = () => {
                 style={cb.image}
                 resizeMode="cover"
               />
-              {/* Gradient scrim for uploader label */}
-              <View style={cb.scrim} />
-              <View style={cb.uploaderRow}>
-                <View style={cb.uploaderAvatar}>
-                  <Text style={cb.uploaderInitial}>
-                    {item.uploaderName?.[0]?.toUpperCase() ?? "?"}
-                  </Text>
-                </View>
-                <Text style={cb.uploaderName}>{item.uploaderName}</Text>
-              </View>
             </View>
           </View>
         )}
@@ -651,7 +643,9 @@ const CarouselBanner: React.FC = () => {
 };
 
 const cb = StyleSheet.create({
-  wrapper: { marginBottom: 6 },
+  // Negative margins escape the parent card's padding:20 so the FlatList
+  // fills SCREEN_W exactly — pagingEnabled then snaps by the correct frame width.
+  wrapper: { marginHorizontal: -20, marginBottom: 6 },
 
   headerRow: {
     flexDirection: "row",
