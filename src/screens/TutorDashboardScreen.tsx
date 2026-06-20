@@ -734,6 +734,69 @@ const cb = StyleSheet.create({
   },
 });
 
+// ─── Get Started Button ───────────────────────────────────────────────────────
+
+const GetStartedButton: React.FC<{ onPress: () => void }> = ({ onPress }) => {
+  const pulse = useRef(new Animated.Value(1)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.18, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  const onPressIn = () =>
+    Animated.spring(scale, { toValue: 0.93, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
+  const onPressOut = () =>
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 5 }).start();
+
+  return (
+    <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
+      <Animated.View style={{ transform: [{ scale }] }}>
+        {/* Glow ring */}
+        <Animated.View style={[gsb.glow, { transform: [{ scale: pulse }] }]} />
+        <LinearGradient
+          colors={["#FFD700", "#FF8C00"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={gsb.btn}
+        >
+          <Ionicons name="play-circle" size={15} color="#fff" />
+          <Text style={gsb.txt}>Get Started</Text>
+          <Ionicons name="arrow-forward" size={12} color="rgba(255,255,255,0.8)" />
+        </LinearGradient>
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+const gsb = StyleSheet.create({
+  glow: {
+    position: "absolute",
+    top: -6, left: -6, right: -6, bottom: -6,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,180,0,0.28)",
+  },
+  btn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    shadowColor: "#FF8C00",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.55,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  txt: { fontSize: 12, fontWeight: "800", color: "#fff", letterSpacing: 0.2 },
+});
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
@@ -1167,13 +1230,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
                 <View style={s.badgeDot} />
                 <Text style={s.badgeTxt}>TUTOR</Text>
               </View>
-              <Pressable
-                style={({ pressed }) => [s.getStartedBtn, pressed && { opacity: 0.8 }]}
-                onPress={() => navigation.navigate("GetStarted")}
-              >
-                <Ionicons name="play-circle-outline" size={14} color={T.primary} />
-                <Text style={s.getStartedTxt}>Get Started</Text>
-              </Pressable>
+              <GetStartedButton onPress={() => navigation.navigate("GetStarted")} />
             </View>
           </View>
 
@@ -2288,21 +2345,6 @@ const s = StyleSheet.create({
 
   greetBlock: { marginBottom: 24, gap: 0 },
   greetRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 0 },
-  getStartedBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.92)",
-  },
-  getStartedTxt: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: T.primary,
-    letterSpacing: 0.2,
-  },
   greetSub: { color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: "500", marginBottom: 3 },
   greetName: {
     color: "#fff",
