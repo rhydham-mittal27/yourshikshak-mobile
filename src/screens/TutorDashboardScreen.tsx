@@ -32,7 +32,6 @@ import {
 } from "react-native";
 
 const SCREEN_W = Dimensions.get("window").width;
-const SIDEBAR_W = SCREEN_W * 0.72;
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -306,6 +305,12 @@ const AnnouncementCard = ({
           <Text style={[ac.modeTxt, { color: modeColor }]}>{lead.mode}</Text>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {lead.leadId ? (
+            <View style={ac.idPill}>
+              <Ionicons name="pricetag-outline" size={10} color={T.primary} />
+              <Text style={ac.idTxt}>{lead.leadId}</Text>
+            </View>
+          ) : null}
           {pct > 0 && (
             <View style={[ac.matchPill, { backgroundColor: `${matchColor}15`, borderColor: `${matchColor}30` }]}>
               <Text style={[ac.matchTxt, { color: matchColor }]}>{matchLabel}</Text>
@@ -325,6 +330,28 @@ const AnnouncementCard = ({
           .join(" · ")}
       </Text>
 
+      {/* Payment highlight */}
+      {lead.tutorFees || lead.paymentAmount ? (
+        <View style={ac.payBanner}>
+          <View style={ac.payIcon}>
+            <Ionicons name="wallet-outline" size={15} color={T.success} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={ac.payLabel}>Your monthly fees</Text>
+            <Text style={ac.payAmount}>
+              {fmtRupee(lead.tutorFees ?? lead.paymentAmount ?? 0)}
+              <Text style={ac.payPer}> /month</Text>
+            </Text>
+          </View>
+          {lead.tutorFees && lead.paymentAmount && lead.paymentAmount !== lead.tutorFees ? (
+            <View style={ac.payAside}>
+              <Text style={ac.payAsideLabel}>Class fee</Text>
+              <Text style={ac.payAsideTxt}>{fmtRupee(lead.paymentAmount)}/mo</Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
       {/* Details row */}
       <View style={ac.detailsRow}>
         {lead.city ? (
@@ -342,12 +369,6 @@ const AnnouncementCard = ({
             <Text style={ac.detailTxt}>{lead.classDurationHours}h/session</Text>
           </View>
         ) : null}
-        {lead.paymentAmount ? (
-          <View style={ac.detailChip}>
-            <Ionicons name="cash-outline" size={11} color={T.mutedFg} />
-            <Text style={ac.detailTxt}>{fmtRupee(lead.paymentAmount)}/mo</Text>
-          </View>
-        ) : null}
         {lead.timing ? (
           <View style={ac.detailChip}>
             <Ionicons name="alarm-outline" size={11} color={T.mutedFg} />
@@ -363,6 +384,14 @@ const AnnouncementCard = ({
           </View>
         ) : null}
       </View>
+
+      {/* Coordinator notes */}
+      {lead.notes ? (
+        <View style={ac.notesBox}>
+          <Ionicons name="document-text-outline" size={13} color={T.primary} />
+          <Text style={ac.notesTxt}>{lead.notes}</Text>
+        </View>
+      ) : null}
 
       {/* Footer: interest count + CTA */}
       <View style={ac.footer}>
@@ -635,41 +664,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
   const [showWAModal, setShowWAModal] = useState(false);
   const [waLink, setWaLink] = useState<string | undefined>();
 
-  // Sidebar
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const sidebarAnim = useRef(new Animated.Value(-SIDEBAR_W)).current;
-  const overlayAnim = useRef(new Animated.Value(0)).current;
-
-  const openSidebar = () => {
-    setSidebarOpen(true);
-    Animated.parallel([
-      Animated.spring(sidebarAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        bounciness: 0,
-      }),
-      Animated.timing(overlayAnim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const closeSidebar = () => {
-    Animated.parallel([
-      Animated.spring(sidebarAnim, {
-        toValue: -SIDEBAR_W,
-        useNativeDriver: true,
-        bounciness: 0,
-      }),
-      Animated.timing(overlayAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => setSidebarOpen(false));
-  };
+  // More sheet
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
 
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState(false);
@@ -1046,18 +1042,11 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
                 <Text style={s.brandTagline}>Your Learning Partner</Text>
               </View>
             </View>
-            <Pressable onPress={openSidebar} style={s.avatarBtn} hitSlop={8}>
-              {profilePhotoUrl && !photoError ? (
-                <Image
-                  source={{ uri: profilePhotoUrl }}
-                  style={s.avatarImg}
-                  onError={() => setPhotoError(true)}
-                />
-              ) : (
-                <View style={s.avatarInner}>
-                  <Text style={s.avatarInitial}>
-                    {name ? name.charAt(0).toUpperCase() : "T"}
-                  </Text>
+            <Pressable onPress={() => navigation.navigate("Notifications")} style={s.notifBtn} hitSlop={8}>
+              <Ionicons name="notifications-outline" size={22} color="rgba(255,255,255,0.85)" />
+              {unreadCount > 0 && (
+                <View style={s.notifBadge}>
+                  <Text style={s.notifBadgeTxt}>{unreadCount > 99 ? "99+" : unreadCount}</Text>
                 </View>
               )}
             </Pressable>
@@ -1737,239 +1726,78 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           )}
         </View>
 
-        <View style={{ height: Math.max(insets.bottom, 32) }} />
+        <View style={{ height: Math.max(insets.bottom, 8) + 70 }} />
       </ScrollView>
 
-      {/* ── Sidebar overlay + drawer ──────────────────────────────────────── */}
-      {sidebarOpen && (
-        <TouchableWithoutFeedback onPress={closeSidebar}>
-          <Animated.View style={[sb.overlay, { opacity: overlayAnim }]} />
-        </TouchableWithoutFeedback>
-      )}
+      {/* ── Bottom App Bar ───────────────────────────────────────────────── */}
+      <View style={[ab.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+        <Pressable style={ab.item}>
+          <View style={ab.activeIndicator} />
+          <Ionicons name="home" size={22} color={T.primary} />
+          <Text style={[ab.label, { color: T.primary, fontWeight: "700" }]}>Home</Text>
+        </Pressable>
+        <Pressable style={ab.item} onPress={() => navigation.navigate("MyClasses")}>
+          <Ionicons name="book-outline" size={22} color={T.mutedFg} />
+          <Text style={ab.label}>Classes</Text>
+        </Pressable>
+        <Pressable style={ab.item} onPress={() => navigation.navigate("MyDemos")}>
+          <Ionicons name="videocam-outline" size={22} color={T.mutedFg} />
+          <Text style={ab.label}>Demos</Text>
+        </Pressable>
+        <Pressable style={ab.item} onPress={() => navigation.navigate("TutorProfile")}>
+          <Ionicons name="person-outline" size={22} color={T.mutedFg} />
+          <Text style={ab.label}>Profile</Text>
+        </Pressable>
+        <Pressable style={ab.item} onPress={() => setShowMoreSheet(true)}>
+          <Ionicons name="grid-outline" size={22} color={T.mutedFg} />
+          <Text style={ab.label}>More</Text>
+        </Pressable>
+      </View>
 
-      <Animated.View
-        style={[
-          sb.drawer,
-          {
-            transform: [{ translateX: sidebarAnim }],
-            paddingTop: Math.max(insets.top, 20),
-          },
-        ]}
-        pointerEvents={sidebarOpen ? "auto" : "none"}
+      {/* ── More Sheet ───────────────────────────────────────────────────── */}
+      <Modal
+        visible={showMoreSheet}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMoreSheet(false)}
       >
-        {/* Drawer header */}
-        <View style={sb.drawerHeader}>
-          {profilePhotoUrl && !photoError ? (
-            <Image
-              source={{ uri: profilePhotoUrl }}
-              style={sb.drawerAvatarImg}
-              onError={() => setPhotoError(true)}
-            />
-          ) : (
-            <View style={sb.drawerAvatar}>
-              <Text style={sb.drawerAvatarTxt}>
-                {name ? name.charAt(0).toUpperCase() : "T"}
-              </Text>
+        <TouchableWithoutFeedback onPress={() => setShowMoreSheet(false)}>
+          <View style={ms.overlay} />
+        </TouchableWithoutFeedback>
+        <View style={[ms.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          <View style={ms.handle} />
+          <Text style={ms.title}>Menu</Text>
+          {[
+            { icon: "calendar-outline", label: "Timetable", color: T.primary, bg: `${T.primary}15`, route: "Timetable" as const },
+            { icon: "school-outline", label: "Class Opportunities", color: T.secondary, bg: `${T.secondary}15`, route: "ClassOpportunities" as const },
+            { icon: "cash-outline", label: "Payments", color: "#10B981", bg: "#10B98115", route: "Payments" as const },
+            { icon: "settings-outline", label: "Settings", color: "#94A3B8", bg: "#64748B15", route: "Settings" as const },
+          ].map(({ icon, label, color, bg, route }) => (
+            <Pressable
+              key={route}
+              style={({ pressed }) => [ms.item, pressed && ms.itemPressed]}
+              onPress={() => { setShowMoreSheet(false); navigation.navigate(route as any); }}
+            >
+              <View style={[ms.iconBg, { backgroundColor: bg }]}>
+                <Ionicons name={icon as any} size={20} color={color} />
+              </View>
+              <Text style={ms.itemLabel}>{label}</Text>
+              <Ionicons name="chevron-forward" size={16} color={T.border} />
+            </Pressable>
+          ))}
+          <View style={ms.divider} />
+          <Pressable
+            style={({ pressed }) => [ms.item, pressed && ms.itemPressed]}
+            onPress={() => { setShowMoreSheet(false); setTimeout(signOut, 300); }}
+          >
+            <View style={[ms.iconBg, { backgroundColor: `${T.error}15` }]}>
+              <Ionicons name="log-out-outline" size={20} color={T.error} />
             </View>
-          )}
-          <View style={{ flex: 1 }}>
-            <Text style={sb.drawerName} numberOfLines={1}>
-              {name}
-            </Text>
-            <View style={sb.drawerBadge}>
-              <View style={sb.drawerBadgeDot} />
-              <Text style={sb.drawerBadgeTxt}>TUTOR</Text>
-            </View>
-          </View>
-          <Pressable onPress={closeSidebar} style={sb.closeBtn} hitSlop={10}>
-            <Ionicons name="close" size={20} color="rgba(255,255,255,0.6)" />
+            <Text style={[ms.itemLabel, { color: T.error }]}>Sign Out</Text>
+            <Ionicons name="chevron-forward" size={16} color={`${T.error}40`} />
           </Pressable>
         </View>
-
-        <View style={sb.divider} />
-
-        {/* My Classes */}
-        <Pressable
-          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
-          onPress={() => {
-            navigation.navigate("MyClasses");
-            closeSidebar();
-          }}
-        >
-          <View style={[sb.navIconBg, { backgroundColor: `${T.success}18` }]}>
-            <Ionicons name="book-outline" size={18} color={T.success} />
-          </View>
-          <Text style={sb.navLabel}>My Classes</Text>
-          <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
-        </Pressable>
-
-        {/* Timetable */}
-        <Pressable
-          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
-          onPress={() => {
-            navigation.navigate("Timetable");
-            closeSidebar();
-          }}
-        >
-          <View style={[sb.navIconBg, { backgroundColor: `${T.primary}18` }]}>
-            <Ionicons name="calendar-outline" size={18} color={T.primary} />
-          </View>
-          <Text style={sb.navLabel}>Timetable</Text>
-          <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
-        </Pressable>
-
-        {/* Class Opportunities */}
-        <Pressable
-          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
-          onPress={() => {
-            navigation.navigate("ClassOpportunities");
-            closeSidebar();
-          }}
-        >
-          <View style={[sb.navIconBg, { backgroundColor: `${T.secondary}18` }]}>
-            <Ionicons name="school-outline" size={18} color={T.secondary} />
-          </View>
-          <Text style={sb.navLabel}>Class Opportunities</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={14}
-            color="rgba(255,255,255,0.3)"
-          />
-        </Pressable>
-
-        {/* My Demos */}
-        <Pressable
-          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
-          onPress={() => {
-            navigation.navigate("MyDemos");
-            closeSidebar();
-          }}
-        >
-          <View style={[sb.navIconBg, { backgroundColor: "#8B5CF618" }]}>
-            <Ionicons name="videocam-outline" size={18} color="#8B5CF6" />
-          </View>
-          <Text style={sb.navLabel}>My Demos</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={14}
-            color="rgba(255,255,255,0.3)"
-          />
-        </Pressable>
-
-        {/* Notifications */}
-        <Pressable
-          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
-          onPress={() => {
-            navigation.navigate("Notifications");
-            closeSidebar();
-          }}
-        >
-          <View style={[sb.navIconBg, { backgroundColor: `${T.warning}18` }]}>
-            <Ionicons
-              name="notifications-outline"
-              size={18}
-              color={T.warning}
-            />
-            {unreadCount > 0 && (
-              <View style={sb.badge}>
-                <Text style={sb.badgeTxt}>
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </Text>
-              </View>
-            )}
-          </View>
-          <Text style={sb.navLabel}>Notifications</Text>
-          {unreadCount > 0 && (
-            <View style={[sb.badge, { position: "relative", marginRight: 6 }]}>
-              <Text style={sb.badgeTxt}>
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </Text>
-            </View>
-          )}
-          <Ionicons
-            name="chevron-forward"
-            size={14}
-            color="rgba(255,255,255,0.3)"
-          />
-        </Pressable>
-
-        {/* Payments */}
-        <Pressable
-          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
-          onPress={() => {
-            navigation.navigate("Payments");
-            closeSidebar();
-          }}
-        >
-          <View style={[sb.navIconBg, { backgroundColor: "#10B98118" }]}>
-            <Ionicons name="cash-outline" size={18} color="#10B981" />
-          </View>
-          <Text style={sb.navLabel}>Payments</Text>
-          <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
-        </Pressable>
-
-        {/* Settings */}
-        <Pressable
-          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
-          onPress={() => {
-            navigation.navigate("Settings");
-            closeSidebar();
-          }}
-        >
-          <View style={[sb.navIconBg, { backgroundColor: "#64748B18" }]}>
-            <Ionicons name="settings-outline" size={18} color="#94A3B8" />
-          </View>
-          <Text style={sb.navLabel}>Settings</Text>
-          <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
-        </Pressable>
-
-        {/* Spacer pushes Profile to bottom */}
-        <View style={{ flex: 1 }} />
-
-        <View style={sb.divider} />
-
-        {/* Bottom nav item: Profile */}
-        <Pressable
-          style={({ pressed }) => [sb.navItem, pressed && sb.navItemPressed]}
-          onPress={() => {
-            navigation.navigate("TutorProfile");
-            closeSidebar();
-          }}
-        >
-          <View style={[sb.navIconBg, { backgroundColor: `${T.primary}20` }]}>
-            <Ionicons name="person-outline" size={18} color={T.primary} />
-          </View>
-          <Text style={sb.navLabel}>Profile</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={14}
-            color="rgba(255,255,255,0.3)"
-          />
-        </Pressable>
-
-        {/* Sign out */}
-        <Pressable
-          style={({ pressed }) => [
-            sb.navItem,
-            { marginBottom: Math.max(insets.bottom, 16) },
-            pressed && sb.navItemPressed,
-          ]}
-          onPress={() => {
-            closeSidebar();
-            setTimeout(signOut, 300);
-          }}
-        >
-          <View style={[sb.navIconBg, { backgroundColor: `${T.error}18` }]}>
-            <Ionicons name="log-out-outline" size={18} color={T.error} />
-          </View>
-          <Text style={[sb.navLabel, { color: T.error }]}>Sign Out</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={14}
-            color="rgba(239,68,68,0.3)"
-          />
-        </Pressable>
-      </Animated.View>
+      </Modal>
 
       {/* ── Attendance Modal ──────────────────────────────────────────────── */}
       <Modal
@@ -2337,25 +2165,20 @@ const s = StyleSheet.create({
   logoImg: { width: 42, height: 42 },
   brandName: { color: "#fff", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
   brandTagline: { color: "rgba(255,255,255,0.65)", fontSize: 10, fontWeight: "500", marginTop: 1, letterSpacing: 0.2 },
-  avatarBtn: { width: 38, height: 38, borderRadius: 19, overflow: "hidden" },
-  avatarImg: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.25)",
-  },
-  avatarInner: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: T.primary,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.25)",
+  notifBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center" },
+  notifBadge: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    minWidth: 15,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: T.error,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 3,
   },
-  avatarInitial: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  notifBadgeTxt: { color: "#fff", fontSize: 8, fontWeight: "800" },
 
   greetBlock: { marginBottom: 24, gap: 0 },
   greetRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 0 },
@@ -2814,6 +2637,61 @@ const ac = StyleSheet.create({
     borderWidth: 1,
   },
   matchTxt: { fontSize: 10, fontWeight: "700" },
+  idPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: T.radiusFull,
+    backgroundColor: `${T.primary}12`,
+    borderWidth: 1,
+    borderColor: `${T.primary}25`,
+  },
+  idTxt: { fontSize: 10, fontWeight: "800", color: T.primary, letterSpacing: 0.3 },
+  payBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: `${T.success}0E`,
+    borderWidth: 1,
+    borderColor: `${T.success}2E`,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  payIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: `${T.success}1A`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  payLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: T.success,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+    marginBottom: 1,
+  },
+  payAmount: { fontSize: 18, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.4 },
+  payPer: { fontSize: 11.5, fontWeight: "600", color: T.mutedFg },
+  payAside: { alignItems: "flex-end" },
+  payAsideLabel: { fontSize: 9, fontWeight: "600", color: T.mutedFg, marginBottom: 2 },
+  payAsideTxt: { fontSize: 11.5, fontWeight: "700", color: T.textSecondary },
+  notesBox: {
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: T.muted,
+    borderRadius: 10,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    marginBottom: 12,
+  },
+  notesTxt: { flex: 1, fontSize: 12, color: T.textSecondary, lineHeight: 17 },
 
   subjectTxt: {
     fontSize: 15,
@@ -2956,137 +2834,108 @@ const dc = StyleSheet.create({
   submitBtnTxt: { fontSize: 12, fontWeight: "700", color: "#fff" },
 });
 
-// ─── Sidebar styles ───────────────────────────────────────────────────────────
+// ─── Bottom App Bar styles ────────────────────────────────────────────────────
 
-const sb = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(2,8,23,0.75)",
-    zIndex: 10,
-  },
-  drawer: {
+const ab = StyleSheet.create({
+  bar: {
     position: "absolute",
-    top: 0,
     bottom: 0,
     left: 0,
-    width: SIDEBAR_W,
-    backgroundColor: T.darkBg,
-    borderRightWidth: 1,
-    borderRightColor: "rgba(255,255,255,0.08)",
-    zIndex: 11,
-    paddingHorizontal: 18,
+    right: 0,
+    flexDirection: "row",
+    backgroundColor: T.paper,
+    borderTopWidth: 1,
+    borderTopColor: T.border,
+    paddingTop: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 6, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 20,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 12,
   },
-  drawerHeader: {
-    flexDirection: "row",
+  item: {
+    flex: 1,
     alignItems: "center",
-    gap: 12,
-    paddingVertical: 20,
+    gap: 3,
+    paddingVertical: 4,
   },
-  drawerAvatarImg: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2.5,
-    borderColor: "rgba(255,255,255,0.25)",
-  },
-  drawerAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  activeIndicator: {
+    position: "absolute",
+    top: -9,
+    width: 28,
+    height: 3,
+    borderRadius: 2,
     backgroundColor: T.primary,
-    borderWidth: 2.5,
-    borderColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
   },
-  drawerAvatarTxt: { color: "#fff", fontSize: 22, fontWeight: "700" },
-  drawerName: {
-    color: "#fff",
-    fontSize: 15,
+  label: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: T.mutedFg,
+    letterSpacing: 0.1,
+  },
+});
+
+// ─── More sheet styles ────────────────────────────────────────────────────────
+
+const ms = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(2,8,23,0.5)",
+  },
+  sheet: {
+    backgroundColor: T.paper,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: T.border,
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 13,
     fontWeight: "700",
-    letterSpacing: -0.3,
+    color: T.textDisabled,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 8,
   },
-  drawerBadge: {
+  item: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginTop: 4,
-    alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: T.radiusFull,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    gap: 14,
+    paddingVertical: 14,
+    borderRadius: T.radiusMd,
+    paddingHorizontal: 4,
   },
-  drawerBadgeDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: T.success,
-  },
-  drawerBadgeTxt: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0.7,
-  },
-  closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.07)",
+  itemPressed: { backgroundColor: T.muted },
+  iconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+  },
+  itemLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "600",
+    color: T.textPrimary,
   },
   divider: {
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    marginVertical: 4,
-  },
-  navItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 4,
-    borderRadius: T.radiusMd,
-  },
-  navItemPressed: { backgroundColor: "rgba(255,255,255,0.05)" },
-  navIconBg: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  navLabel: {
-    flex: 1,
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  badge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: T.error,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  badgeTxt: {
-    fontSize: 9,
-    fontWeight: "800",
-    color: "#fff",
+    backgroundColor: T.border,
+    marginVertical: 6,
   },
 });
 

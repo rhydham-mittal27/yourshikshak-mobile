@@ -66,6 +66,12 @@ const OpportunityCard: React.FC<Props> = ({
               <Text style={[s.matchTxt, { color: matchColor }]}>{matchLabel}</Text>
             </View>
           )}
+          {lead.leadId ? (
+            <View style={s.idPill}>
+              <Ionicons name="pricetag-outline" size={10} color={T.primary} />
+              <Text style={s.idTxt}>{lead.leadId}</Text>
+            </View>
+          ) : null}
         </View>
         <Text style={s.timeAgo}>{timeAgo(item.postedAt)}</Text>
       </View>
@@ -80,6 +86,28 @@ const OpportunityCard: React.FC<Props> = ({
             .filter(Boolean)
             .join(" · ")}
         </Text>
+      ) : null}
+
+      {/* Payment highlight */}
+      {lead.tutorFees || lead.paymentAmount ? (
+        <View style={s.payBanner}>
+          <View style={s.payIcon}>
+            <Ionicons name="wallet-outline" size={16} color={T.success} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.payLabel}>Your monthly fees</Text>
+            <Text style={s.payAmount}>
+              {fmtRupee(lead.tutorFees ?? lead.paymentAmount ?? 0)}
+              <Text style={s.payPer}> /month</Text>
+            </Text>
+          </View>
+          {lead.tutorFees && lead.paymentAmount && lead.paymentAmount !== lead.tutorFees ? (
+            <View style={s.payAside}>
+              <Text style={s.payAsideLabel}>Class fee</Text>
+              <Text style={s.payAsideTxt}>{fmtRupee(lead.paymentAmount)}/mo</Text>
+            </View>
+          ) : null}
+        </View>
       ) : null}
 
       {/* Detail chips */}
@@ -97,14 +125,6 @@ const OpportunityCard: React.FC<Props> = ({
           <View style={s.detailChip}>
             <Ionicons name="time-outline" size={11} color={T.mutedFg} />
             <Text style={s.detailTxt}>{lead.classDurationHours}h/session</Text>
-          </View>
-        ) : null}
-        {lead.paymentAmount ? (
-          <View style={[s.detailChip, { backgroundColor: `${T.success}10` }]}>
-            <Ionicons name="cash-outline" size={11} color={T.success} />
-            <Text style={[s.detailTxt, { color: T.success, fontWeight: "700" }]}>
-              {fmtRupee(lead.paymentAmount)}/mo
-            </Text>
           </View>
         ) : null}
         {lead.timing ? (
@@ -126,6 +146,14 @@ const OpportunityCard: React.FC<Props> = ({
           </View>
         ) : null}
       </View>
+
+      {/* Coordinator notes */}
+      {lead.notes ? (
+        <View style={s.notesBox}>
+          <Ionicons name="document-text-outline" size={13} color={T.primary} />
+          <Text style={s.notesTxt}>{lead.notes}</Text>
+        </View>
+      ) : null}
 
       {/* Footer */}
       <View style={s.footer}>
@@ -200,6 +228,61 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   matchTxt: { fontSize: 10, fontWeight: "700" },
+  idPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: T.radiusFull,
+    backgroundColor: `${T.primary}12`,
+    borderWidth: 1,
+    borderColor: `${T.primary}25`,
+  },
+  idTxt: { fontSize: 10, fontWeight: "800", color: T.primary, letterSpacing: 0.3 },
+  payBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+    backgroundColor: `${T.success}0E`,
+    borderWidth: 1,
+    borderColor: `${T.success}2E`,
+    borderRadius: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    marginBottom: 12,
+  },
+  payIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: `${T.success}1A`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  payLabel: {
+    fontSize: 10.5,
+    fontWeight: "700",
+    color: T.success,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+    marginBottom: 1,
+  },
+  payAmount: { fontSize: 19, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.4 },
+  payPer: { fontSize: 12, fontWeight: "600", color: T.mutedFg },
+  payAside: { alignItems: "flex-end" },
+  payAsideLabel: { fontSize: 9.5, fontWeight: "600", color: T.mutedFg, marginBottom: 2 },
+  payAsideTxt: { fontSize: 12, fontWeight: "700", color: T.textSecondary },
+  notesBox: {
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: T.muted,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  notesTxt: { flex: 1, fontSize: 12.5, color: T.textSecondary, lineHeight: 18 },
   modePill: {
     flexDirection: "row",
     alignItems: "center",

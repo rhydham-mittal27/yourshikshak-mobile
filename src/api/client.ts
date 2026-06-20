@@ -271,6 +271,7 @@ export interface LeadAnnouncement {
   interestedTutors?: Array<{ tutor: string; [key: string]: any }>;
   classLead: {
     _id: string;
+    leadId?: string;
     studentName: string;
     grade?: string;
     board?: string;
@@ -279,6 +280,11 @@ export interface LeadAnnouncement {
     area?: string;
     classDurationHours?: number;
     paymentAmount?: number;
+    tutorFees?: number;
+    timing?: string;
+    weekdays?: string[];
+    preferredTutorGender?: string;
+    notes?: string;
     subject?: Array<{ label?: string; value?: string }>;
   };
 }
