@@ -53,12 +53,8 @@ export const registerForPushNotifications = async (): Promise<
     ]);
   }
 
-  const projectId =
-    Constants.expoConfig?.extra?.eas?.projectId ??
-    Constants.easConfig?.projectId;
-  const tokenData = await Notifications.getExpoPushTokenAsync(
-    projectId ? { projectId } : undefined,
-  );
+  // Use raw FCM/APNs device token so the backend can send via Firebase Admin directly
+  const tokenData = await Notifications.getDevicePushTokenAsync();
   const token = tokenData.data;
 
   try {
