@@ -536,25 +536,40 @@ interface BannerItem {
 const notExpired = (b: BannerItem) => new Date(b.expiresAt) > new Date();
 
 const CarouselBanner: React.FC = () => {
-  const [banners, setBanners] = useState<BannerItem[]>([]);
-  const [active, setActive]   = useState(0);
+  const [banners, setBanners]       = useState<BannerItem[]>([]);
+  const [active, setActive]         = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const flatRef   = useRef<FlatList>(null);
   const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const expiryRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const spinAnim  = useRef(new Animated.Value(0)).current;
+
+  const fetchBanners = useCallback(async (manual = false) => {
+    if (manual) {
+      setRefreshing(true);
+      Animated.loop(
+        Animated.timing(spinAnim, { toValue: 1, duration: 600, useNativeDriver: true })
+      ).start();
+    }
+    try {
+      const res  = await apiClient.get("/v1/banners/active");
+      const body = res as any;
+      const data: BannerItem[] = Array.isArray(body) ? body : (body?.data ?? []);
+      const valid = data.filter(notExpired);
+      setBanners(valid);
+      setActive(0);
+      flatRef.current?.scrollToOffset({ offset: 0, animated: false });
+    } catch {}
+    if (manual) {
+      spinAnim.stopAnimation();
+      spinAnim.setValue(0);
+      setRefreshing(false);
+    }
+  }, []);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    (async () => {
-      try {
-        const res  = await apiClient.get("/v1/banners/active");
-        const body = res as any;
-        const data: BannerItem[] = Array.isArray(body) ? body : (body?.data ?? []);
-        console.log("[Banner] API returned", data.length, "banners:", JSON.stringify(data.map(b => ({ id: b._id, expiresAt: b.expiresAt, name: b.uploaderName }))));
-        const valid = data.filter(notExpired);
-        console.log("[Banner] after notExpired filter:", valid.length);
-        if (valid.length > 0) setBanners(valid);
-      } catch {}
-    })();
+    fetchBanners();
 
     // Evict banners that expire while the app is open
     expiryRef.current = setInterval(() => {
@@ -590,9 +605,21 @@ const CarouselBanner: React.FC = () => {
           <View style={cb.notifDot} />
           <Text style={cb.headerLabel}>Announcements</Text>
         </View>
-        {banners.length > 1 && (
-          <Text style={cb.headerCount}>{active + 1} / {banners.length}</Text>
-        )}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {banners.length > 1 && (
+            <Text style={cb.headerCount}>{active + 1} / {banners.length}</Text>
+          )}
+          <Pressable
+            onPress={() => fetchBanners(true)}
+            disabled={refreshing}
+            style={({ pressed }) => [cb.refreshBtn, pressed && { opacity: 0.7 }]}
+          >
+            <Animated.View style={{ transform: [{ rotate: spinAnim.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) }] }}>
+              <Ionicons name="refresh-outline" size={13} color={T.primary} />
+            </Animated.View>
+            <Text style={cb.refreshTxt}>{refreshing ? "Refreshing…" : "Refresh"}</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Slides */}
@@ -668,6 +695,18 @@ const cb = StyleSheet.create({
     letterSpacing: -0.1,
   },
   headerCount: { fontSize: 11, fontWeight: "600", color: T.mutedFg },
+  refreshBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: T.radiusFull,
+    backgroundColor: `${T.primary}12`,
+    borderWidth: 1,
+    borderColor: `${T.primary}28`,
+  },
+  refreshTxt: { fontSize: 11, fontWeight: "700", color: T.primary },
 
   // Each slide is full SCREEN_W so pagingEnabled snaps perfectly
   slide: { width: SLIDE_W, paddingHorizontal: 16 },
@@ -736,65 +775,29 @@ const cb = StyleSheet.create({
 
 // ─── Get Started Button ───────────────────────────────────────────────────────
 
-const GetStartedButton: React.FC<{ onPress: () => void }> = ({ onPress }) => {
-  const pulse = useRef(new Animated.Value(1)).current;
-  const scale = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.18, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-
-  const onPressIn = () =>
-    Animated.spring(scale, { toValue: 0.93, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
-  const onPressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 5 }).start();
-
-  return (
-    <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-      <Animated.View style={{ transform: [{ scale }] }}>
-        {/* Glow ring */}
-        <Animated.View style={[gsb.glow, { transform: [{ scale: pulse }] }]} />
-        <LinearGradient
-          colors={["#FFD700", "#FF8C00"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={gsb.btn}
-        >
-          <Ionicons name="play-circle" size={15} color="#fff" />
-          <Text style={gsb.txt}>Get Started</Text>
-          <Ionicons name="arrow-forward" size={12} color="rgba(255,255,255,0.8)" />
-        </LinearGradient>
-      </Animated.View>
-    </Pressable>
-  );
-};
+const GetStartedButton: React.FC<{ onPress: () => void }> = ({ onPress }) => (
+  <Pressable
+    onPress={onPress}
+    style={({ pressed }) => [gsb.btn, pressed && { opacity: 0.75 }]}
+  >
+    <Ionicons name="play-circle-outline" size={13} color="#1a1a1a" />
+    <Text style={gsb.txt}>Get Started</Text>
+  </Pressable>
+);
 
 const gsb = StyleSheet.create({
-  glow: {
-    position: "absolute",
-    top: -6, left: -6, right: -6, bottom: -6,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,180,0,0.28)",
-  },
   btn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    shadowColor: "#FF8C00",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.55,
-    shadowRadius: 8,
-    elevation: 6,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: T.radiusFull,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
   },
-  txt: { fontSize: 12, fontWeight: "800", color: "#fff", letterSpacing: 0.2 },
+  txt: { fontSize: 11, fontWeight: "700", color: "#1a1a1a" },
 });
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -1210,14 +1213,19 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
                 <Text style={s.brandTagline}>Your Learning Partner</Text>
               </View>
             </View>
-            <Pressable onPress={() => navigation.navigate("Notifications")} style={s.notifBtn} hitSlop={8}>
-              <Ionicons name="notifications-outline" size={22} color="rgba(255,255,255,0.85)" />
-              {unreadCount > 0 && (
-                <View style={s.notifBadge}>
-                  <Text style={s.notifBadgeTxt}>{unreadCount > 99 ? "99+" : unreadCount}</Text>
-                </View>
-              )}
-            </Pressable>
+            <View style={s.topActions}>
+              <Pressable onPress={() => navigation.navigate("Notifications")} style={s.notifBtn} hitSlop={8}>
+                <Ionicons name="notifications-outline" size={22} color="rgba(255,255,255,0.85)" />
+                {unreadCount > 0 && (
+                  <View style={s.notifBadge}>
+                    <Text style={s.notifBadgeTxt}>{unreadCount > 99 ? "99+" : unreadCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable onPress={() => navigation.navigate("TutorProfile")} style={s.notifBtn} hitSlop={8}>
+                <Ionicons name="person-circle-outline" size={24} color="rgba(255,255,255,0.85)" />
+              </Pressable>
+            </View>
           </View>
 
           <View style={s.greetBlock}>
@@ -1900,15 +1908,15 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         </Pressable>
         <Pressable style={ab.item} onPress={() => navigation.navigate("MyClasses")}>
           <Ionicons name="book-outline" size={22} color={T.mutedFg} />
-          <Text style={ab.label}>Classes</Text>
+          <Text style={ab.label}>My Classes</Text>
         </Pressable>
-        <Pressable style={ab.item} onPress={() => navigation.navigate("MyDemos")}>
-          <Ionicons name="videocam-outline" size={22} color={T.mutedFg} />
-          <Text style={ab.label}>Demos</Text>
+        <Pressable style={ab.item} onPress={() => navigation.navigate("ClassOpportunities")}>
+          <Ionicons name="telescope-outline" size={22} color={T.mutedFg} />
+          <Text style={ab.label}>Explore</Text>
         </Pressable>
-        <Pressable style={ab.item} onPress={() => navigation.navigate("TutorProfile")}>
-          <Ionicons name="person-outline" size={22} color={T.mutedFg} />
-          <Text style={ab.label}>Profile</Text>
+        <Pressable style={ab.item} onPress={() => navigation.navigate("Payments")}>
+          <Ionicons name="wallet-outline" size={22} color={T.mutedFg} />
+          <Text style={ab.label}>Payments</Text>
         </Pressable>
         <Pressable style={ab.item} onPress={() => setShowMoreSheet(true)}>
           <Ionicons name="grid-outline" size={22} color={T.mutedFg} />
@@ -1923,16 +1931,15 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         animationType="slide"
         onRequestClose={() => setShowMoreSheet(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setShowMoreSheet(false)}>
-          <View style={ms.overlay} />
-        </TouchableWithoutFeedback>
+        <View style={ms.overlay}>
+          <Pressable style={{ flex: 1 }} onPress={() => setShowMoreSheet(false)} />
         <View style={[ms.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={ms.handle} />
           <Text style={ms.title}>Menu</Text>
           {[
-            { icon: "calendar-outline", label: "Timetable", color: T.primary, bg: `${T.primary}15`, route: "Timetable" as const },
-            { icon: "school-outline", label: "Class Opportunities", color: T.secondary, bg: `${T.secondary}15`, route: "ClassOpportunities" as const },
-            { icon: "cash-outline", label: "Payments", color: "#10B981", bg: "#10B98115", route: "Payments" as const },
+            { icon: "person-outline", label: "My Profile", color: T.primary, bg: `${T.primary}15`, route: "TutorProfile" as const },
+            { icon: "videocam-outline", label: "My Demos", color: "#7C3AED", bg: "#7C3AED15", route: "MyDemos" as const },
+            { icon: "calendar-outline", label: "Timetable", color: T.secondary, bg: `${T.secondary}15`, route: "Timetable" as const },
             { icon: "help-circle-outline", label: "FAQ", color: "#F59E0B", bg: "#F59E0B15", route: "FAQ" as const },
             { icon: "settings-outline", label: "Settings", color: "#94A3B8", bg: "#64748B15", route: "Settings" as const },
           ].map(({ icon, label, color, bg, route }) => (
@@ -1959,6 +1966,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text style={[ms.itemLabel, { color: T.error }]}>Sign Out</Text>
             <Ionicons name="chevron-forward" size={16} color={`${T.error}40`} />
           </Pressable>
+        </View>
         </View>
       </Modal>
 
@@ -2314,6 +2322,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 20,
   },
+  topActions: { flexDirection: "row", alignItems: "center", gap: 4 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   logoRing: {
     width: 42,
@@ -2344,7 +2353,7 @@ const s = StyleSheet.create({
   notifBadgeTxt: { color: "#fff", fontSize: 8, fontWeight: "800" },
 
   greetBlock: { marginBottom: 24, gap: 0 },
-  greetRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 0 },
+  greetRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 0 },
   greetSub: { color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: "500", marginBottom: 3 },
   greetName: {
     color: "#fff",
@@ -3027,8 +3036,9 @@ const ab = StyleSheet.create({
 
 const ms = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(2,8,23,0.5)",
+    flex: 1,
+    backgroundColor: "rgba(2,8,23,0.55)",
+    justifyContent: "flex-end",
   },
   sheet: {
     backgroundColor: T.paper,

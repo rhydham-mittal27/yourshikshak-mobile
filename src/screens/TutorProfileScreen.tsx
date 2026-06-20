@@ -581,7 +581,8 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   const allSubjects: string[] = (tutor?.subjects ?? [])
     .map((s: any) => (typeof s === "string" ? s : (s?.label ?? s?.name ?? "")))
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a: string, b: string) => a.localeCompare(b));
 
   // Shares the public tutor profile link — same /ourtutor/:teacherId page the
   // frontend "Share Profile" button links to.
@@ -1013,14 +1014,71 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                 </>
               )}
 
-              {/* subjects */}
-              {!loading && allSubjects.length > 0 && (
+              {/* Teaching Info — boards + grades + subjects */}
+              {!loading && !!(
+                allSubjects.length ||
+                tutor?.preferredBoards?.length || tutor?.settings?.preferredBoards?.length ||
+                tutor?.preferredGrades?.length || tutor?.settings?.preferredGrades?.length
+              ) && (
                 <>
-                  <SH icon="book-outline" title="Subjects" accent="#2D68C4" />
-                  <View style={s.chipWrap}>
-                    {allSubjects.map((s, i) => (
-                      <Chip key={i} label={s} rainbow idx={i} />
-                    ))}
+                  <SH icon="book-outline" title="Teaching Info" accent="#2D68C4" />
+                  <View style={s.teachCard}>
+                    {/* Boards row */}
+                    {!!(tutor?.preferredBoards?.length || tutor?.settings?.preferredBoards?.length) && (() => {
+                      const boards = [...(tutor?.preferredBoards ?? []), ...(tutor?.settings?.preferredBoards ?? [])]
+                        .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i);
+                      return (
+                        <View style={s.teachRow}>
+                          <View style={s.teachRowIcon}>
+                            <Ionicons name="layers-outline" size={11} color="#0EA5E9" />
+                          </View>
+                          <Text style={s.teachRowLabel}>Boards</Text>
+                          <View style={s.teachChips}>
+                            {boards.map((b: string, i: number) => (
+                              <Chip key={i} label={b} color="#0EA5E9" />
+                            ))}
+                          </View>
+                        </View>
+                      );
+                    })()}
+
+                    {/* Grades row */}
+                    {!!(tutor?.preferredGrades?.length || tutor?.settings?.preferredGrades?.length) && (() => {
+                      const grades = [...(tutor?.preferredGrades ?? []), ...(tutor?.settings?.preferredGrades ?? [])]
+                        .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i)
+                        .sort((a: string, b: string) => {
+                          const n = (s: string) => parseInt(s.replace(/\D/g, "")) || 0;
+                          return n(a) - n(b);
+                        });
+                      return (
+                        <View style={[s.teachRow, { borderTopWidth: 1, borderTopColor: T.border, marginTop: 8, paddingTop: 8 }]}>
+                          <View style={s.teachRowIcon}>
+                            <Ionicons name="school-outline" size={11} color="#F59E0B" />
+                          </View>
+                          <Text style={s.teachRowLabel}>Grades</Text>
+                          <View style={s.teachChips}>
+                            {grades.map((g: string, i: number) => (
+                              <Chip key={i} label={g} color="#F59E0B" />
+                            ))}
+                          </View>
+                        </View>
+                      );
+                    })()}
+
+                    {/* Subjects row */}
+                    {allSubjects.length > 0 && (
+                      <View style={[s.teachRow, { borderTopWidth: 1, borderTopColor: T.border, marginTop: 8, paddingTop: 8, alignItems: "flex-start" }]}>
+                        <View style={[s.teachRowIcon, { marginTop: 1 }]}>
+                          <Ionicons name="book-outline" size={11} color="#2D68C4" />
+                        </View>
+                        <Text style={[s.teachRowLabel, { marginTop: 1 }]}>Subjects</Text>
+                        <View style={[s.teachChips, { flexWrap: "wrap" }]}>
+                          {allSubjects.map((sub, i) => (
+                            <Chip key={i} label={sub} rainbow idx={i} />
+                          ))}
+                        </View>
+                      </View>
+                    )}
                   </View>
                 </>
               )}
@@ -1031,27 +1089,46 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                   <SH icon="school-outline" title="Qualifications" accent="#7C3AED" />
                   <View style={s.chipWrap}>
                     {qualifications.map((q: string, i: number) => (
-                      <Chip key={i} label={q} color="#7C3AED" idx={i} rainbow />
+                      <Chip key={i} label={q} color="#7C3AED" />
                     ))}
                   </View>
                 </>
               )}
 
-              {/* skills + languages */}
-              {!loading &&
-                !!(tutor?.skills?.length || tutor?.languagesKnown?.length) && (
-                  <>
-                    <SH icon="flash-outline" title="Skills & Languages" accent={T.secondary} />
-                    <View style={s.chipWrap}>
-                      {(tutor?.skills ?? []).map((sk: string, i: number) => (
-                        <Chip key={`sk${i}`} label={sk} rainbow idx={i} />
-                      ))}
-                      {(tutor?.languagesKnown ?? []).map((l: string, i: number) => (
-                        <Chip key={`l${i}`} label={l} color="#14B8A6" idx={i + 5} rainbow />
-                      ))}
-                    </View>
-                  </>
-                )}
+              {/* skills + languages — separated into sub-rows */}
+              {!loading && !!(tutor?.skills?.length || tutor?.languagesKnown?.length) && (
+                <>
+                  <SH icon="flash-outline" title="Skills & Languages" accent={T.secondary} />
+                  <View style={s.teachCard}>
+                    {!!(tutor?.skills?.length) && (
+                      <View style={[s.teachRow, { alignItems: "flex-start" }]}>
+                        <View style={[s.teachRowIcon, { marginTop: 1 }]}>
+                          <Ionicons name="flash-outline" size={11} color={T.secondary} />
+                        </View>
+                        <Text style={[s.teachRowLabel, { marginTop: 1 }]}>Skills</Text>
+                        <View style={[s.teachChips, { flexWrap: "wrap" }]}>
+                          {(tutor.skills as string[]).map((sk: string, i: number) => (
+                            <Chip key={i} label={sk} rainbow idx={i} />
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                    {!!(tutor?.languagesKnown?.length) && (
+                      <View style={[s.teachRow, tutor?.skills?.length ? { borderTopWidth: 1, borderTopColor: T.border, marginTop: 8, paddingTop: 8 } : {}, { alignItems: "flex-start" }]}>
+                        <View style={[s.teachRowIcon, { marginTop: 1 }]}>
+                          <Ionicons name="chatbubble-ellipses-outline" size={11} color="#14B8A6" />
+                        </View>
+                        <Text style={[s.teachRowLabel, { marginTop: 1 }]}>Languages</Text>
+                        <View style={[s.teachChips, { flexWrap: "wrap" }]}>
+                          {(tutor.languagesKnown as string[]).map((l: string, i: number) => (
+                            <Chip key={i} label={l} color="#14B8A6" />
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </>
+              )}
 
               {/* extracurricular activities */}
               {!loading && !!(tutor?.extracurricularActivities?.length) && (
@@ -1059,36 +1136,8 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                   <SH icon="color-palette-outline" title="Extracurricular" accent="#EC4899" />
                   <View style={s.chipWrap}>
                     {(tutor.extracurricularActivities as string[]).map((a: string, i: number) => (
-                      <Chip key={i} label={a} color="#EC4899" rainbow idx={i} />
+                      <Chip key={i} label={a} color="#EC4899" />
                     ))}
-                  </View>
-                </>
-              )}
-
-              {/* preferred grades */}
-              {!loading && !!(tutor?.preferredGrades?.length || tutor?.settings?.preferredGrades?.length) && (
-                <>
-                  <SH icon="school-outline" title="Preferred Grades" accent="#F59E0B" />
-                  <View style={s.chipWrap}>
-                    {([...(tutor?.preferredGrades ?? []), ...(tutor?.settings?.preferredGrades ?? [])]
-                      .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i)
-                      .map((g: string, i: number) => (
-                        <Chip key={i} label={g} color="#F59E0B" />
-                      )))}
-                  </View>
-                </>
-              )}
-
-              {/* preferred boards */}
-              {!loading && !!(tutor?.preferredBoards?.length || tutor?.settings?.preferredBoards?.length) && (
-                <>
-                  <SH icon="layers-outline" title="Preferred Boards" accent="#0EA5E9" />
-                  <View style={s.chipWrap}>
-                    {([...(tutor?.preferredBoards ?? []), ...(tutor?.settings?.preferredBoards ?? [])]
-                      .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i)
-                      .map((b: string, i: number) => (
-                        <Chip key={i} label={b} color="#0EA5E9" />
-                      )))}
                   </View>
                 </>
               )}
@@ -1136,31 +1185,31 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                 })()}
 
               {/* preferred locations */}
-              {!loading &&
-                !!(
-                  tutor?.preferredCities?.length ||
-                  tutor?.preferredLocations?.length
-                ) && (
-                  <>
-                    <SH
-                      icon="location-outline"
-                      title="Preferred Areas"
-                      accent="#E11D48"
-                    />
-                    <View style={s.chipWrap}>
-                      {(tutor?.preferredCities ?? []).slice(0, 6).map((c: any, i: number) => (
-                        <Chip key={`city${i}`} label={c?.label ?? c?.name ?? c} rainbow idx={i + 3} />
-                      ))}
-                    </View>
-                    {!!(tutor?.preferredLocations?.length) && (
-                      <View style={[s.chipWrap, { marginTop: 4 }]}>
-                        {(tutor.preferredLocations as string[]).map((a: string, i: number) => (
-                          <Chip key={`area${i}`} label={a} color="#E11D48" idx={i} />
-                        ))}
+              {!loading && !!(tutor?.preferredCities?.length || tutor?.preferredLocations?.length) && (
+                <>
+                  <SH icon="location-outline" title="Preferred Areas" accent="#E11D48" />
+                  <View style={s.areasCard}>
+                    {tutor?.preferredCities?.length > 0 && (
+                      <View>
+                        <Text style={s.areasLabel}>Cities</Text>
+                        <View style={s.chipWrap}>
+                          {(tutor.preferredCities as any[]).slice(0, 6).map((c: any, i: number) => (
+                            <Chip key={`city${i}`} label={c?.label ?? c?.name ?? c} color="#0EA5E9" />
+                          ))}
+                        </View>
                       </View>
                     )}
-                  </>
-                )}
+                    {tutor?.preferredLocations?.length > 0 && (
+                      <View style={tutor?.preferredCities?.length ? s.areasDivider : undefined}>
+                        <Text style={s.areasLabel}>Areas / Localities</Text>
+                        <Text style={s.areasTxt}>
+                          {(tutor.preferredLocations as string[]).join("  ·  ")}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </>
+              )}
 
               {/* addresses */}
               <SH icon="map-outline" title="Addresses" accent="#E11D48" />
@@ -2283,6 +2332,64 @@ const s = StyleSheet.create({
   modeVal: { fontSize: 14, fontWeight: "800" },
 
   chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 },
+
+  // Teaching Info card
+  teachCard: {
+    backgroundColor: T.paper,
+    borderRadius: T.radiusMd,
+    borderWidth: 1,
+    borderColor: T.border,
+    padding: 12,
+    marginBottom: 8,
+  },
+  teachRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  teachRowIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    backgroundColor: T.muted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  teachRowLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: T.mutedFg,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    width: 60,
+  },
+  teachChips: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 5 },
+
+  // Preferred Areas card
+  areasCard: {
+    backgroundColor: T.paper,
+    borderRadius: T.radiusMd,
+    borderWidth: 1,
+    borderColor: T.border,
+    padding: 12,
+    marginBottom: 8,
+    gap: 0,
+  },
+  areasLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: T.mutedFg,
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+    marginBottom: 6,
+  },
+  areasTxt: {
+    fontSize: 12,
+    color: T.textSecondary,
+    lineHeight: 18,
+  },
+  areasDivider: {
+    borderTopWidth: 1,
+    borderTopColor: T.border,
+    marginTop: 10,
+    paddingTop: 10,
+  },
 
   // availability
   availRow: { flexDirection: "row", alignItems: "center", gap: 8 },

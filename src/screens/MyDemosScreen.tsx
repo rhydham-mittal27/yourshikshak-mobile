@@ -640,12 +640,12 @@ const MyDemosScreen = ({
                 onPress={() => changeFilter(f.key)}
                 style={({ pressed }) => [
                   s.filterChip,
-                  active && { backgroundColor: meta?.color ?? "#fff", borderColor: meta?.color ?? "#fff" },
+                  active && { backgroundColor: "#fff", borderColor: "#fff" },
                   pressed && { transform: [{ scale: 0.96 }] },
                 ]}
               >
-                {meta ? <Ionicons name={meta.icon} size={11} color={active ? "#fff" : meta.color} /> : null}
-                <Text style={[s.filterTxt, active && { color: "#fff", fontWeight: "800" }]}>
+                {meta ? <Ionicons name={meta.icon} size={11} color={active ? "#1a1a1a" : "rgba(255,255,255,0.85)"} /> : null}
+                <Text style={[s.filterTxt, active && { color: "#1a1a1a", fontWeight: "800" }]}>
                   {f.label}
                 </Text>
               </Pressable>
@@ -887,10 +887,10 @@ const s = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderColor: "rgba(255,255,255,0.25)",
   },
-  filterTxt: { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.8)" },
+  filterTxt: { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.85)" },
 
   listWrap: { flex: 1 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 32 },
