@@ -520,45 +520,61 @@ const emp = StyleSheet.create({
 });
 
 // ─── Carousel Banner ──────────────────────────────────────────────────────────
-const BANNER_W = SCREEN_W - 40;
-const BANNER_H = 110;
+// Full-width slides (SCREEN_W) with pagingEnabled gives pixel-perfect snap
+// with zero offset math. The visible card sits inside with horizontal padding.
+const SLIDE_W  = SCREEN_W;
+const CARD_W   = SCREEN_W - 32; // 16px margin each side
+const BANNER_H = 140;
 
 interface BannerItem {
   _id: string;
   imageUrl: string;
   uploaderName: string;
+  expiresAt: string;
 }
+
+const notExpired = (b: BannerItem) => new Date(b.expiresAt) > new Date();
 
 const CarouselBanner: React.FC = () => {
   const [banners, setBanners] = useState<BannerItem[]>([]);
-  const [active, setActive] = useState(0);
-  const flatRef = useRef<FlatList>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [active, setActive]   = useState(0);
+  const flatRef   = useRef<FlatList>(null);
+  const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const expiryRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
-        const res = await apiClient.get("/v1/banners/active");
-        console.log("[Banner] raw res:", JSON.stringify(res));
+        const res  = await apiClient.get("/v1/banners/active");
         const body = res as any;
         const data: BannerItem[] = Array.isArray(body) ? body : (body?.data ?? []);
-        console.log("[Banner] parsed data:", JSON.stringify(data));
-        if (data.length > 0) setBanners(data);
-      } catch (err) {
-        console.log("[Banner] fetch error:", JSON.stringify(err));
-      }
+        const valid = data.filter(notExpired);
+        if (valid.length > 0) setBanners(valid);
+      } catch {}
     })();
+
+    // Evict banners that expire while the app is open
+    expiryRef.current = setInterval(() => {
+      setBanners((prev) => {
+        const still = prev.filter(notExpired);
+        return still.length === prev.length ? prev : still;
+      });
+    }, 60_000);
+
+    return () => { if (expiryRef.current) clearInterval(expiryRef.current); };
   }, []);
 
+  // ── Auto-advance (only when > 1 banner) ───────────────────────────────────
   useEffect(() => {
     if (banners.length < 2) return;
     timerRef.current = setInterval(() => {
       setActive((prev) => {
         const next = (prev + 1) % banners.length;
-        flatRef.current?.scrollToIndex({ index: next, animated: true });
+        flatRef.current?.scrollToOffset({ offset: next * SLIDE_W, animated: true });
         return next;
       });
-    }, 3500);
+    }, 4000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [banners]);
 
@@ -566,6 +582,18 @@ const CarouselBanner: React.FC = () => {
 
   return (
     <View style={cb.wrapper}>
+      {/* Header row */}
+      <View style={cb.headerRow}>
+        <View style={cb.headerLeft}>
+          <View style={cb.notifDot} />
+          <Text style={cb.headerLabel}>Announcements</Text>
+        </View>
+        {banners.length > 1 && (
+          <Text style={cb.headerCount}>{active + 1} / {banners.length}</Text>
+        )}
+      </View>
+
+      {/* Slides */}
       <FlatList
         ref={flatRef}
         data={banners}
@@ -573,31 +601,48 @@ const CarouselBanner: React.FC = () => {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        snapToInterval={BANNER_W + 10}
         decelerationRate="fast"
+        scrollEnabled={banners.length > 1}
         onMomentumScrollEnd={(e) => {
-          const idx = Math.round(e.nativeEvent.contentOffset.x / (BANNER_W + 12));
+          const idx = Math.round(e.nativeEvent.contentOffset.x / SLIDE_W);
           setActive(idx);
         }}
+        getItemLayout={(_, index) => ({
+          length: SLIDE_W,
+          offset: SLIDE_W * index,
+          index,
+        })}
         renderItem={({ item }) => (
           <View style={cb.slide}>
-            <Image
-              source={{ uri: item.imageUrl }}
-              style={cb.slideImage}
-              resizeMode="cover"
-              onError={(e) => console.log("[Banner] image error:", item.imageUrl, e.nativeEvent.error)}
-            />
-            <View style={cb.uploaderBadge}>
-              <Text style={cb.uploaderText}>{item.uploaderName}</Text>
+            <View style={cb.card}>
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={cb.image}
+                resizeMode="cover"
+              />
+              {/* Gradient scrim for uploader label */}
+              <View style={cb.scrim} />
+              <View style={cb.uploaderRow}>
+                <View style={cb.uploaderAvatar}>
+                  <Text style={cb.uploaderInitial}>
+                    {item.uploaderName?.[0]?.toUpperCase() ?? "?"}
+                  </Text>
+                </View>
+                <Text style={cb.uploaderName}>{item.uploaderName}</Text>
+              </View>
             </View>
           </View>
         )}
-        contentContainerStyle={{ gap: 10 }}
       />
+
+      {/* Dot indicators */}
       {banners.length > 1 && (
         <View style={cb.dots}>
           {banners.map((_, i) => (
-            <View key={i} style={[cb.dot, i === active && cb.dotActive]} />
+            <View
+              key={i}
+              style={[cb.dot, i === active && cb.dotActive]}
+            />
           ))}
         </View>
       )}
@@ -606,27 +651,93 @@ const CarouselBanner: React.FC = () => {
 };
 
 const cb = StyleSheet.create({
-  wrapper: { marginBottom: 12 },
-  slide: {
-    width: BANNER_W,
+  wrapper: { marginBottom: 6 },
+
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
+  notifDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: T.primary,
+  },
+  headerLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: T.textPrimary,
+    letterSpacing: -0.1,
+  },
+  headerCount: { fontSize: 11, fontWeight: "600", color: T.mutedFg },
+
+  // Each slide is full SCREEN_W so pagingEnabled snaps perfectly
+  slide: { width: SLIDE_W, paddingHorizontal: 16 },
+
+  card: {
+    width: CARD_W,
     height: BANNER_H,
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: "hidden",
+    backgroundColor: T.muted,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  slideImage: { width: BANNER_W, height: BANNER_H },
-  uploaderBadge: {
+  image: { width: CARD_W, height: BANNER_H },
+
+  // Bottom scrim for uploader label legibility
+  scrim: {
     position: "absolute",
-    bottom: 8,
-    right: 10,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 48,
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
-  uploaderText: { color: "#fff", fontSize: 10, fontWeight: "600" },
-  dots: { flexDirection: "row", justifyContent: "center", gap: 4, marginTop: 8 },
-  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: "#CBD5E1" },
-  dotActive: { width: 14, backgroundColor: T.primary },
+  uploaderRow: {
+    position: "absolute",
+    bottom: 10,
+    left: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  uploaderAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: T.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uploaderInitial: { color: "#fff", fontSize: 10, fontWeight: "800" },
+  uploaderName: { color: "#fff", fontSize: 11, fontWeight: "600" },
+
+  dots: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 10,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#CBD5E1",
+  },
+  dotActive: {
+    width: 18,
+    backgroundColor: T.primary,
+    borderRadius: 3,
+  },
 });
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
