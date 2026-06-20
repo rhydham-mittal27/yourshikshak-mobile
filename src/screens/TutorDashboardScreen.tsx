@@ -527,27 +527,41 @@ interface BannerItem {
   _id: string;
   imageUrl: string;
   uploaderName: string;
+  expiresAt: string;
 }
+
+const notExpired = (b: BannerItem) => new Date(b.expiresAt) > new Date();
 
 const CarouselBanner: React.FC = () => {
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [active, setActive] = useState(0);
   const flatRef = useRef<FlatList>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const expiryRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
         const res = await apiClient.get("/v1/banners/active");
-        console.log("[Banner] raw res:", JSON.stringify(res));
         const body = res as any;
         const data: BannerItem[] = Array.isArray(body) ? body : (body?.data ?? []);
-        console.log("[Banner] parsed data:", JSON.stringify(data));
-        if (data.length > 0) setBanners(data);
+        // Filter expired banners defensively on the client side
+        const valid = data.filter(notExpired);
+        if (valid.length > 0) setBanners(valid);
       } catch (err) {
         console.log("[Banner] fetch error:", JSON.stringify(err));
       }
     })();
+
+    // Evict banners that expire while the app is open
+    expiryRef.current = setInterval(() => {
+      setBanners((prev) => {
+        const still = prev.filter(notExpired);
+        return still.length === prev.length ? prev : still;
+      });
+    }, 60_000);
+
+    return () => { if (expiryRef.current) clearInterval(expiryRef.current); };
   }, []);
 
   useEffect(() => {
