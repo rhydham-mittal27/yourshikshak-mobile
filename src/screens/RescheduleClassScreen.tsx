@@ -9,6 +9,8 @@ import {
   StatusBar,
   TextInput,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -170,7 +172,7 @@ const RescheduleClassScreen = () => {
     d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
 
   return (
-    <View style={rc.root}>
+    <KeyboardAvoidingView style={rc.root} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <StatusBar barStyle="light-content" />
 
       <LinearGradient
@@ -305,7 +307,7 @@ const RescheduleClassScreen = () => {
           </Pressable>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

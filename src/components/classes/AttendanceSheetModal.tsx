@@ -11,6 +11,8 @@ import {
   Dimensions,
   Animated,
   PanResponder,
+  Platform,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -37,7 +39,7 @@ interface Props {
   onSubmitSuccess?: () => void;
 }
 
-type Tab = "submit" | "history" | "shift";
+type Tab = "history" | "shift";
 
 const STATUS_META: Record<string, { color: string; bg: string; icon: any; label: string }> = {
   PRESENT:   { color: T.success,   bg: "#ECFDF5", icon: "checkmark-circle", label: "Present" },
@@ -70,7 +72,19 @@ const subjectLabel = (cls: FinalClass | null) => {
 };
 
 const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, onSubmitSuccess }) => {
-  const [tab, setTab] = useState<Tab>("submit");
+  const [tab, setTab] = useState<Tab>("history");
+  const [kbHeight, setKbHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKbHeight(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKbHeight(0),
+    );
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const [records, setRecords]         = useState<ClassAttendanceRecord[]>([]);
   const [histLoading, setHistLoading] = useState(false);
@@ -155,7 +169,7 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
   useEffect(() => {
     if (visible) {
       setTopic(""); setNotes(""); setStudentStatus("PRESENT");
-      setSubmitError(null); setSubmitSuccess(false); setTab("submit");
+      setSubmitError(null); setSubmitSuccess(false); setTab("history");
       setShiftDays(""); setShiftReason(""); setShiftError(null); setShiftSuccess(false);
       setShiftRequests([]);
     }
@@ -220,7 +234,7 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
       <Pressable style={s.container} onPress={close} activeOpacity={1}>
 
         {/* Gesture-driven sheet */}
-        <Animated.View style={[s.sheet, { height: sheetH }]} {...pan.panHandlers}>
+        <Animated.View style={[s.sheet, { height: sheetH, marginBottom: kbHeight }]} {...pan.panHandlers}>
             {/* Drag handle */}
             <View style={s.dragHandle} />
 
@@ -242,9 +256,9 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
 
             {/* Tabs */}
             <View style={s.tabRow}>
-              {(["submit", "history", "shift"] as Tab[]).map((t) => {
-                const icon = t === "submit" ? "add-circle-outline" : t === "history" ? "list-outline" : "calendar-outline";
-                const label = t === "submit" ? "Submit" : t === "history" ? "History" : "Reschedule";
+              {(["history", "shift"] as Tab[]).map((t) => {
+                const icon = t === "history" ? "list-outline" : "calendar-outline";
+                const label = t === "history" ? "History" : "Permanent Shift";
                 return (
                   <Pressable key={t} onPress={() => setTab(t)} style={[s.tabBtn, tab === t && s.tabBtnActive]}>
                     <Ionicons name={icon} size={13} color={tab === t ? T.primary : "#94A3B8"} />
@@ -253,98 +267,6 @@ const AttendanceSheetModal: React.FC<Props> = ({ visible, cls, cycle, onClose, o
                 );
               })}
             </View>
-
-            {/* ── Submit Tab ── */}
-            {tab === "submit" && (
-              <ScrollView style={s.body} contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
-                <View style={s.dateStrip}>
-                  <Ionicons name="calendar-outline" size={13} color="#64748B" />
-                  <Text style={s.dateTxt}>Today: {todayStr()}</Text>
-                </View>
-
-                {!classDay && (
-                  <View style={[s.alertBox, { backgroundColor: "#FFFBEB", borderColor: "#FDE68A" }]}>
-                    <Ionicons name="warning-outline" size={15} color="#D97706" />
-                    <Text style={[s.alertTxt, { color: "#92400E" }]}>Today is not a scheduled day for this class.</Text>
-                  </View>
-                )}
-                {alreadyMarked && (
-                  <View style={[s.alertBox, { backgroundColor: "#EFF6FF", borderColor: "#BFDBFE" }]}>
-                    <Ionicons name="information-circle-outline" size={15} color="#2563EB" />
-                    <Text style={[s.alertTxt, { color: "#1E40AF" }]}>Attendance for today has already been marked.</Text>
-                  </View>
-                )}
-                {submitSuccess && (
-                  <View style={[s.alertBox, { backgroundColor: "#ECFDF5", borderColor: "#A7F3D0" }]}>
-                    <Ionicons name="checkmark-circle-outline" size={15} color={T.success} />
-                    <Text style={[s.alertTxt, { color: "#065F46" }]}>Attendance submitted successfully!</Text>
-                  </View>
-                )}
-
-                <View style={s.formCard}>
-                  <Text style={s.formLabel}>CLASS</Text>
-                  <Text style={s.formValue}>{cls?.studentName}</Text>
-                  <Text style={s.formSub}>{cls ? subjectLabel(cls) : "—"} · Grade {cls?.grade} · {cls?.completedSessions ?? 0}/{cls?.classesPerMonth ?? cls?.totalSessions ?? "?"} sessions</Text>
-                </View>
-
-                <View style={s.inputGroup}>
-                  <Text style={s.inputLabel}>Topic Covered</Text>
-                  <TextInput
-                    style={[s.input, alreadyMarked && s.inputDisabled]}
-                    placeholder="e.g., Trigonometry — Heights & Distances"
-                    placeholderTextColor="#94A3B8"
-                    value={topic} onChangeText={setTopic}
-                    editable={!alreadyMarked} multiline numberOfLines={2}
-                  />
-                  <Text style={s.inputHint}>Briefly describe what was taught</Text>
-                </View>
-
-                <View style={s.inputGroup}>
-                  <Text style={s.inputLabel}>Student Attendance</Text>
-                  <View style={s.statusToggleRow}>
-                    {(["PRESENT", "ABSENT"] as const).map((st) => {
-                      const meta = STATUS_META[st]; const active = studentStatus === st;
-                      return (
-                        <Pressable key={st} onPress={() => !alreadyMarked && setStudentStatus(st)}
-                          style={[s.statusToggle, active && { backgroundColor: meta.bg, borderColor: meta.color }]}>
-                          <Ionicons name={meta.icon} size={16} color={active ? meta.color : "#CBD5E1"} />
-                          <Text style={[s.statusToggleTxt, active && { color: meta.color, fontWeight: "700" }]}>{meta.label}</Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                <View style={s.inputGroup}>
-                  <Text style={s.inputLabel}>Notes (Optional)</Text>
-                  <TextInput
-                    style={[s.input, { height: 72 }, alreadyMarked && s.inputDisabled]}
-                    placeholder="Any additional remarks about this session"
-                    placeholderTextColor="#94A3B8"
-                    value={notes} onChangeText={setNotes}
-                    editable={!alreadyMarked} multiline textAlignVertical="top"
-                  />
-                </View>
-
-                {submitError && (
-                  <View style={[s.alertBox, { backgroundColor: "#FEF2F2", borderColor: "#FECACA" }]}>
-                    <Ionicons name="alert-circle-outline" size={15} color={T.error} />
-                    <Text style={[s.alertTxt, { color: "#991B1B", flex: 1 }]}>{submitError}</Text>
-                  </View>
-                )}
-
-                <Pressable onPress={handleSubmit}
-                  disabled={submitting || checkingMark || alreadyMarked || !classDay || submitSuccess}
-                  style={[s.submitBtn, (submitting || alreadyMarked || !classDay || submitSuccess) && s.submitBtnDisabled]}>
-                  {submitting
-                    ? <ActivityIndicator color="#fff" size="small" />
-                    : <Ionicons name="checkmark-circle" size={18} color="#fff" />}
-                  <Text style={s.submitBtnTxt}>
-                    {submitting ? "Submitting…" : checkingMark ? "Checking…" : alreadyMarked ? "Already Marked" : submitSuccess ? "Submitted!" : "Submit Attendance"}
-                  </Text>
-                </Pressable>
-              </ScrollView>
-            )}
 
             {/* ── History Tab ── */}
             {tab === "history" && (

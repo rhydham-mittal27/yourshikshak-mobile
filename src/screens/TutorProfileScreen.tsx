@@ -189,6 +189,42 @@ const Chip = ({
   );
 };
 
+// ─── Area chips (preferred localities with show-more collapse) ────────────────
+
+const AREAS_INITIAL = 10;
+
+const AreaChips = ({ locations, hasDivider }: { locations: string[]; hasDivider: boolean }) => {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? locations : locations.slice(0, AREAS_INITIAL);
+  const hidden = locations.length - AREAS_INITIAL;
+  return (
+    <View style={hasDivider ? s.areasDivider : undefined}>
+      <Text style={s.areasLabel}>Areas / Localities</Text>
+      <View style={s.chipWrap}>
+        {visible.map((loc, i) => (
+          <Chip key={i} label={loc} color="#E11D48" />
+        ))}
+        {!expanded && hidden > 0 && (
+          <Pressable
+            onPress={() => setExpanded(true)}
+            style={[chip.wrap, { backgroundColor: "#E11D4810", borderColor: "#E11D4828" }]}
+          >
+            <Text style={[chip.txt, { color: "#E11D48" }]}>+{hidden} more</Text>
+          </Pressable>
+        )}
+        {expanded && (
+          <Pressable
+            onPress={() => setExpanded(false)}
+            style={[chip.wrap, { backgroundColor: "#94A3B810", borderColor: "#94A3B828" }]}
+          >
+            <Text style={[chip.txt, { color: "#94A3B8" }]}>Show less</Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+};
+
 // ─── Document card ────────────────────────────────────────────────────────────
 
 const DOC_META: Record<string, { label: string; icon: any; color: string; grad: [string, string] }> = {
@@ -310,6 +346,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [vFeeMode, setVFeeMode] = useState<"now" | "later">("now");
   const [vFeeAsset, setVFeeAsset] = useState<{ uri: string; name: string; mime: string } | null>(null);
   const [vAgreed, setVAgreed] = useState([false, false, false]);
+  const [activeBoardIdx, setActiveBoardIdx] = useState(0);
   const [vUploading, setVUploading] = useState<string | null>(null);
   const [vSubmitting, setVSubmitting] = useState(false);
   const [vError, setVError] = useState<string | null>(null);
@@ -579,10 +616,41 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
     (d: any) => String(d.documentType).toUpperCase() !== "PROFILE_PHOTO",
   );
 
-  const allSubjects: string[] = (tutor?.subjects ?? [])
-    .map((s: any) => (typeof s === "string" ? s : (s?.label ?? s?.name ?? "")))
-    .filter(Boolean)
-    .sort((a: string, b: string) => a.localeCompare(b));
+  // Build Board → Grade → Subjects hierarchy from populated subject tree
+  type SubjectGroup = { board: string; grades: { grade: string; subjects: string[] }[] };
+  const subjectHierarchy: SubjectGroup[] = (() => {
+    const boardMap: Record<string, Record<string, Set<string>>> = {};
+    for (const s of (tutor?.subjects ?? []) as any[]) {
+      if (!s || typeof s !== "object") continue;
+      const subjectLabel: string = s.label ?? s.name ?? "";
+      if (!subjectLabel) continue;
+      const grade = s.parent;
+      const board = grade?.parent;
+      const gradeLabel: string = grade?.label ?? grade?.name ?? "Other";
+      const boardLabel: string = board?.label ?? board?.name ?? "Other";
+      if (!boardMap[boardLabel]) boardMap[boardLabel] = {};
+      if (!boardMap[boardLabel][gradeLabel]) boardMap[boardLabel][gradeLabel] = new Set();
+      boardMap[boardLabel][gradeLabel].add(subjectLabel);
+    }
+    return Object.entries(boardMap).map(([board, gradeMap]) => ({
+      board,
+      grades: Object.entries(gradeMap).map(([grade, subs]) => ({
+        grade,
+        subjects: Array.from(subs).sort((a, b) => a.localeCompare(b)),
+      })).sort((a, b) => {
+        const n = (s: string) => parseInt(s.replace(/\D/g, "")) || 0;
+        return n(a.grade) - n(b.grade);
+      }),
+    })).sort((a, b) => a.board.localeCompare(b.board));
+  })();
+
+  // Flat fallback for legacy string subjects
+  const allSubjects: string[] = subjectHierarchy.length === 0
+    ? (tutor?.subjects ?? [])
+        .map((s: any) => (typeof s === "string" ? s : (s?.label ?? s?.name ?? "")))
+        .filter(Boolean)
+        .sort((a: string, b: string) => a.localeCompare(b))
+    : [];
 
   // Shares the public tutor profile link — same /ourtutor/:teacherId page the
   // frontend "Share Profile" button links to.
@@ -1016,6 +1084,7 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
 
               {/* Teaching Info — boards + grades + subjects */}
               {!loading && !!(
+                subjectHierarchy.length ||
                 allSubjects.length ||
                 tutor?.preferredBoards?.length || tutor?.settings?.preferredBoards?.length ||
                 tutor?.preferredGrades?.length || tutor?.settings?.preferredGrades?.length
@@ -1065,18 +1134,106 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                       );
                     })()}
 
-                    {/* Subjects row */}
-                    {allSubjects.length > 0 && (
-                      <View style={[s.teachRow, { borderTopWidth: 1, borderTopColor: T.border, marginTop: 8, paddingTop: 8, alignItems: "flex-start" }]}>
-                        <View style={[s.teachRowIcon, { marginTop: 1 }]}>
-                          <Ionicons name="book-outline" size={11} color="#2D68C4" />
+                    {/* Subjects — compact tabbed hierarchy */}
+                    {(subjectHierarchy.length > 0 || allSubjects.length > 0) && (
+                      <View style={[sh.subjectsWrap, { borderTopWidth: 1, borderTopColor: T.border, marginTop: 8, paddingTop: 12 }]}>
+                        {/* Row label */}
+                        <View style={sh.subjectsHeader}>
+                          <View style={s.teachRowIcon}>
+                            <Ionicons name="book-outline" size={11} color="#2D68C4" />
+                          </View>
+                          <Text style={s.teachRowLabel}>Subjects</Text>
                         </View>
-                        <Text style={[s.teachRowLabel, { marginTop: 1 }]}>Subjects</Text>
-                        <View style={[s.teachChips, { flexWrap: "wrap" }]}>
-                          {allSubjects.map((sub, i) => (
-                            <Chip key={i} label={sub} rainbow idx={i} />
-                          ))}
-                        </View>
+
+                        {subjectHierarchy.length > 0 ? (
+                          <View style={{ marginTop: 10 }}>
+                            {/* Board tabs */}
+                            {subjectHierarchy.length > 1 && (
+                              <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={sh.boardTabs}
+                              >
+                                {subjectHierarchy.map((bg, bi) => (
+                                  <Pressable
+                                    key={bg.board}
+                                    onPress={() => setActiveBoardIdx(bi)}
+                                    style={[sh.boardTab, activeBoardIdx === bi && sh.boardTabActive]}
+                                  >
+                                    <Ionicons
+                                      name="layers-outline"
+                                      size={10}
+                                      color={activeBoardIdx === bi ? "#fff" : "#0EA5E9"}
+                                    />
+                                    <Text style={[sh.boardTabTxt, activeBoardIdx === bi && sh.boardTabTxtActive]}>
+                                      {bg.board}
+                                    </Text>
+                                  </Pressable>
+                                ))}
+                              </ScrollView>
+                            )}
+                            {/* Single-board label when only one board */}
+                            {subjectHierarchy.length === 1 && (
+                              <View style={sh.singleBoardRow}>
+                                <Ionicons name="layers-outline" size={11} color="#0EA5E9" />
+                                <Text style={sh.singleBoardTxt}>{subjectHierarchy[0].board}</Text>
+                              </View>
+                            )}
+
+                            {/* Compact grade rows for active board */}
+                            {(() => {
+                              const board = subjectHierarchy[Math.min(activeBoardIdx, subjectHierarchy.length - 1)];
+                              if (!board) return null;
+
+                              // Collapse consecutive "All Subjects" grades into a range
+                              type GradeRow = { rangeLabel: string; subjects: string[] };
+                              const rows: GradeRow[] = [];
+                              let allSubsRun: string[] = [];
+
+                              const flushRun = () => {
+                                if (allSubsRun.length === 0) return;
+                                const label = allSubsRun.length === 1
+                                  ? allSubsRun[0]
+                                  : `${allSubsRun[0]} – ${allSubsRun[allSubsRun.length - 1]}`;
+                                rows.push({ rangeLabel: label, subjects: ["All Subjects"] });
+                                allSubsRun = [];
+                              };
+
+                              for (const gg of board.grades) {
+                                const isAllSubs = gg.subjects.length === 1 && gg.subjects[0].toLowerCase().includes("all");
+                                if (isAllSubs) {
+                                  allSubsRun.push(gg.grade);
+                                } else {
+                                  flushRun();
+                                  rows.push({ rangeLabel: gg.grade, subjects: gg.subjects });
+                                }
+                              }
+                              flushRun();
+
+                              return (
+                                <View style={sh.gradeRows}>
+                                  {rows.map((row, ri) => (
+                                    <View key={ri} style={sh.gradeRow}>
+                                      <Text style={sh.gradeRowLabel} numberOfLines={1}>{row.rangeLabel}</Text>
+                                      <View style={sh.gradeRowChips}>
+                                        {row.subjects.map((sub, si) => (
+                                          <Chip key={si} label={sub} rainbow idx={si} />
+                                        ))}
+                                      </View>
+                                    </View>
+                                  ))}
+                                </View>
+                              );
+                            })()}
+                          </View>
+                        ) : (
+                          /* Flat fallback */
+                          <View style={[sh.gradeRowChips, { marginTop: 8 }]}>
+                            {allSubjects.map((sub, i) => (
+                              <Chip key={i} label={sub} rainbow idx={i} />
+                            ))}
+                          </View>
+                        )}
                       </View>
                     )}
                   </View>
@@ -1200,12 +1357,10 @@ const TutorProfileScreen: React.FC<Props> = ({ navigation }) => {
                       </View>
                     )}
                     {tutor?.preferredLocations?.length > 0 && (
-                      <View style={tutor?.preferredCities?.length ? s.areasDivider : undefined}>
-                        <Text style={s.areasLabel}>Areas / Localities</Text>
-                        <Text style={s.areasTxt}>
-                          {(tutor.preferredLocations as string[]).join("  ·  ")}
-                        </Text>
-                      </View>
+                      <AreaChips
+                        locations={tutor.preferredLocations as string[]}
+                        hasDivider={!!tutor?.preferredCities?.length}
+                      />
                     )}
                   </View>
                 </>
@@ -2543,6 +2698,91 @@ const sh = StyleSheet.create({
     borderWidth: 1,
   },
   badgeTxt: { fontSize: 9, fontWeight: "800" },
+
+  // Subject hierarchy — compact tabbed design
+  subjectsWrap: {},
+  subjectsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  // Board tabs
+  boardTabs: {
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 10,
+  },
+  boardTab: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 99,
+    backgroundColor: "#E8F4FE",
+    borderWidth: 1,
+    borderColor: "#BDE0F8",
+  },
+  boardTabActive: {
+    backgroundColor: "#0EA5E9",
+    borderColor: "#0284C7",
+  },
+  boardTabTxt: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#0EA5E9",
+  },
+  boardTabTxtActive: {
+    color: "#fff",
+  },
+
+  // Single board (no tabs)
+  singleBoardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginBottom: 8,
+  },
+  singleBoardTxt: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    color: "#0EA5E9",
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+
+  // Compact grade rows
+  gradeRows: { gap: 6 },
+  gradeRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5FB",
+  },
+  gradeRowLabel: {
+    width: 110,
+    fontSize: 11,
+    fontWeight: "600",
+    color: T.textSecondary,
+    paddingTop: 3,
+    flexShrink: 0,
+  },
+  gradeRowChips: {
+    flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 5,
+  },
+
+  // Legacy (kept for compat)
+  boardRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  boardLabel: { fontSize: 11.5, fontWeight: "800", color: "#0EA5E9" },
+  gradeBlock: { marginLeft: 8, gap: 5 },
+  gradeLabel: { fontSize: 10.5, fontWeight: "700", color: T.textSecondary },
+  subjectChips: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
 });
 
 // Tab bar

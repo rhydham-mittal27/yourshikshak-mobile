@@ -1,9 +1,11 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  Keyboard,
   Modal,
   PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -193,6 +195,19 @@ function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDel
   const [confirmText, setConfirmText] = useState("");
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState<string | null>(null);
+  const [kbHeight, setKbHeight]       = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKbHeight(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKbHeight(0),
+    );
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const confirmed = confirmText.trim() === "DELETE";
 
@@ -230,7 +245,7 @@ function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDel
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
       <Pressable style={dm.backdrop} onPress={loading ? undefined : onClose}>
         <Animated.View
-          style={[dm.sheet, { paddingBottom: Math.max(insets.bottom, 28), transform: [{ translateY }] }]}
+          style={[dm.sheet, { paddingBottom: Math.max(insets.bottom, 28), marginBottom: kbHeight, transform: [{ translateY }] }]}
           {...panResponder.panHandlers}
         >
           <View style={dm.handle} />

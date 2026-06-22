@@ -458,7 +458,7 @@ function SessionCard({ session, index, onReschedule }: {
   const statusConf  = STATUS_CONFIG[session.status] ?? STATUS_CONFIG.PLANNED;
   const startTime   = session.timeSlot?.split("(")[0]?.trim() ?? "—";
   const duration    = session.timeSlot?.match(/\(([^)]+)\)/)?.[1];
-  const canReschedule = session.status === "PLANNED";
+  const canReschedule = session.status === "PLANNED" && new Date(session.sessionDate) > new Date();
 
   return (
     <View style={cc.card}>

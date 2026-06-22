@@ -292,9 +292,9 @@ const IntroScreen: React.FC<Props> = ({ navigation }) => {
         <RoleCard
           colors={["#0095C1", "#00B7EB", "#33C9F0"]}
           icon="people"
-          eyebrow="FOR PARENTS / STUDENTS"
-          title="I'm a Parent / Student"
-          subtitle="Find a verified expert tutor for your child or yourself within 24 hours"
+          eyebrow="FOR PARENTS"
+          title="I'm a Parent"
+          subtitle="Find a verified expert tutor for your child within 24 hours"
           ctaLabel="Find a Tutor"
           delay={180}
           compact={compact}

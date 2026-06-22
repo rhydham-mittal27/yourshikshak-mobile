@@ -15,6 +15,7 @@ import {
   RefreshControl,
   Animated,
   Easing,
+  Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +24,8 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import {
   getTutorAnnouncements,
+  getTutorMyInterests,
+  getTutorProfile,
   expressInterest,
   LeadAnnouncement,
 } from "../api/client";
@@ -34,17 +37,17 @@ import OpportunitySkeleton from "../components/opportunities/OpportunitySkeleton
 type Nav = StackNavigationProp<RootStackParamList, "ClassOpportunities">;
 interface Props { navigation: Nav }
 
-// ── Filter ────────────────────────────────────────────────────────────────────
-
 type Filter = "all" | "ONLINE" | "OFFLINE" | "HYBRID" | "match";
 
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: "all",     label: "All"       },
-  { key: "match",   label: "Top Match" },
-  { key: "ONLINE",  label: "Online"    },
-  { key: "OFFLINE", label: "Offline"   },
-  { key: "HYBRID",  label: "Hybrid"    },
+const FILTERS: { key: Filter; label: string; icon: any }[] = [
+  { key: "all",     label: "All",        icon: "apps-outline"       },
+  { key: "match",   label: "Top Match",  icon: "star-outline"       },
+  { key: "ONLINE",  label: "Online",     icon: "videocam-outline"   },
+  { key: "OFFLINE", label: "Offline",    icon: "home-outline"       },
+  { key: "HYBRID",  label: "Hybrid",     icon: "git-merge-outline"  },
 ];
+
+const { width: SCREEN_W } = Dimensions.get("window");
 
 // ── Filter chip ───────────────────────────────────────────────────────────────
 
@@ -63,13 +66,19 @@ const FilterChip = ({
       <Pressable
         onPress={onPress}
         onPressIn={() =>
-          Animated.spring(scale, { toValue: 0.92, useNativeDriver: true, speed: 60, bounciness: 0 }).start()
+          Animated.spring(scale, { toValue: 0.93, useNativeDriver: true, speed: 80, bounciness: 0 }).start()
         }
         onPressOut={() =>
-          Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 5 }).start()
+          Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 4 }).start()
         }
         style={[chip.pill, active && chip.pillActive]}
       >
+        <Ionicons
+          name={f.icon}
+          size={11}
+          color={active ? "#fff" : T.mutedFg}
+          style={{ marginRight: 3 }}
+        />
         <Text style={[chip.label, active && chip.labelActive]}>{f.label}</Text>
       </Pressable>
     </Animated.View>
@@ -78,20 +87,22 @@ const FilterChip = ({
 
 // ── Stat tile ─────────────────────────────────────────────────────────────────
 
-const Stat = ({
+const StatTile = ({
   icon,
   value,
   label,
-  color,
+  accent,
 }: {
   icon: any;
   value: number;
   label: string;
-  color?: string;
+  accent?: string;
 }) => (
   <View style={stat.tile}>
-    <Ionicons name={icon} size={13} color={color ?? "rgba(255,255,255,0.45)"} />
-    <Text style={[stat.val, color ? { color } : {}]}>{value}</Text>
+    <View style={[stat.iconRing, accent && { backgroundColor: `${accent}22`, borderColor: `${accent}40` }]}>
+      <Ionicons name={icon} size={14} color={accent ?? "rgba(255,255,255,0.6)"} />
+    </View>
+    <Text style={[stat.val, accent && { color: accent }]}>{value}</Text>
     <Text style={stat.lbl}>{label}</Text>
   </View>
 );
@@ -99,24 +110,33 @@ const Stat = ({
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 const Skeleton = ({ count = 3 }: { count?: number }) => (
-  <View style={{ gap: 10, paddingHorizontal: 18 }}>
+  <View style={{ gap: 12, paddingHorizontal: 16 }}>
     {Array.from({ length: count }).map((_, i) => (
       <View key={i} style={s.skelCard}>
-        <View style={{ flexDirection: "row", gap: 6, marginBottom: 10 }}>
-          <OpportunitySkeleton w="26%" h={18} radius={99} />
-          <OpportunitySkeleton w="36%" h={18} radius={99} />
+        <View style={{ flexDirection: "row", gap: 6, marginBottom: 12 }}>
+          <OpportunitySkeleton w="22%" h={22} radius={99} />
+          <OpportunitySkeleton w="30%" h={22} radius={99} />
+          <OpportunitySkeleton w="18%" h={22} radius={99} />
         </View>
-        <OpportunitySkeleton w={i % 2 ? "62%" : "76%"} h={20} radius={6} />
-        <OpportunitySkeleton w="38%" h={13} />
-        <OpportunitySkeleton w="100%" h={50} radius={11} />
-        <View style={{ flexDirection: "row", gap: 6 }}>
-          <OpportunitySkeleton w="28%" h={24} radius={99} />
-          <OpportunitySkeleton w="28%" h={24} radius={99} />
+        <OpportunitySkeleton w={i % 2 ? "68%" : "80%"} h={22} radius={6} />
+        <OpportunitySkeleton w="40%" h={13} radius={4} />
+        <OpportunitySkeleton w="100%" h={56} radius={12} />
+        <View style={{ flexDirection: "row", gap: 6, marginTop: 2 }}>
+          <OpportunitySkeleton w="26%" h={26} radius={99} />
+          <OpportunitySkeleton w="26%" h={26} radius={99} />
+          <OpportunitySkeleton w="22%" h={26} radius={99} />
         </View>
       </View>
     ))}
   </View>
 );
+
+// ── Tab indicator (sliding pill) ──────────────────────────────────────────────
+
+const TABS: { key: "browse" | "history"; label: string; icon: any }[] = [
+  { key: "browse",  label: "Browse",       icon: "telescope-outline" },
+  { key: "history", label: "My Interests", icon: "heart-outline"     },
+];
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
@@ -132,16 +152,34 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
   const [page, setPage]                 = useState(1);
   const [interestedIds, setInterestedIds] = useState<Set<string>>(new Set());
   const [myInterestCount, setMyInterestCount] = useState(0);
+  const tutorIdRef = useRef<string | null>(null);
   const [expressingId, setExpressingId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<Filter>("all");
+  const [activeTab, setActiveTab] = useState<"browse" | "history">("browse");
+  const [historyItems, setHistoryItems] = useState<LeadAnnouncement[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const fetchingRef = useRef(false);
 
-  // Header fade-in
+  // Sliding tab indicator
+  const tabSlide = useRef(new Animated.Value(0)).current;
+
+  const handleTabChange = (tab: "browse" | "history") => {
+    setActiveTab(tab);
+    Animated.spring(tabSlide, {
+      toValue: tab === "browse" ? 0 : 1,
+      useNativeDriver: true,
+      speed: 60,
+      bounciness: 0,
+    }).start();
+    if (tab === "history") loadHistory();
+  };
+
+  // Header entrance
   const headerAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(headerAnim, {
       toValue: 1,
-      duration: 480,
+      duration: 520,
       easing: Easing.bezier(0.23, 1, 0.32, 1),
       useNativeDriver: true,
     }).start();
@@ -159,8 +197,24 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
       setItems((prev) => (append ? [...prev, ...valid] : valid));
       setTotal(res.pagination.total);
       setPage(pageNum);
-      if (!append && res.myInterestCount !== undefined)
-        setMyInterestCount(res.myInterestCount);
+      const tid = tutorIdRef.current;
+      const appliedInPage = new Set(
+        valid
+          .filter((a) =>
+            a.isInterestedByMe ||
+            (tid && a.interestedTutors?.some((t) => t.tutor === tid || t._id === tid || t === tid))
+          )
+          .map((a) => a._id),
+      );
+      if (!append) {
+        setInterestedIds(appliedInPage);
+      } else {
+        setInterestedIds((prev) => {
+          const next = new Set(prev);
+          appliedInPage.forEach((id) => next.add(id));
+          return next;
+        });
+      }
     } catch {}
     setLoading(false);
     setLoadingMore(false);
@@ -168,7 +222,24 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
     fetchingRef.current = false;
   }, []);
 
-  useEffect(() => { loadPage(1); }, [loadPage]);
+  useEffect(() => {
+    getTutorProfile().then((res) => {
+      const data = res.data as any;
+      if (typeof data.interestCount === "number") setMyInterestCount(data.interestCount);
+      if (data._id) tutorIdRef.current = data._id;
+      loadPage(1);
+    }).catch(() => { loadPage(1); });
+  }, [loadPage]);
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await getTutorMyInterests();
+      const valid = (res.data || []).filter((a) => a.classLead !== null);
+      setHistoryItems(valid);
+    } catch {}
+    setHistoryLoading(false);
+  }, []);
 
   const loadMore = () => {
     if (loadingMore || loading || items.length >= total) return;
@@ -189,7 +260,6 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
     setExpressingId(null);
   };
 
-  // Client-side filter
   const filtered = useMemo(() => {
     if (activeFilter === "all") return items;
     if (activeFilter === "match") return items.filter((i) => (i.matchPercentage ?? 0) >= 75);
@@ -225,143 +295,229 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
       >
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <LinearGradient
-          colors={["#0a1628", "#0e1e3a", "#162032"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[s.header, { paddingTop: Math.max(insets.top, 16) + 14 }]}
+          colors={["#080f1e", "#0d1b33", "#0f2040"]}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 0.9, y: 1 }}
+          style={[s.header, { paddingTop: Math.max(insets.top, 16) + 10 }]}
         >
-          {/* Nav row */}
+          {/* Orb decorations */}
+          <View style={s.orbA} pointerEvents="none" />
+          <View style={s.orbB} pointerEvents="none" />
+
+          {/* Nav */}
           <Animated.View
             style={[
               s.navRow,
               {
                 opacity: headerAnim,
-                transform: [{
-                  translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }),
-                }],
+                transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }],
               },
             ]}
           >
-            <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={s.backBtn}>
-              <Ionicons name="arrow-back" size={19} color="#fff" />
+            <Pressable
+              onPress={() => navigation.goBack()}
+              hitSlop={12}
+              style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] }]}
+            >
+              <Ionicons name="arrow-back" size={18} color="#fff" />
             </Pressable>
-            <View style={{ flex: 1, paddingHorizontal: 12 }}>
-              <Text style={s.navTitle}>Class Opportunities</Text>
+
+            <View style={{ flex: 1, paddingHorizontal: 14 }}>
+              <Text style={s.navTitle}>Opportunities</Text>
               <Text style={s.navSub}>Find your next student</Text>
             </View>
-            <View style={s.livePill}>
-              <View style={s.liveDot} />
-              <Text style={s.liveTxt}>{total} live</Text>
-            </View>
+
+            {total > 0 && (
+              <View style={s.livePill}>
+                <View style={s.liveDot} />
+                <Text style={s.liveTxt}>{total} live</Text>
+              </View>
+            )}
           </Animated.View>
 
-          {/* Stats */}
+          {/* Stat tiles */}
           <Animated.View
             style={[
               s.statsRow,
               {
                 opacity: headerAnim,
-                transform: [{
-                  translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }),
-                }],
+                transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
               },
             ]}
           >
-            <Stat icon="list-outline"      value={total}            label="Total leads"   />
-            <View style={s.statDiv} />
-            <Stat icon="star-outline"      value={perfectCount}     label="Perfect match" color="#10B981" />
-            <View style={s.statDiv} />
-            <Stat icon="hand-left-outline" value={myInterestCount}  label="Applied"       color={T.secondary} />
+            <StatTile icon="list-outline"      value={total}           label="Total leads"   />
+            <View style={s.statDivider} />
+            <StatTile icon="star-outline"      value={perfectCount}    label="Perfect match" accent="#10B981" />
+            <View style={s.statDivider} />
+            <StatTile icon="hand-left-outline" value={myInterestCount} label="Applied"       accent={T.secondary} />
           </Animated.View>
         </LinearGradient>
 
-        {/* ── Rounded cap (decorative only — no children so no clipping) ── */}
+        {/* ── Body cap ───────────────────────────────────────────────────── */}
         <View style={s.bodyCap} />
 
-        {/* ── Filter strip — lives OUTSIDE the rounded View so Android     */}
-        {/*    border-radius clipping cannot touch it                       */}
-        <View style={s.filterWrapper}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={s.filterContent}
-            decelerationRate="fast"
-          >
-            {FILTERS.map((f) => (
-              <FilterChip
-                key={f.key}
-                f={f}
-                active={activeFilter === f.key}
-                onPress={() => setActiveFilter(f.key)}
-              />
-            ))}
-          </ScrollView>
+        {/* ── Tab switcher ───────────────────────────────────────────────── */}
+        <View style={s.tabTrack}>
+          {TABS.map((tab) => {
+            const active = activeTab === tab.key;
+            return (
+              <Pressable
+                key={tab.key}
+                style={[s.tabBtn, active && s.tabBtnActive]}
+                onPress={() => handleTabChange(tab.key)}
+              >
+                <Ionicons
+                  name={tab.icon}
+                  size={13}
+                  color={active ? "#fff" : T.mutedFg}
+                />
+                <Text style={[s.tabLabel, active && s.tabLabelActive]}>{tab.label}</Text>
+                {tab.key === "history" && myInterestCount > 0 && (
+                  <View style={[s.tabBadge, active && s.tabBadgeActive]}>
+                    <Text style={[s.tabBadgeTxt, active && { color: "#fff" }]}>{myInterestCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
         </View>
 
-        {/* ── Body ───────────────────────────────────────────────────────── */}
-        <View style={s.body}>
-
-          {/* Results label */}
-          <View style={s.resultsRow}>
-            <Text style={s.resultsLabel}>
-              {activeFilter === "all"
-                ? "All opportunities"
-                : FILTERS.find((f) => f.key === activeFilter)?.label}
-            </Text>
-            {!loading && (
-              <View style={s.countPill}>
-                <Text style={s.countTxt}>{filtered.length}</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Cards */}
-          <View style={s.cardsList}>
-            {loading && <Skeleton count={3} />}
-
-            {!loading && filtered.length === 0 && items.length === 0 && (
-              <View style={{ paddingHorizontal: 18 }}>
-                <OpportunityEmptyState
-                  onRefresh={() => { fetchingRef.current = false; loadPage(1); }}
-                />
-              </View>
-            )}
-
-            {!loading && filtered.length === 0 && items.length > 0 && (
-              <View style={s.emptyFilter}>
-                <Ionicons name="filter-outline" size={30} color={T.textDisabled} />
-                <Text style={s.emptyFilterTxt}>No results for this filter</Text>
-                <Pressable onPress={() => setActiveFilter("all")} style={s.showAllBtn}>
-                  <Text style={s.showAllTxt}>Show all</Text>
-                </Pressable>
-              </View>
-            )}
-
-            {!loading && filtered.map((item, i) => (
-              <View key={item._id} style={{ paddingHorizontal: 18 }}>
-                <OpportunityCard
-                  item={item}
-                  interested={interestedIds.has(item._id)}
-                  expressing={expressingId === item._id}
-                  onInterest={handleInterest}
-                  revealDelay={Math.min(i * 50, 280)}
-                />
-              </View>
-            ))}
-
-            {loadingMore && <Skeleton count={2} />}
-          </View>
-
-          {!loading && !loadingMore && items.length > 0 && items.length >= total && (
-            <View style={s.endRow}>
-              <View style={s.endLine} />
-              <Text style={s.endTxt}>All caught up</Text>
-              <View style={s.endLine} />
+        {/* ── Browse tab ─────────────────────────────────────────────────── */}
+        {activeTab === "browse" && (
+          <>
+            {/* Filter strip */}
+            <View style={s.filterBar}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={s.filterContent}
+                decelerationRate="fast"
+              >
+                {FILTERS.map((f) => (
+                  <FilterChip
+                    key={f.key}
+                    f={f}
+                    active={activeFilter === f.key}
+                    onPress={() => setActiveFilter(f.key)}
+                  />
+                ))}
+              </ScrollView>
             </View>
-          )}
-        </View>
 
-        <View style={{ height: Math.max(insets.bottom, 32) }} />
+            {/* Results header */}
+            <View style={s.resultsRow}>
+              <Text style={s.resultsLabel}>
+                {activeFilter === "all"
+                  ? "All opportunities"
+                  : FILTERS.find((f) => f.key === activeFilter)?.label ?? "Results"}
+              </Text>
+              {!loading && filtered.length > 0 && (
+                <View style={s.countPill}>
+                  <Text style={s.countTxt}>{filtered.length}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Cards */}
+            <View style={s.cardsList}>
+              {loading && <Skeleton count={3} />}
+
+              {!loading && filtered.length === 0 && items.length === 0 && (
+                <View style={s.emptyWrap}>
+                  <OpportunityEmptyState
+                    onRefresh={() => { fetchingRef.current = false; loadPage(1); }}
+                  />
+                </View>
+              )}
+
+              {!loading && filtered.length === 0 && items.length > 0 && (
+                <View style={s.emptyFilter}>
+                  <View style={s.emptyIconBox}>
+                    <Ionicons name="filter-outline" size={24} color={T.mutedFg} />
+                  </View>
+                  <Text style={s.emptyTitle}>No results</Text>
+                  <Text style={s.emptyBody}>No leads match this filter right now.</Text>
+                  <Pressable
+                    onPress={() => setActiveFilter("all")}
+                    style={({ pressed }) => [s.showAllBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }]}
+                  >
+                    <Text style={s.showAllTxt}>Show all</Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {!loading && filtered.map((item, i) => (
+                <View key={item._id} style={s.cardWrap}>
+                  <OpportunityCard
+                    item={item}
+                    interested={interestedIds.has(item._id)}
+                    expressing={expressingId === item._id}
+                    onInterest={handleInterest}
+                    revealDelay={Math.min(i * 45, 240)}
+                  />
+                </View>
+              ))}
+
+              {loadingMore && <Skeleton count={2} />}
+            </View>
+
+            {!loading && !loadingMore && items.length > 0 && items.length >= total && (
+              <View style={s.endRow}>
+                <View style={s.endLine} />
+                <Text style={s.endTxt}>All caught up</Text>
+                <View style={s.endLine} />
+              </View>
+            )}
+          </>
+        )}
+
+        {/* ── My Interests tab ───────────────────────────────────────────── */}
+        {activeTab === "history" && (
+          <>
+            <View style={s.resultsRow}>
+              <Text style={s.resultsLabel}>Leads I applied to</Text>
+              {!historyLoading && historyItems.length > 0 && (
+                <View style={s.countPill}>
+                  <Text style={s.countTxt}>{historyItems.length}</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={s.cardsList}>
+              {historyLoading && <Skeleton count={3} />}
+
+              {!historyLoading && historyItems.length === 0 && (
+                <View style={s.emptyFilter}>
+                  <View style={[s.emptyIconBox, { backgroundColor: "#FFF1F2" }]}>
+                    <Ionicons name="heart-dislike-outline" size={24} color="#F43F5E" />
+                  </View>
+                  <Text style={s.emptyTitle}>No interests yet</Text>
+                  <Text style={s.emptyBody}>Leads you apply to will appear here.</Text>
+                  <Pressable
+                    onPress={() => handleTabChange("browse")}
+                    style={({ pressed }) => [s.showAllBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }]}
+                  >
+                    <Text style={s.showAllTxt}>Browse opportunities</Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {!historyLoading && historyItems.map((item, i) => (
+                <View key={item._id} style={s.cardWrap}>
+                  <OpportunityCard
+                    item={item}
+                    interested={true}
+                    expressing={false}
+                    onInterest={() => {}}
+                    revealDelay={Math.min(i * 45, 240)}
+                  />
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        <View style={{ height: Math.max(insets.bottom, 28) + 16 }} />
       </ScrollView>
     </View>
   );
@@ -369,192 +525,341 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
+const BG = "#F4F7FC";
+
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#EEF2F8" },
+  root: { flex: 1, backgroundColor: BG },
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1 },
 
-  // Header
+  // ── Header
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 34,
+    paddingHorizontal: 18,
+    paddingBottom: 30,
+    overflow: "hidden",
+  },
+  orbA: {
+    position: "absolute",
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: `${T.primary}18`,
+    top: -80,
+    right: -60,
+  },
+  orbB: {
+    position: "absolute",
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: `${T.secondary}10`,
+    bottom: 10,
+    left: -40,
   },
   navRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 22,
   },
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     backgroundColor: "rgba(255,255,255,0.10)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: "rgba(255,255,255,0.14)",
     alignItems: "center",
     justifyContent: "center",
   },
-  navTitle: { color: "#fff", fontSize: 20, fontWeight: "800", letterSpacing: -0.4 },
-  navSub: { color: "rgba(255,255,255,0.46)", fontSize: 11, marginTop: 1 },
+  navTitle: {
+    color: "#fff",
+    fontSize: 19,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  navSub: {
+    color: "rgba(255,255,255,0.42)",
+    fontSize: 11,
+    marginTop: 1,
+    fontWeight: "500",
+  },
   livePill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: T.radiusFull,
-    backgroundColor: "rgba(255,255,255,0.09)",
+    borderRadius: 99,
+    backgroundColor: "rgba(16,185,129,0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.13)",
+    borderColor: "rgba(16,185,129,0.30)",
   },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: T.success },
-  liveTxt: { color: "rgba(255,255,255,0.88)", fontSize: 11, fontWeight: "700" },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: T.success,
+  },
+  liveTxt: {
+    color: T.success,
+    fontSize: 11,
+    fontWeight: "700",
+  },
 
-  // Stats
+  // ── Stats row
   statsRow: {
     flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.07)",
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.09)",
-    paddingVertical: 14,
+    borderColor: "rgba(255,255,255,0.08)",
+    paddingVertical: 16,
+    paddingHorizontal: 6,
   },
-  statDiv: { width: 1, height: 32, backgroundColor: "rgba(255,255,255,0.10)" },
+  statDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignSelf: "center",
+  },
 
-  // Rounded cap — purely decorative, no children = no clipping on Android
+  // ── Body cap
   bodyCap: {
-    height: 22,
-    backgroundColor: "#EEF2F8",
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    marginTop: -20,
+    height: 24,
+    backgroundColor: BG,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: -22,
   },
 
-  // Filter wrapper — full-width, sits between cap and body, no border radius
-  filterWrapper: {
-    backgroundColor: "#EEF2F8",
-    paddingTop: 10,
-    paddingBottom: 6,
+  // ── Tab switcher
+  tabTrack: {
+    flexDirection: "row",
+    backgroundColor: BG,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  tabBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 99,
+    backgroundColor: "#E8EDF5",
+  },
+  tabBtnActive: {
+    backgroundColor: T.primaryDark,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  tabLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: T.mutedFg,
+  },
+  tabLabelActive: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  tabBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "rgba(0,0,0,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 5,
+  },
+  tabBadgeActive: {
+    backgroundColor: "rgba(255,255,255,0.22)",
+  },
+  tabBadgeTxt: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: T.textSecondary,
+  },
+
+  // ── Filter bar
+  filterBar: {
+    backgroundColor: BG,
+    paddingTop: 4,
+    paddingBottom: 8,
   },
   filterContent: {
     flexDirection: "row",
     gap: 7,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
   },
 
-  // Body — plain, no border radius needed here
-  body: {
-    flexGrow: 1,
-    backgroundColor: "#EEF2F8",
-    paddingTop: 2,
-  },
-
-  // Results
+  // ── Results row
   resultsRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingHorizontal: 18,
-    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingTop: 14,
     paddingBottom: 10,
   },
-  resultsLabel: { flex: 1, fontSize: 14, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.2 },
+  resultsLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "800",
+    color: T.textPrimary,
+    letterSpacing: -0.3,
+  },
   countPill: {
     backgroundColor: T.primary,
-    borderRadius: T.radiusFull,
-    paddingHorizontal: 9,
+    borderRadius: 99,
+    paddingHorizontal: 10,
     paddingVertical: 3,
   },
-  countTxt: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  countTxt: { color: "#fff", fontSize: 11, fontWeight: "800" },
 
-  // Cards wrapper — padding applied per-item so skeleton and cards align
+  // ── Cards
   cardsList: { gap: 0 },
+  cardWrap: { paddingHorizontal: 16 },
 
-  // Skeleton card
+  // ── Skeleton card
   skelCard: {
     backgroundColor: T.paper,
-    borderRadius: 16,
-    borderWidth: 0.5,
-    borderColor: "#CBD5E1",
-    borderLeftWidth: 3,
-    borderLeftColor: "#E2E8F0",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
     padding: 16,
-    marginBottom: 10,
+    marginBottom: 12,
     gap: 10,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
     elevation: 2,
   },
 
-  // Empty filter state
+  // ── Empty states
+  emptyWrap: { paddingHorizontal: 16 },
   emptyFilter: {
     alignItems: "center",
-    paddingVertical: 48,
-    paddingHorizontal: 18,
-    gap: 10,
+    paddingVertical: 52,
+    paddingHorizontal: 24,
+    gap: 8,
   },
-  emptyFilterTxt: { fontSize: 14, fontWeight: "700", color: T.textSecondary },
+  emptyIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: T.muted,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: T.textPrimary,
+    letterSpacing: -0.3,
+  },
+  emptyBody: {
+    fontSize: 13,
+    color: T.textSecondary,
+    textAlign: "center",
+    lineHeight: 19,
+  },
   showAllBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 9,
-    borderRadius: T.radiusFull,
+    marginTop: 8,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 99,
     backgroundColor: T.primary,
-    marginTop: 4,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  showAllTxt: { color: "#fff", fontSize: 13, fontWeight: "700" },
+  showAllTxt: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
 
-  // End
+  // ── End row
   endRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 18,
-    paddingVertical: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 28,
   },
   endLine: { flex: 1, height: 1, backgroundColor: T.border },
-  endTxt: { fontSize: 11.5, color: T.textDisabled, fontWeight: "600" },
-});
-
-// ── Stat tile styles ──────────────────────────────────────────────────────────
-
-const stat = StyleSheet.create({
-  tile: { flex: 1, alignItems: "center", gap: 3 },
-  val: { color: "#fff", fontSize: 21, fontWeight: "800", letterSpacing: -0.5 },
-  lbl: {
-    color: "rgba(255,255,255,0.40)",
-    fontSize: 9.5,
+  endTxt: {
+    fontSize: 11.5,
+    color: T.textDisabled,
     fontWeight: "600",
-    textAlign: "center",
-    letterSpacing: 0.1,
+    letterSpacing: 0.2,
   },
 });
 
-// ── Filter chip styles ────────────────────────────────────────────────────────
+// ── Stat tile ─────────────────────────────────────────────────────────────────
+
+const stat = StyleSheet.create({
+  tile: { flex: 1, alignItems: "center", gap: 4 },
+  iconRing: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 2,
+  },
+  val: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.6,
+    lineHeight: 26,
+  },
+  lbl: {
+    color: "rgba(255,255,255,0.38)",
+    fontSize: 9,
+    fontWeight: "600",
+    textAlign: "center",
+    letterSpacing: 0.2,
+  },
+});
+
+// ── Filter chip ───────────────────────────────────────────────────────────────
 
 const chip = StyleSheet.create({
   pill: {
-    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 13,
     paddingVertical: 7,
-    borderRadius: T.radiusFull,
-    backgroundColor: T.paper,
+    borderRadius: 99,
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#DDE3EE",
+    borderColor: "rgba(0,0,0,0.07)",
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
     elevation: 1,
   },
   pillActive: {
     backgroundColor: T.primary,
     borderColor: T.primaryDark,
     shadowColor: T.primary,
-    shadowOpacity: 0.28,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 0.30,
+    shadowRadius: 8,
+    elevation: 4,
   },
   label: { fontSize: 12.5, fontWeight: "600", color: T.textSecondary },
   labelActive: { color: "#fff", fontWeight: "700" },
