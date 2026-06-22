@@ -363,9 +363,7 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={0}
-        enabled={Platform.OS === "ios"}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
           style={s.scroll}

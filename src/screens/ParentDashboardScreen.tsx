@@ -24,7 +24,7 @@ import {
   TouchableWithoutFeedback,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ActivityIndicator,
 } from "react-native";
@@ -320,14 +320,23 @@ const RequestSheet = ({
 }) => {
   const [subject, setSubject] = useState("");
   const [grade, setGrade] = useState("");
+  const [kbHeight, setKbHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKbHeight(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKbHeight(0),
+    );
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={am.overlay}
-      >
+      <View style={am.overlay}>
         <Pressable style={{ flex: 1 }} onPress={onClose} />
-        <View style={am.sheet}>
+        <View style={[am.sheet, { marginBottom: kbHeight }]}>
           <View style={am.handle} />
           <View style={am.header}>
             <View style={[am.headerIcon, { backgroundColor: `${T.primary}12` }]}>
@@ -372,7 +381,7 @@ const RequestSheet = ({
             )}
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
@@ -391,14 +400,23 @@ const ConcernSheet = ({
   submitting: boolean;
 }) => {
   const [msg, setMsg] = useState("");
+  const [kbHeight, setKbHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKbHeight(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKbHeight(0),
+    );
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={am.overlay}
-      >
+      <View style={am.overlay}>
         <Pressable style={{ flex: 1 }} onPress={onClose} />
-        <View style={am.sheet}>
+        <View style={[am.sheet, { marginBottom: kbHeight }]}>
           <View style={am.handle} />
           <View style={am.header}>
             <View style={[am.headerIcon, { backgroundColor: `${T.error}12` }]}>
@@ -437,7 +455,7 @@ const ConcernSheet = ({
             )}
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };

@@ -36,168 +36,187 @@ const OpportunityCard: React.FC<Props> = ({
   useEffect(() => {
     Animated.timing(anim, {
       toValue: 1,
-      duration: 400,
+      duration: 380,
       delay: revealDelay,
       easing: Easing.bezier(0.23, 1, 0.32, 1),
       useNativeDriver: true,
     }).start();
   }, []);
-  const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [16, 0] });
+  const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] });
 
-  // ── Interest button press scale ─────────────────────────────────────────────
+  // ── Interest button spring ─────────────────────────────────────────────────
   const btnScale = useRef(new Animated.Value(1)).current;
   const onPressIn = () =>
-    Animated.spring(btnScale, { toValue: 0.93, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
+    Animated.spring(btnScale, { toValue: 0.93, useNativeDriver: true, speed: 80, bounciness: 0 }).start();
   const onPressOut = () =>
-    Animated.spring(btnScale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 5 }).start();
+    Animated.spring(btnScale, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
 
   // ── Match ───────────────────────────────────────────────────────────────────
   const pct = item.matchPercentage ?? 0;
   const isPerfect = pct === 100;
+  const isHighMatch = pct >= 75;
   const matchColor =
-    isPerfect ? "#059669"
-    : pct >= 75 ? T.primary
-    : pct >= 50 ? "#D97706"
-    : "#94A3B8";
-  const matchLabel = isPerfect ? "Perfect Match" : `${pct}% match`;
+    isPerfect    ? "#059669"
+    : isHighMatch ? T.primary
+    : pct >= 50   ? "#D97706"
+    :               "#94A3B8";
 
   // ── Mode ────────────────────────────────────────────────────────────────────
   const modeIcon: any =
-    lead.mode === "ONLINE" ? "videocam-outline"
+    lead.mode === "ONLINE"  ? "videocam-outline"
     : lead.mode === "HYBRID" ? "git-merge-outline"
-    : "home-outline";
+    :                          "home-outline";
   const modeColor =
-    lead.mode === "ONLINE" ? T.primary
+    lead.mode === "ONLINE"  ? T.primary
     : lead.mode === "HYBRID" ? "#7C3AED"
-    : T.secondary;
+    :                          T.secondary;
 
   return (
-    <Animated.View style={{ opacity: anim, transform: [{ translateY }] }}>
-      <View
-        style={[
-          s.card,
-          { borderLeftColor: pct > 0 ? matchColor : "#CBD5E1" },
-          isPerfect && s.perfectCard,
-        ]}
-      >
-        {/* Top row */}
-        <View style={s.topRow}>
-          <View style={s.badges}>
-            <View style={[s.modePill, { backgroundColor: `${modeColor}15`, borderColor: `${modeColor}30` }]}>
-              <Ionicons name={modeIcon} size={10} color={modeColor} />
-              <Text style={[s.modeTxt, { color: modeColor }]}>{lead.mode}</Text>
-            </View>
-            {pct > 0 && (
-              <View style={[s.matchPill, { backgroundColor: `${matchColor}12`, borderColor: `${matchColor}28` }]}>
-                {isPerfect && <Ionicons name="star" size={9} color={matchColor} />}
-                <Text style={[s.matchTxt, { color: matchColor }]}>{matchLabel}</Text>
+    <Animated.View style={[s.root, { opacity: anim, transform: [{ translateY }] }]}>
+      <View style={[s.card, isPerfect && s.perfectCard]}>
+
+        {/* ── Match accent bar (top, full-width — replaces banned side stripe) */}
+        {pct > 0 && (
+          <View
+            style={[
+              s.accentBar,
+              { backgroundColor: matchColor },
+              isPerfect && { shadowColor: matchColor, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 4 },
+            ]}
+          />
+        )}
+
+        <View style={s.inner}>
+          {/* ── Top row ── */}
+          <View style={s.topRow}>
+            <View style={s.badges}>
+              {/* Mode pill */}
+              <View style={[s.pill, { backgroundColor: `${modeColor}12`, borderColor: `${modeColor}28` }]}>
+                <Ionicons name={modeIcon} size={9.5} color={modeColor} />
+                <Text style={[s.pillTxt, { color: modeColor }]}>{lead.mode}</Text>
               </View>
-            )}
-            {lead.leadId ? (
-              <View style={s.idPill}>
-                <Text style={s.idTxt}># {lead.leadId}</Text>
+
+              {/* Match pill */}
+              {pct > 0 && (
+                <View style={[s.pill, { backgroundColor: `${matchColor}10`, borderColor: `${matchColor}25` }]}>
+                  {isPerfect && <Ionicons name="star" size={9} color={matchColor} style={{ marginRight: -1 }} />}
+                  <Text style={[s.pillTxt, { color: matchColor, fontWeight: "800" }]}>
+                    {isPerfect ? "Perfect" : `${pct}%`}
+                  </Text>
+                </View>
+              )}
+
+              {/* Lead ID */}
+              {lead.leadId ? (
+                <View style={[s.pill, { backgroundColor: `${T.primary}08`, borderColor: `${T.primary}18` }]}>
+                  <Text style={[s.pillTxt, { color: T.primary }]}>#{lead.leadId}</Text>
+                </View>
+              ) : null}
+            </View>
+
+            <Text style={s.timeAgo}>{timeAgo(item.postedAt)}</Text>
+          </View>
+
+          {/* ── Subject ── */}
+          <Text style={s.subject} numberOfLines={2}>{subjectLabel(lead)}</Text>
+
+          {/* ── Grade / board ── */}
+          {(lead.grade || lead.board) ? (
+            <Text style={s.grade}>
+              {[lead.grade && `Grade ${lead.grade}`, lead.board].filter(Boolean).join(" · ")}
+            </Text>
+          ) : null}
+
+          {/* ── Payment ── */}
+          {(lead.tutorFees || lead.paymentAmount) ? (
+            <View style={s.payBanner}>
+              <View style={s.payIconBox}>
+                <Ionicons name="wallet-outline" size={14} color={T.success} />
+              </View>
+              <View>
+                <Text style={s.payLabel}>YOUR EARNINGS</Text>
+                <View style={{ flexDirection: "row", alignItems: "baseline", gap: 2 }}>
+                  <Text style={s.payAmount}>
+                    {fmtRupee(lead.tutorFees ?? lead.paymentAmount ?? 0)}
+                  </Text>
+                  <Text style={s.payPer}>/month</Text>
+                </View>
+              </View>
+            </View>
+          ) : null}
+
+          {/* ── Detail chips ── */}
+          <View style={s.chips}>
+            {lead.city ? (
+              <View style={s.chip}>
+                <Ionicons name="location-outline" size={10} color={T.mutedFg} />
+                <Text style={s.chipTxt}>{lead.city}{lead.area ? `, ${lead.area}` : ""}</Text>
+              </View>
+            ) : null}
+            {lead.classDurationHours ? (
+              <View style={s.chip}>
+                <Ionicons name="time-outline" size={10} color={T.mutedFg} />
+                <Text style={s.chipTxt}>{lead.classDurationHours}h/session</Text>
+              </View>
+            ) : null}
+            {lead.timing ? (
+              <View style={s.chip}>
+                <Ionicons name="alarm-outline" size={10} color={T.mutedFg} />
+                <Text style={s.chipTxt}>{lead.timing}</Text>
+              </View>
+            ) : null}
+            {lead.preferredTutorGender &&
+            lead.preferredTutorGender !== "ANY" &&
+            lead.preferredTutorGender !== "NO_PREFERENCE" ? (
+              <View style={s.chip}>
+                <Ionicons name="person-outline" size={10} color={T.mutedFg} />
+                <Text style={s.chipTxt}>
+                  {lead.preferredTutorGender === "MALE" ? "Male tutor" : "Female tutor"}
+                </Text>
               </View>
             ) : null}
           </View>
-          <Text style={s.timeAgo}>{timeAgo(item.postedAt)}</Text>
-        </View>
 
-        {/* Subject */}
-        <Text style={s.subject} numberOfLines={2}>{subjectLabel(lead)}</Text>
-
-        {/* Grade / board */}
-        {lead.grade || lead.board ? (
-          <Text style={s.grade}>
-            {[lead.grade && `Grade ${lead.grade}`, lead.board].filter(Boolean).join(" · ")}
-          </Text>
-        ) : null}
-
-        {/* Payment */}
-        {lead.tutorFees || lead.paymentAmount ? (
-          <View style={s.payBanner}>
-            <View style={s.payIconBox}>
-              <Ionicons name="wallet-outline" size={15} color={T.success} />
+          {/* ── Notes ── */}
+          {lead.notes ? (
+            <View style={s.notesBox}>
+              <Ionicons name="document-text-outline" size={11} color={T.primary} />
+              <Text style={s.notesTxt}>{lead.notes}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.payLabel}>YOUR MONTHLY EARNINGS</Text>
-              <Text style={s.payAmount}>
-                {fmtRupee(lead.tutorFees ?? lead.paymentAmount ?? 0)}
-                <Text style={s.payPer}> /month</Text>
-              </Text>
+          ) : null}
+
+          {/* ── Footer ── */}
+          <View style={s.footer}>
+            <View style={s.interestRow}>
+              <Ionicons name="people-outline" size={12} color={T.mutedFg} />
+              <Text style={s.interestTxt}>{item.interestCount} interested</Text>
             </View>
+
+            <Animated.View style={{ transform: [{ scale: btnScale }] }}>
+              <Pressable
+                onPress={() => onInterest(item._id)}
+                onPressIn={onPressIn}
+                onPressOut={onPressOut}
+                disabled={interested || expressing}
+                style={[s.btn, interested ? s.btnDone : s.btnActive]}
+              >
+                {expressing ? (
+                  <ActivityIndicator size={11} color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons
+                      name={interested ? "checkmark-circle" : "hand-left-outline"}
+                      size={11}
+                      color={interested ? T.success : "#fff"}
+                    />
+                    <Text style={[s.btnTxt, interested && { color: T.success }]}>
+                      {interested ? "Applied" : "I'm Interested"}
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            </Animated.View>
           </View>
-        ) : null}
-
-        {/* Detail chips */}
-        <View style={s.chips}>
-          {lead.city ? (
-            <View style={s.chip}>
-              <Ionicons name="location-outline" size={10} color={T.mutedFg} />
-              <Text style={s.chipTxt}>{lead.city}{lead.area ? `, ${lead.area}` : ""}</Text>
-            </View>
-          ) : null}
-          {lead.classDurationHours ? (
-            <View style={s.chip}>
-              <Ionicons name="time-outline" size={10} color={T.mutedFg} />
-              <Text style={s.chipTxt}>{lead.classDurationHours}h/session</Text>
-            </View>
-          ) : null}
-          {lead.timing ? (
-            <View style={s.chip}>
-              <Ionicons name="alarm-outline" size={10} color={T.mutedFg} />
-              <Text style={s.chipTxt}>{lead.timing}</Text>
-            </View>
-          ) : null}
-          {lead.preferredTutorGender &&
-          lead.preferredTutorGender !== "ANY" &&
-          lead.preferredTutorGender !== "NO_PREFERENCE" ? (
-            <View style={s.chip}>
-              <Ionicons name="person-outline" size={10} color={T.mutedFg} />
-              <Text style={s.chipTxt}>
-                {lead.preferredTutorGender === "MALE" ? "Male tutor" : "Female tutor"}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Notes */}
-        {lead.notes ? (
-          <View style={s.notesBox}>
-            <Ionicons name="document-text-outline" size={12} color={T.primary} />
-            <Text style={s.notesTxt}>{lead.notes}</Text>
-          </View>
-        ) : null}
-
-        {/* Footer */}
-        <View style={s.footer}>
-          <View style={s.interestRow}>
-            <Ionicons name="people-outline" size={12} color={T.mutedFg} />
-            <Text style={s.interestTxt}>{item.interestCount} interested</Text>
-          </View>
-          <Animated.View style={{ transform: [{ scale: btnScale }] }}>
-            <Pressable
-              onPress={() => onInterest(item._id)}
-              onPressIn={onPressIn}
-              onPressOut={onPressOut}
-              disabled={interested || expressing}
-              style={[s.btn, interested ? s.btnDone : s.btnActive]}
-            >
-              {expressing ? (
-                <ActivityIndicator size={11} color="#fff" />
-              ) : (
-                <>
-                  <Ionicons
-                    name={interested ? "checkmark-circle" : "hand-left-outline"}
-                    size={12}
-                    color={interested ? T.success : "#fff"}
-                  />
-                  <Text style={[s.btnTxt, interested && { color: T.success }]}>
-                    {interested ? "Applied" : "I'm Interested"}
-                  </Text>
-                </>
-              )}
-            </Pressable>
-          </Animated.View>
         </View>
       </View>
     </Animated.View>
@@ -205,28 +224,36 @@ const OpportunityCard: React.FC<Props> = ({
 };
 
 const s = StyleSheet.create({
+  root: { marginBottom: 12 },
   card: {
     backgroundColor: T.paper,
-    borderRadius: 16,
-    borderWidth: 0.5,
-    borderColor: "#CBD5E1",
-    borderLeftWidth: 3,
-    padding: 16,
-    marginBottom: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+    overflow: "hidden",
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
     elevation: 2,
   },
   perfectCard: {
-    borderColor: "#10B981",
-    shadowColor: "#10B981",
-    shadowOpacity: 0.14,
-    shadowRadius: 12,
+    borderColor: "rgba(16,185,129,0.18)",
+    shadowColor: "#059669",
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
     elevation: 4,
   },
 
+  // Top accent bar (replaces banned side-stripe border)
+  accentBar: {
+    height: 3,
+    width: "100%",
+  },
+
+  inner: { padding: 16 },
+
+  // Top row
   topRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -235,125 +262,134 @@ const s = StyleSheet.create({
     gap: 6,
   },
   badges: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, flex: 1 },
-  modePill: {
+  pill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 3.5,
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: T.radiusFull,
+    paddingVertical: 3.5,
+    borderRadius: 99,
     borderWidth: 1,
   },
-  modeTxt: { fontSize: 9.5, fontWeight: "700", letterSpacing: 0.4 },
-  matchPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: T.radiusFull,
-    borderWidth: 1,
-  },
-  matchTxt: { fontSize: 9.5, fontWeight: "800" },
-  idPill: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: T.radiusFull,
-    backgroundColor: `${T.primary}0D`,
-    borderWidth: 1,
-    borderColor: `${T.primary}20`,
-  },
-  idTxt: { fontSize: 9, fontWeight: "800", color: T.primary, letterSpacing: 0.4 },
-  timeAgo: { fontSize: 10.5, color: T.textDisabled },
+  pillTxt: { fontSize: 9.5, fontWeight: "700", letterSpacing: 0.3 },
+  timeAgo: { fontSize: 10, color: T.textDisabled, fontWeight: "500" },
 
+  // Subject & grade
   subject: {
     fontSize: 17,
     fontWeight: "800",
     color: T.textPrimary,
     letterSpacing: -0.4,
-    lineHeight: 23,
+    lineHeight: 24,
     marginBottom: 2,
   },
-  grade: { fontSize: 11.5, color: T.textSecondary, marginBottom: 12 },
+  grade: {
+    fontSize: 11.5,
+    color: T.textSecondary,
+    marginBottom: 12,
+    fontWeight: "500",
+  },
 
+  // Payment banner
   payBanner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: `${T.success}0C`,
+    backgroundColor: `${T.success}09`,
     borderWidth: 1,
-    borderColor: `${T.success}25`,
-    borderRadius: 11,
+    borderColor: `${T.success}22`,
+    borderRadius: 13,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 12,
   },
   payIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: `${T.success}18`,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: `${T.success}16`,
     alignItems: "center",
     justifyContent: "center",
   },
   payLabel: {
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: "800",
     color: T.success,
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
     marginBottom: 1,
   },
-  payAmount: { fontSize: 18, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.4 },
-  payPer: { fontSize: 11.5, fontWeight: "600", color: T.mutedFg },
+  payAmount: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: T.textPrimary,
+    letterSpacing: -0.5,
+  },
+  payPer: { fontSize: 11, fontWeight: "600", color: T.mutedFg },
 
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 5, marginBottom: 12 },
+  // Detail chips
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
   chip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: T.muted,
-    borderRadius: T.radiusFull,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+    backgroundColor: "#F1F5FB",
+    borderRadius: 99,
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
   },
   chipTxt: { fontSize: 10.5, color: T.textSecondary, fontWeight: "500" },
 
+  // Notes box
   notesBox: {
     flexDirection: "row",
     gap: 7,
-    backgroundColor: `${T.primary}08`,
+    backgroundColor: `${T.primary}07`,
     borderWidth: 1,
-    borderColor: `${T.primary}14`,
-    borderRadius: 9,
+    borderColor: `${T.primary}12`,
+    borderRadius: 11,
     paddingHorizontal: 11,
     paddingVertical: 9,
     marginBottom: 13,
+    alignItems: "flex-start",
   },
-  notesTxt: { flex: 1, fontSize: 12, color: T.textSecondary, lineHeight: 17.5 },
+  notesTxt: { flex: 1, fontSize: 12, color: T.textSecondary, lineHeight: 18 },
 
+  // Footer
   footer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderTopWidth: 1,
-    borderTopColor: "#EFF3F8",
+    borderTopColor: "rgba(0,0,0,0.05)",
     paddingTop: 11,
+    marginTop: 2,
   },
   interestRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  interestTxt: { fontSize: 11.5, color: T.mutedFg },
+  interestTxt: { fontSize: 11.5, color: T.mutedFg, fontWeight: "500" },
+
+  // CTA button
   btn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: T.radiusFull,
+    borderRadius: 99,
   },
-  btnActive: { backgroundColor: T.primary },
+  btnActive: {
+    backgroundColor: T.primary,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   btnDone: {
-    backgroundColor: `${T.success}12`,
+    backgroundColor: `${T.success}10`,
     borderWidth: 1,
-    borderColor: `${T.success}30`,
+    borderColor: `${T.success}28`,
   },
   btnTxt: { fontSize: 12, fontWeight: "700", color: "#fff" },
 });

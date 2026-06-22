@@ -27,7 +27,7 @@ import {
   TouchableWithoutFeedback,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
 } from "react-native";
 
@@ -331,7 +331,7 @@ const AnnouncementCard = ({
       </Text>
 
       {/* Payment highlight */}
-      {lead.tutorFees || lead.paymentAmount ? (
+      {lead.tutorFees ? (
         <View style={ac.payBanner}>
           <View style={ac.payIcon}>
             <Ionicons name="wallet-outline" size={15} color={T.success} />
@@ -339,16 +339,10 @@ const AnnouncementCard = ({
           <View style={{ flex: 1 }}>
             <Text style={ac.payLabel}>Your monthly fees</Text>
             <Text style={ac.payAmount}>
-              {fmtRupee(lead.tutorFees ?? lead.paymentAmount ?? 0)}
+              {fmtRupee(lead.tutorFees)}
               <Text style={ac.payPer}> /month</Text>
             </Text>
           </View>
-          {lead.tutorFees && lead.paymentAmount && lead.paymentAmount !== lead.tutorFees ? (
-            <View style={ac.payAside}>
-              <Text style={ac.payAsideLabel}>Class fee</Text>
-              <Text style={ac.payAsideTxt}>{fmtRupee(lead.paymentAmount)}/mo</Text>
-            </View>
-          ) : null}
         </View>
       ) : null}
 
@@ -831,6 +825,19 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
       .catch(() => {});
   }, []);
 
+  const [kbHeight, setKbHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKbHeight(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKbHeight(0),
+    );
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+
   // WhatsApp community modal
   const [showWAModal, setShowWAModal] = useState(false);
   const [waLink, setWaLink] = useState<string | undefined>();
@@ -845,6 +852,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
   const [analytics, setAnalytics] = useState<TutorAdvancedAnalytics | null>(
     null,
   );
+  const [profileClassesAssigned, setProfileClassesAssigned] = useState<number | null>(null);
+  const [profileDemosTaken, setProfileDemosTaken] = useState<number | null>(null);
   const [kpiLoading, setKpiLoading] = useState(true);
   const [kpiError, setKpiError] = useState<string | null>(null);
 
@@ -856,6 +865,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
   const [annLoadingMore, setAnnLoadingMore] = useState(false);
   const [interestedIds, setInterestedIds] = useState<Set<string>>(new Set());
   const [expressingId, setExpressingId] = useState<string | null>(null);
+  const [myInterestCount, setMyInterestCount] = useState(0);
 
   const [todayClasses, setTodayClasses] = useState<TodayClass[]>([]);
   const [todayLoading, setTodayLoading] = useState(true);
@@ -870,9 +880,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
   const [attSubmitting, setAttSubmitting] = useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"today" | "opportunities">(
-    "today",
-  );
+  const [activeTab, setActiveTab] = useState<"today" | "opportunities">("today");
+  const hasAutoSwitchedTab = useRef(false);
 
   // Demos
   const [demos, setDemos] = useState<TutorDemo[]>([]);
@@ -910,8 +919,11 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           setPhotoError(false);
         }
 
-        // Show WhatsApp community modal for offline tutors who haven't joined yet
         const profile = profileRes.data as any;
+        if (typeof profile?.classesAssigned === "number") setProfileClassesAssigned(profile.classesAssigned);
+        if (typeof profile?.demosTaken === "number") setProfileDemosTaken(profile.demosTaken);
+
+        // Show WhatsApp community modal for offline tutors who haven't joined yet
         if (profile?.preferredMode === "OFFLINE" && !profile?.whatsappCommunityJoined) {
           try {
             const cityOpts = await getOptions("CITY");
@@ -953,6 +965,13 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
       setAnnLoadingMore(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!annLoading && announcements.length > 0 && !hasAutoSwitchedTab.current) {
+      hasAutoSwitchedTab.current = true;
+      setActiveTab("opportunities");
+    }
+  }, [annLoading, announcements.length]);
 
   const fetchTodayClasses = useCallback(async () => {
     setTodayError(null);
@@ -1120,7 +1139,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           iconColor: T.primary,
           iconBg: `${T.primary}15`,
           label: "Classes Assigned",
-          value: fmt(perf!.classesAssigned),
+          value: fmt(profileClassesAssigned ?? perf!.classesAssigned),
           sub: `${fmt(perf!.classesCompleted)} completed`,
           subIcon: "checkmark-circle-outline" as any,
           subColor: T.success,
@@ -1130,8 +1149,8 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           icon: "videocam-outline" as any,
           iconColor: "#7C3AED",
           iconBg: "#7C3AED15",
-          label: "Demos Scheduled",
-          value: fmt(demos.length),
+          label: "Demos Taken",
+          value: fmt(profileDemosTaken ?? demos.length),
           sub: `${fmt(analytics!.demos.approved)} approved`,
           subIcon: "thumbs-up-outline" as any,
           subColor: T.success,
@@ -1222,8 +1241,16 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
                   </View>
                 )}
               </Pressable>
-              <Pressable onPress={() => navigation.navigate("TutorProfile")} style={s.notifBtn} hitSlop={8}>
-                <Ionicons name="person-circle-outline" size={24} color="rgba(255,255,255,0.85)" />
+              <Pressable onPress={() => navigation.navigate("TutorProfile")} style={s.pfpBtn} hitSlop={8}>
+                {profilePhotoUrl && !photoError ? (
+                  <Image
+                    source={{ uri: profilePhotoUrl }}
+                    style={s.pfpImg}
+                    onError={() => setPhotoError(true)}
+                  />
+                ) : (
+                  <Ionicons name="person-circle-outline" size={24} color="rgba(255,255,255,0.85)" />
+                )}
               </Pressable>
             </View>
           </View>
@@ -1245,13 +1272,13 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
           {hasKpi && (
             <View style={s.stripRow}>
               <View style={s.stripItem}>
-                <Text style={s.stripVal}>{fmt(perf!.classesAssigned)}</Text>
+                <Text style={s.stripVal}>{fmt(profileClassesAssigned ?? perf!.classesAssigned)}</Text>
                 <Text style={s.stripLbl}>Classes{"\n"}assigned</Text>
               </View>
               <View style={s.stripSep} />
               <View style={s.stripItem}>
-                <Text style={s.stripVal}>{fmt(demos.length)}</Text>
-                <Text style={s.stripLbl}>Demos{"\n"}scheduled</Text>
+                <Text style={s.stripVal}>{fmt(profileDemosTaken ?? demos.length)}</Text>
+                <Text style={s.stripLbl}>Demos{"\n"}taken</Text>
               </View>
               <View style={s.stripSep} />
               <View style={s.stripItem}>
@@ -1977,12 +2004,9 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         animationType="slide"
         onRequestClose={() => setAttModal(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={am.overlay}
-        >
+        <View style={am.overlay}>
           <Pressable style={{ flex: 1 }} onPress={() => setAttModal(false)} />
-          <View style={am.sheet}>
+          <View style={[am.sheet, { marginBottom: kbHeight }]}>
             {/* handle */}
             <View style={am.handle} />
 
@@ -2091,7 +2115,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
               )}
             </Pressable>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       {/* ── Demo Submit Modal ─────────────────────────────────────────────── */}
@@ -2101,12 +2125,9 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
         animationType="slide"
         onRequestClose={() => setDemoModal(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={am.overlay}
-        >
+        <View style={am.overlay}>
           <Pressable style={{ flex: 1 }} onPress={() => setDemoModal(false)} />
-          <View style={am.sheet}>
+          <View style={[am.sheet, { marginBottom: kbHeight }]}>
             <View style={am.handle} />
             <View style={am.header}>
               <View style={[am.headerIcon, { backgroundColor: "#7C3AED12" }]}>
@@ -2235,7 +2256,7 @@ const TutorDashboardScreen: React.FC<Props> = ({ navigation, route }) => {
               )}
             </Pressable>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       {/* ── WhatsApp Community Modal ──────────────────────────────────────── */}
@@ -2322,7 +2343,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 20,
   },
-  topActions: { flexDirection: "row", alignItems: "center", gap: 4 },
+  topActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   logoRing: {
     width: 42,
@@ -2338,6 +2359,8 @@ const s = StyleSheet.create({
   brandName: { color: "#fff", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
   brandTagline: { color: "rgba(255,255,255,0.65)", fontSize: 10, fontWeight: "500", marginTop: 1, letterSpacing: 0.2 },
   notifBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center" },
+  pfpBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", overflow: "hidden", borderWidth: 2, borderColor: "rgba(255,255,255,0.35)" },
+  pfpImg: { width: 36, height: 36, borderRadius: 18 },
   notifBadge: {
     position: "absolute",
     top: -3,

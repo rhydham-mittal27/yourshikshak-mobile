@@ -508,18 +508,19 @@ const MyDemosScreen = ({
   const [selected, setSelected] = useState<TutorDemo | null>(null);
   const flatListRef = React.useRef<FlatList>(null);
 
-  const kbOffset = useRef(new Animated.Value(0)).current;
+
+  const [kbHeight, setKbHeight] = useState(0);
   useEffect(() => {
     const show = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (e) => Animated.timing(kbOffset, { toValue: e.endCoordinates.height, duration: 250, useNativeDriver: false }).start(),
+      (e) => setKbHeight(e.endCoordinates.height),
     );
     const hide = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => Animated.timing(kbOffset, { toValue: 0, duration: 200, useNativeDriver: false }).start(),
+      () => setKbHeight(0),
     );
     return () => { show.remove(); hide.remove(); };
-  }, [kbOffset]);
+  }, []);
 
   const [submitItem, setSubmitItem] = useState<TutorDemo | null>(null);
   const [submitTopic, setSubmitTopic] = useState("");
@@ -723,9 +724,8 @@ const MyDemosScreen = ({
       {/* ── Submit Demo Modal ── */}
       {submitItem ? (
         <Modal visible animationType="slide" transparent onRequestClose={() => setSubmitItem(null)}>
-          <Animated.View style={{ flex: 1, paddingBottom: kbOffset }}>
             <View style={mds.backdrop}>
-              <View style={mds.sheet}>
+              <View style={[mds.sheet, { marginBottom: kbHeight }]}>
                 <View style={mds.handle} />
 
                 <View style={mds.header}>
@@ -822,7 +822,6 @@ const MyDemosScreen = ({
                 </ScrollView>
               </View>
             </View>
-          </Animated.View>
         </Modal>
       ) : null}
     </View>

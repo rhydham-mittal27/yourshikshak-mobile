@@ -104,10 +104,17 @@ export default function PaymentsScreen({ navigation }: Props) {
   const totalEarned  = payoutStats.paidAmount;
   const totalPending = payoutStats.pendingAmount;
   const thisMonth    = (() => {
-    const m = new Date().getMonth() + 1;
-    const y = new Date().getFullYear();
+    const now = new Date();
+    const m = now.getMonth() + 1;
+    const y = now.getFullYear();
     return payouts
-      .filter(p => p.cycleMonth === m && p.cycleYear === y && p.status === "PAID")
+      .filter(p => {
+        if (p.status !== "PAID") return false;
+        if (p.cycleMonth != null && p.cycleYear != null)
+          return p.cycleMonth === m && p.cycleYear === y;
+        const d = new Date(p.paymentDate ?? p.createdAt);
+        return d.getMonth() + 1 === m && d.getFullYear() === y;
+      })
       .reduce((s, p) => s + p.amount, 0);
   })();
 
@@ -217,7 +224,7 @@ function PayoutsTab({ payments, stats }: { payments: PaymentItem[]; stats: typeo
 
   return (
     <>
-      <StatRow stats={stats} paidLabel="Total Received" pendingLabel="Awaiting Payout" />
+      <StatRow stats={stats} paidLabel="Total Received" hidePending />
       {payments.map(p => <PaymentCard key={p._id} payment={p} />)}
     </>
   );
@@ -263,7 +270,7 @@ function VerificationTab({
 
       {payments.length > 0 && (
         <>
-          <StatRow stats={stats} paidLabel="Paid" pendingLabel="Outstanding" />
+          <StatRow stats={stats} paidLabel="Paid" hidePending />
           {payments.map(p => <PaymentCard key={p._id} payment={p} />)}
         </>
       )}
@@ -283,8 +290,8 @@ function VerificationTab({
 
 const dummyStats = { totalAmount: 0, paidAmount: 0, pendingAmount: 0 };
 
-function StatRow({ stats, paidLabel, pendingLabel }: {
-  stats: typeof dummyStats; paidLabel: string; pendingLabel: string;
+function StatRow({ stats, paidLabel, pendingLabel, hidePending }: {
+  stats: typeof dummyStats; paidLabel: string; pendingLabel?: string; hidePending?: boolean;
 }) {
   return (
     <View style={sc.statRow}>
@@ -293,11 +300,13 @@ function StatRow({ stats, paidLabel, pendingLabel }: {
         <Text style={[sc.statVal, { color: C.paid }]}>{fmtRupee(stats.paidAmount)}</Text>
         <Text style={sc.statLbl}>{paidLabel}</Text>
       </View>
-      <View style={[sc.statCard, { borderColor: C.pendingBorder, backgroundColor: C.pendingBg }]}>
-        <Ionicons name="time-outline" size={18} color={C.pending} />
-        <Text style={[sc.statVal, { color: C.pending }]}>{fmtRupee(stats.pendingAmount)}</Text>
-        <Text style={sc.statLbl}>{pendingLabel}</Text>
-      </View>
+      {!hidePending && (
+        <View style={[sc.statCard, { borderColor: C.pendingBorder, backgroundColor: C.pendingBg }]}>
+          <Ionicons name="time-outline" size={18} color={C.pending} />
+          <Text style={[sc.statVal, { color: C.pending }]}>{fmtRupee(stats.pendingAmount)}</Text>
+          <Text style={sc.statLbl}>{pendingLabel}</Text>
+        </View>
+      )}
     </View>
   );
 }

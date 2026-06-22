@@ -268,6 +268,7 @@ export interface LeadAnnouncement {
   isActive: boolean;
   interestCount: number;
   matchPercentage?: number;
+  isInterestedByMe?: boolean;
   interestedTutors?: Array<{ tutor: string; [key: string]: any }>;
   classLead: {
     _id: string;
@@ -307,6 +308,9 @@ export const getTutorAnnouncements = async (
   apiClient.get(
     `/announcements/tutor/available?page=${page}&limit=${limit}`,
   ) as Promise<AnnouncementsResponse>;
+
+export const getTutorMyInterests = async (): Promise<{ data: LeadAnnouncement[] }> =>
+  apiClient.get(`/announcements/tutor/my-interests`) as Promise<{ data: LeadAnnouncement[] }>;
 
 export const expressInterest = async (
   announcementId: string,

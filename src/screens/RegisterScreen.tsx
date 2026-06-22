@@ -16,6 +16,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  Keyboard,
   KeyboardAvoidingView,
   StatusBar,
   Pressable,
@@ -107,12 +108,11 @@ const INIT: FormData = {
 const STEPS = [
   { id: 0, label: "Personal", icon: "person-circle-outline" as const },
   { id: 1, label: "Education", icon: "school-outline" as const },
-  { id: 2, label: "Location", icon: "location-outline" as const },
-  { id: 3, label: "Availability", icon: "calendar-outline" as const },
-  { id: 4, label: "Security", icon: "shield-checkmark-outline" as const },
+  { id: 2, label: "Setup", icon: "settings-outline" as const },
 ];
 
-const DAY_OPTS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAY_OPTS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAY_FULL: Record<string, string> = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
 const TIME_SLOT_OPTS = [
   "6:00 AM - 8:00 AM",
   "8:00 AM - 10:00 AM",
@@ -444,6 +444,89 @@ const ChipSelect = ({
   </View>
 );
 
+/** Searchable multi-select dropdown */
+const SearchableMultiSelect = ({
+  label,
+  options,
+  selected,
+  onToggle,
+  accent = T.primary,
+  placeholder = "Search…",
+  hint,
+}: {
+  label: string;
+  options: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+  accent?: string;
+  placeholder?: string;
+  hint?: string;
+}) => {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const filtered = query.trim()
+    ? options.filter((o) => o.toLowerCase().includes(query.toLowerCase()))
+    : options;
+  return (
+    <View style={s.fieldWrap}>
+      <Text style={s.chipGroupLabel}>{label}</Text>
+      {/* selected tags */}
+      {selected.length > 0 && (
+        <View style={s.smsTagRow}>
+          {selected.map((v) => (
+            <Pressable key={v} style={[s.smsTag, { borderColor: accent, backgroundColor: `${accent}12` }]} onPress={() => onToggle(v)}>
+              <Text style={[s.smsTagTxt, { color: accent }]}>{v}</Text>
+              <Ionicons name="close" size={11} color={accent} style={{ marginLeft: 3 }} />
+            </Pressable>
+          ))}
+        </View>
+      )}
+      {/* search input */}
+      <Pressable
+        style={[s.smsInputWrap, open && { borderColor: accent }]}
+        onPress={() => setOpen(true)}
+      >
+        <Ionicons name="search-outline" size={15} color={open ? accent : T.mutedFg} style={{ marginRight: 8 }} />
+        <TextInput
+          style={s.smsInput}
+          value={query}
+          onChangeText={(t) => { setQuery(t); setOpen(true); }}
+          placeholder={placeholder}
+          placeholderTextColor={T.textDisabled}
+          onFocus={() => setOpen(true)}
+        />
+        {query.length > 0 && (
+          <Pressable onPress={() => setQuery("")} hitSlop={8}>
+            <Ionicons name="close-circle" size={15} color={T.mutedFg} />
+          </Pressable>
+        )}
+      </Pressable>
+      {/* dropdown */}
+      {open && filtered.length > 0 && (
+        <ScrollView style={s.smsDropdown} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+          {filtered.map((opt) => {
+            const on = selected.includes(opt);
+            return (
+              <Pressable
+                key={opt}
+                style={({ pressed }) => [s.smsOption, pressed && { backgroundColor: `${accent}08` }]}
+                onPress={() => { onToggle(opt); setQuery(""); }}
+              >
+                <Text style={[s.smsOptionTxt, on && { color: accent, fontWeight: "700" }]}>{opt}</Text>
+                {on && <Ionicons name="checkmark-circle" size={15} color={accent} />}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+      {open && (
+        <Pressable style={s.smsDismiss} onPress={() => { setOpen(false); setQuery(""); }} />
+      )}
+      {hint && <Text style={s.smsHint}>{hint}</Text>}
+    </View>
+  );
+};
+
 /** Gender segmented control */
 const GenderPicker = ({
   value,
@@ -517,7 +600,7 @@ const ModePicker = ({
     <View style={s.fieldWrap}>
       <Text style={s.chipGroupLabel}>Preferred Teaching Mode</Text>
       <View style={s.modeRow}>
-        {opts.map(({ m, label, desc, icon }) => {
+        {opts.map(({ m, label, icon }) => {
           const active = value === m;
           return (
             <Pressable
@@ -525,17 +608,8 @@ const ModePicker = ({
               onPress={() => onPick(m)}
               style={[s.modeCard, active && s.modeCardActive]}
             >
-              <View style={[s.modeIconWrap, active && s.modeIconWrapActive]}>
-                <Ionicons
-                  name={icon}
-                  size={19}
-                  color={active ? T.primary : T.textDisabled}
-                />
-              </View>
-              <Text style={[s.modeLabel, active && { color: T.primary }]}>
-                {label}
-              </Text>
-              <Text style={s.modeDesc}>{desc}</Text>
+              <Ionicons name={icon} size={15} color={active ? T.primary : T.textDisabled} style={{ marginRight: 5 }} />
+              <Text style={[s.modeLabel, active && { color: T.primary }]}>{label}</Text>
             </Pressable>
           );
         })}
@@ -576,6 +650,20 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [otpVerifying, setOtpVerifying] = useState(false);
   const [otpValue, setOtpValue] = useState("");
   const [otpError, setOtpError] = useState("");
+  const [resendTimer, setResendTimer] = useState(0);
+  const resendTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [otpKbHeight, setOtpKbHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setOtpKbHeight(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setOtpKbHeight(0),
+    );
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const [cityOpts, setCityOpts] = useState<string[]>([]);
   const [areaOpts, setAreaOpts] = useState<string[]>([]);
@@ -683,11 +771,24 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   ) => {
     setForm((p) => {
       const arr = p[k] as string[];
+      const isSelected = arr.includes(v);
+      if (!isSelected && k === "preferredAreas" && arr.length >= 10) return p;
       return {
         ...p,
-        [k]: arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v],
+        [k]: isSelected ? arr.filter((x) => x !== v) : [...arr, v],
       };
     });
+  };
+
+  const startResendTimer = () => {
+    if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+    setResendTimer(30);
+    resendTimerRef.current = setInterval(() => {
+      setResendTimer((t) => {
+        if (t <= 1) { clearInterval(resendTimerRef.current!); return 0; }
+        return t - 1;
+      });
+    }, 1000);
   };
 
   const handleSendOtp = async () => {
@@ -701,6 +802,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       await sendRegistrationOtp(form.email);
       setOtpValue("");
       setOtpModalOpen(true);
+      startResendTimer();
     } catch (err: any) {
       showError(err?.response?.data?.message || "Failed to send OTP");
     } finally {
@@ -756,8 +858,6 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         form.preferredAreas.length === 0
       )
         e.preferredAreas = "Select at least one preferred area";
-    }
-    if (step === 4) {
       if (form.password.length < 6) e.password = "Minimum 6 characters";
       if (form.password !== form.confirmPassword)
         e.confirmPassword = "Passwords do not match";
@@ -835,9 +935,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       {/* Everything lives inside ONE ScrollView — header + card — so the whole page scrolls */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={0}
-        enabled={Platform.OS === "ios"}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
           style={s.scroll}
@@ -1007,7 +1105,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                   icon="document-text-outline"
                   multiline
                   lines={3}
-                  placeholder="Your teaching philosophy…"
+                  placeholder="e.g. Passionate educator with a gift for making complex topics click — I don't just teach, I inspire."
                 />
               </>
             )}
@@ -1117,33 +1215,37 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                   )}
                 </View>
                 {extraOpts.length > 0 && (
-                  <ChipSelect
+                  <SearchableMultiSelect
                     label="Extracurricular Activities (Optional)"
                     options={extraOpts}
                     selected={form.extracurricularActivities}
                     onToggle={(v) => toggle("extracurricularActivities", v)}
+                    placeholder="Search activities…"
                   />
                 )}
-                <ChipSelect
+                <SearchableMultiSelect
                   label="Languages Known"
                   options={LANG_OPTS}
                   selected={form.languagesKnown}
                   onToggle={(v) => toggle("languagesKnown", v)}
+                  placeholder="Search languages…"
                 />
-                <ChipSelect
+                <SearchableMultiSelect
                   label="Core Skills (Optional)"
                   options={SKILL_OPTS}
                   selected={form.skills}
                   onToggle={(v) => toggle("skills", v)}
                   accent={T.success}
+                  placeholder="Search skills…"
                 />
               </>
             )}
 
             {/* ── Step 2: Location ── */}
+            {/* ── Step 2: Location, Availability & Security ── */}
             {step === 2 && (
               <>
-                <SectionHead icon="location-outline" title="Location Details" />
+                <SectionHead icon="location-outline" title="Location & Mode" />
                 <ModePicker
                   value={form.preferredMode}
                   onPick={(m) => {
@@ -1180,7 +1282,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                       error={errors.city}
                     />
                     {form.city && (
-                      <ChipSelect
+                      <SearchableMultiSelect
                         label="Preferred Areas"
                         options={
                           areaOpts.length > 0
@@ -1195,7 +1297,8 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                         }
                         selected={form.preferredAreas}
                         onToggle={(v) => toggle("preferredAreas", v)}
-                        error={errors.preferredAreas}
+                        placeholder="Search areas…"
+                        hint={`Select up to 10 areas (${form.preferredAreas.length}/10)`}
                       />
                     )}
                   </>
@@ -1205,68 +1308,42 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                   value={form.permanentAddress}
                   onChange={(v) => set("permanentAddress", v)}
                   icon="home-outline"
-                  multiline
-                  lines={2}
-                  placeholder="Your permanent address"
+                  placeholder="Must match address on your govt. ID proof"
                 />
                 <FInput
                   label="Residential Address (if diff.)"
                   value={form.residentialAddress}
                   onChange={(v) => set("residentialAddress", v)}
                   icon="location-outline"
-                  multiline
-                  lines={2}
                   placeholder="Current residential address (optional)"
                 />
-              </>
-            )}
 
-            {/* ── Step 3: Availability ── */}
-            {step === 3 && (
-              <>
                 <SectionHead icon="calendar-outline" title="Availability" />
-                <Text style={s.availHint}>
-                  Help students find you at the right time. Select the days and time slots you're generally available to teach.
-                </Text>
-                <ChipSelect
-                  label="Available Days"
-                  options={DAY_OPTS}
-                  selected={form.daysAvailable}
-                  onToggle={(v) => toggle("daysAvailable", v)}
-                />
-                <ChipSelect
+                <View style={s.fieldWrap}>
+                  <Text style={s.chipGroupLabel}>Available Days</Text>
+                  <View style={s.dayRow}>
+                    {DAY_OPTS.map((d) => {
+                      const on = form.daysAvailable.includes(DAY_FULL[d]);
+                      return (
+                        <Pressable
+                          key={d}
+                          onPress={() => toggle("daysAvailable", DAY_FULL[d])}
+                          style={[s.dayChip, on && s.dayChipActive]}
+                        >
+                          <Text style={[s.dayChipTxt, on && s.dayChipTxtActive]}>{d}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+                <SearchableMultiSelect
                   label="Preferred Time Slots"
                   options={TIME_SLOT_OPTS}
                   selected={form.timeSlots}
                   onToggle={(v) => toggle("timeSlots", v)}
+                  placeholder="Search time slots…"
                 />
-              </>
-            )}
 
-            {/* ── Step 4: Security ── */}
-            {step === 4 && (
-              <>
-                <View style={s.secCard}>
-                  <LinearGradient
-                    colors={["#EFF6FF", "#DBEAFE"]}
-                    style={s.secCardGrad}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <View style={s.secIconWrap}>
-                      <Ionicons
-                        name="shield-checkmark"
-                        size={28}
-                        color={T.primary}
-                      />
-                    </View>
-                    <Text style={s.secTitle}>Secure Your Account</Text>
-                    <Text style={s.secDesc}>
-                      Protected with enterprise-grade encryption. Choose a
-                      strong password.
-                    </Text>
-                  </LinearGradient>
-                </View>
                 <SectionHead icon="lock-closed-outline" title="Set Password" />
                 <FInput
                   label="Choose Password"
@@ -1294,9 +1371,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                           key={i}
                           style={[
                             s.strengthSeg,
-                            {
-                              backgroundColor: i < sc ? pwColor(sc) : T.border,
-                            },
+                            { backgroundColor: i < sc ? pwColor(sc) : T.border },
                           ]}
                         />
                       ))}
@@ -1402,7 +1477,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         onRequestClose={() => setOtpModalOpen(false)}
       >
         <Pressable style={cp.backdrop} onPress={() => setOtpModalOpen(false)}>
-          <Pressable style={[cp.sheet, { height: "auto", paddingBottom: 40 }]} onPress={() => {}}>
+          <Pressable style={[cp.sheet, { height: "auto", paddingBottom: 40, marginBottom: otpKbHeight }]} onPress={() => {}}>
             <View style={cp.handle} />
             <View style={cp.header}>
               <Text style={cp.headerTitle}>Verify Your Email</Text>
@@ -1436,9 +1511,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 <Text style={s.verifyEmailBtnText}>Confirm OTP</Text>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={s.resendOtpBtn} onPress={handleSendOtp} disabled={otpSending}>
-              <Text style={s.resendOtpText}>
-                {otpSending ? "Sending…" : "Resend OTP"}
+            <TouchableOpacity
+              style={s.resendOtpBtn}
+              onPress={handleSendOtp}
+              disabled={otpSending || resendTimer > 0}
+            >
+              <Text style={[s.resendOtpText, resendTimer > 0 && { color: T.mutedFg }]}>
+                {otpSending ? "Sending…" : resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
               </Text>
             </TouchableOpacity>
           </Pressable>
@@ -1870,6 +1949,36 @@ const s = StyleSheet.create({
   },
   chipTxt: { fontSize: 12, fontWeight: "500", color: T.textSecondary },
 
+  // Searchable multi-select
+  smsTagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 },
+  smsTag: {
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 9, paddingVertical: 4,
+    borderRadius: T.radiusFull, borderWidth: 1.2,
+  },
+  smsTagTxt: { fontSize: 12, fontWeight: "600" },
+  smsInputWrap: {
+    flexDirection: "row", alignItems: "center",
+    borderWidth: 1.5, borderColor: T.border, borderRadius: T.radiusSm,
+    backgroundColor: T.paper, paddingHorizontal: 12, paddingVertical: 10,
+  },
+  smsInput: { flex: 1, fontSize: 14, color: T.textPrimary, padding: 0 },
+  smsDropdown: {
+    borderWidth: 1, borderColor: T.border, borderRadius: T.radiusSm,
+    backgroundColor: "#fff", marginTop: 4,
+    shadowColor: "#0F172A", shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08, shadowRadius: 8, elevation: 4,
+    maxHeight: 200,
+  },
+  smsOption: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 14, paddingVertical: 11,
+    borderBottomWidth: 1, borderBottomColor: T.border,
+  },
+  smsOptionTxt: { fontSize: 14, color: T.textPrimary },
+  smsDismiss: { position: "absolute", top: -999, left: -999, right: -999, bottom: -999, zIndex: -1 },
+  smsHint: { fontSize: 11, color: T.mutedFg, marginTop: 5 },
+
   // Gender segmented
   segRow: { flexDirection: "row", gap: 8 },
   segItem: {
@@ -1890,9 +1999,11 @@ const s = StyleSheet.create({
   modeRow: { flexDirection: "row", gap: 8 },
   modeCard: {
     flex: 1,
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    borderRadius: T.radiusLg, // 12px
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: T.radiusSm,
     borderWidth: 1.2,
     borderColor: T.border,
     backgroundColor: T.paper,
@@ -1900,29 +2011,20 @@ const s = StyleSheet.create({
   modeCardActive: {
     borderColor: T.primary,
     backgroundColor: "#EFF6FF",
-    shadowColor: T.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
   },
-  modeIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: T.muted,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6,
+  modeLabel: { fontSize: 13, fontWeight: "700", color: T.textSecondary },
+
+  // Day picker — compact 7-button row
+  dayRow: { flexDirection: "row", gap: 6 },
+  dayChip: {
+    flex: 1, alignItems: "center", paddingVertical: 8,
+    borderRadius: T.radiusSm, borderWidth: 1.2,
+    borderColor: T.border, backgroundColor: T.paper,
   },
-  modeIconWrapActive: { backgroundColor: "#DBEAFE" },
-  modeLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: T.textSecondary,
-    marginBottom: 2,
-  },
-  modeDesc: { fontSize: 11, color: T.textDisabled, textAlign: "center" },
+  dayChipActive: { borderColor: T.primary, backgroundColor: "#EFF6FF" },
+  dayChipTxt: { fontSize: 11, fontWeight: "600", color: T.textSecondary },
+  dayChipTxtActive: { color: T.primary },
+
 
   // Info card (subjects) — matches MuiAlert standardInfo style
   infoCard: {
