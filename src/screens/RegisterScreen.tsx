@@ -883,12 +883,12 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         email: form.email,
         password: form.password,
       });
-      const token = loginRes.data.tokens.accessToken;
+      const accessToken = loginRes.data.tokens.accessToken;
       await AsyncStorage.setItem(
         AUTH_STORAGE_KEY,
-        JSON.stringify({ token, user: loginRes.data.user }),
+        JSON.stringify({ accessToken, user: loginRes.data.user }),
       );
-      setAuthToken(token);
+      setAuthToken(accessToken);
 
       // Save availability preferences if tutor selected any
       if (form.daysAvailable.length > 0 || form.timeSlots.length > 0) {
