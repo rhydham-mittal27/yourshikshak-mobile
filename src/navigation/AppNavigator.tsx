@@ -7,6 +7,11 @@ import {
   NavigationContainerRef,
 } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
+import AuthScreen from "../screens/AuthScreen";
+import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
+import RoleSelectScreen from "../screens/RoleSelectScreen";
+import TutorCompleteProfileScreen from "../screens/TutorCompleteProfileScreen";
+import ParentCompleteProfileScreen from "../screens/ParentCompleteProfileScreen";
 import IntroScreen from "../screens/IntroScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import ParentRegisterScreen from "../screens/ParentRegisterScreen";
@@ -37,6 +42,11 @@ import GetStartedScreen from "../screens/GetStartedScreen";
 import FAQScreen from "../screens/FAQScreen";
 
 export type RootStackParamList = {
+  Auth: undefined;
+  ForgotPassword: undefined;
+  RoleSelect: { name: string; email: string; phone: string; city: string; password: string };
+  TutorCompleteProfile: { name: string; email: string; phone: string; city: string; password: string };
+  ParentCompleteProfile: { name: string; email: string; phone: string; city: string; password: string };
   Intro: undefined;
   Register: undefined;
   ParentRegister: undefined;
@@ -103,7 +113,7 @@ const AppNavigator = () => {
           }
         }
       } catch (_) {}
-      setInitialRoute("Intro");
+      setInitialRoute("Auth");
     })();
   }, []);
 
@@ -170,12 +180,16 @@ const AppNavigator = () => {
             gestureEnabled: true,
           }}
         >
+          {/* ── New unified auth flow ── */}
+          <Stack.Screen name="Auth" component={AuthScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
+          <Stack.Screen name="TutorCompleteProfile" component={TutorCompleteProfileScreen} />
+          <Stack.Screen name="ParentCompleteProfile" component={ParentCompleteProfileScreen} />
+          {/* ── Legacy screens (kept for deep links / existing users navigating back) ── */}
           <Stack.Screen name="Intro" component={IntroScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen
-            name="ParentRegister"
-            component={ParentRegisterScreen}
-          />
+          <Stack.Screen name="ParentRegister" component={ParentRegisterScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen
             name="TutorDashboard"

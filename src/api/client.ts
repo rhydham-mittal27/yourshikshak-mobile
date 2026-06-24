@@ -920,6 +920,12 @@ export const deleteAccount = (): Promise<void> =>
 export const restoreAccount = (email: string, password: string): Promise<any> =>
   apiClient.post('/auth/restore-account', { email, password }) as any;
 
+export const forgotPassword = (email: string): Promise<void> =>
+  apiClient.post('/auth/forgot-password', { email }) as any;
+
+export const resetPassword = (token: string, newPassword: string): Promise<void> =>
+  apiClient.post('/auth/reset-password', { token, newPassword }) as any;
+
 // ─── Parent Dashboard ─────────────────────────────────────────────────────────
 
 export interface ParentActiveClass {
