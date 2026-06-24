@@ -25,11 +25,11 @@ import { T } from "../constants/colors";
 const SCREEN_W = Dimensions.get("window").width;
 // content padding (16) + faq card body padding (16) on each side
 const FAQ_VIDEO_W = SCREEN_W - 32 - 32;
-const FAQ_VIDEO_H = Math.round(FAQ_VIDEO_W * 9 / 16);
+const FAQ_VIDEO_H = Math.round((FAQ_VIDEO_W * 9) / 16);
 
 const extractYouTubeId = (url: string): string | null => {
   const m = url.match(
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
   );
   return m ? m[1] : null;
 };
@@ -42,7 +42,9 @@ if (
 }
 
 type Nav = StackNavigationProp<RootStackParamList, "FAQ">;
-interface Props { navigation: Nav }
+interface Props {
+  navigation: Nav;
+}
 
 interface FaqItem {
   id: string;
@@ -54,16 +56,21 @@ interface FaqItem {
 }
 
 // ── Section reveal: fade + lift on mount, staggered ──
-const Reveal: React.FC<{ delay?: number; children: React.ReactNode; style?: any }> = ({
-  delay = 0,
-  children,
-  style,
-}) => {
+const Reveal: React.FC<{
+  delay?: number;
+  children: React.ReactNode;
+  style?: any;
+}> = ({ delay = 0, children, style }) => {
   const op = useRef(new Animated.Value(0)).current;
   const ty = useRef(new Animated.Value(16)).current;
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(op, { toValue: 1, duration: 420, delay, useNativeDriver: true }),
+      Animated.timing(op, {
+        toValue: 1,
+        duration: 420,
+        delay,
+        useNativeDriver: true,
+      }),
       Animated.timing(ty, {
         toValue: 0,
         duration: 420,
@@ -74,7 +81,9 @@ const Reveal: React.FC<{ delay?: number; children: React.ReactNode; style?: any 
     ]).start();
   }, []);
   return (
-    <Animated.View style={[style, { opacity: op, transform: [{ translateY: ty }] }]}>
+    <Animated.View
+      style={[style, { opacity: op, transform: [{ translateY: ty }] }]}
+    >
       {children}
     </Animated.View>
   );
@@ -86,20 +95,28 @@ const Skeleton: React.FC<{ style?: any }> = ({ style }) => {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 0.85, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.4, duration: 700, useNativeDriver: true }),
-      ])
+        Animated.timing(pulse, {
+          toValue: 0.85,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.4,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
     ).start();
   }, []);
   return <Animated.View style={[s.skel, style, { opacity: pulse }]} />;
 };
 
 // ── Accordion row ──
-const FaqRow: React.FC<{ item: FaqItem; open: boolean; onToggle: () => void }> = ({
-  item,
-  open,
-  onToggle,
-}) => {
+const FaqRow: React.FC<{
+  item: FaqItem;
+  open: boolean;
+  onToggle: () => void;
+}> = ({ item, open, onToggle }) => {
   const rot = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(rot, {
@@ -109,7 +126,10 @@ const FaqRow: React.FC<{ item: FaqItem; open: boolean; onToggle: () => void }> =
       useNativeDriver: true,
     }).start();
   }, [open]);
-  const spin = rot.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "180deg"] });
+  const spin = rot.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "180deg"],
+  });
 
   return (
     <View style={[s.faqCard, open && s.faqCardOpen]}>
@@ -124,10 +144,16 @@ const FaqRow: React.FC<{ item: FaqItem; open: boolean; onToggle: () => void }> =
               <Text style={s.videoTagTxt}>VIDEO</Text>
             </View>
           ) : null}
-          <Text style={[s.faqQuestion, open && s.faqQuestionOpen]}>{item.question}</Text>
+          <Text style={[s.faqQuestion, open && s.faqQuestionOpen]}>
+            {item.question}
+          </Text>
         </View>
         <Animated.View style={[s.chev, { transform: [{ rotate: spin }] }]}>
-          <Ionicons name="chevron-down" size={16} color={open ? T.primary : T.mutedFg} />
+          <Ionicons
+            name="chevron-down"
+            size={16}
+            color={open ? T.primary : T.mutedFg}
+          />
         </Animated.View>
       </Pressable>
       {open ? (
@@ -142,7 +168,9 @@ const FaqRow: React.FC<{ item: FaqItem; open: boolean; onToggle: () => void }> =
                   play={false}
                 />
               </View>
-              {item.answer ? <Text style={s.faqAnswer}>{item.answer}</Text> : null}
+              {item.answer ? (
+                <Text style={s.faqAnswer}>{item.answer}</Text>
+              ) : null}
             </>
           ) : (
             <Text style={s.faqAnswer}>{item.answer}</Text>
@@ -184,20 +212,24 @@ const FAQScreen: React.FC<Props> = ({ navigation }) => {
             };
           })
           // text answers need an answer body; video answers need a valid video
-          .filter((f) =>
-            f.question && (f.answerType === "video" ? !!f.videoId : !!f.answer)
+          .filter(
+            (f) =>
+              f.question &&
+              (f.answerType === "video" ? !!f.videoId : !!f.answer),
           )
           .sort((a, b) => a.sortOrder - b.sortOrder);
         setFaqs(mapped);
-      } catch {}
-      finally {
+      } catch {
+      } finally {
         setLoading(false);
       }
     })();
   }, []);
 
   const toggle = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.create(200, "easeInEaseOut", "opacity"));
+    LayoutAnimation.configureNext(
+      LayoutAnimation.create(200, "easeInEaseOut", "opacity"),
+    );
     setOpenId((cur) => (cur === id ? null : id));
   };
 
@@ -206,7 +238,11 @@ const FAQScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={s.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       {/* ── Hero header ───────────────────────────────────────────────────── */}
       <LinearGradient
@@ -248,14 +284,23 @@ const FAQScreen: React.FC<Props> = ({ navigation }) => {
       {/* ── Content ───────────────────────────────────────────────────────── */}
       <ScrollView
         style={s.scroll}
-        contentContainerStyle={[s.content, { paddingBottom: Math.max(insets.bottom, 24) + 8 }]}
+        contentContainerStyle={[
+          s.content,
+          { paddingBottom: Math.max(insets.bottom, 24) + 8 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {loading ? (
           <View style={s.stack}>
             {[0, 1, 2, 3].map((i) => (
               <View key={i} style={s.skelCard}>
-                <Skeleton style={{ width: i % 2 ? "60%" : "78%", height: 13, borderRadius: 7 }} />
+                <Skeleton
+                  style={{
+                    width: i % 2 ? "60%" : "78%",
+                    height: 13,
+                    borderRadius: 7,
+                  }}
+                />
               </View>
             ))}
           </View>
@@ -266,21 +311,30 @@ const FAQScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <Text style={s.emptyHead}>No FAQs yet</Text>
             <Text style={s.emptySub}>
-              Frequently asked questions haven't been published yet. Check back shortly —
-              they'll appear here automatically.
+              Frequently asked questions haven't been published yet. Check back
+              shortly — they'll appear here automatically.
             </Text>
           </Reveal>
         ) : (
           <View style={s.stack}>
             {faqs.map((f, i) => (
               <Reveal key={f.id} delay={40 + i * 50}>
-                <FaqRow item={f} open={openId === f.id} onToggle={() => toggle(f.id)} />
+                <FaqRow
+                  item={f}
+                  open={openId === f.id}
+                  onToggle={() => toggle(f.id)}
+                />
               </Reveal>
             ))}
             <Reveal delay={40 + faqs.length * 50} style={s.tipRow}>
-              <Ionicons name="chatbubble-ellipses-outline" size={15} color={T.mutedFg} />
+              <Ionicons
+                name="chatbubble-ellipses-outline"
+                size={15}
+                color={T.mutedFg}
+              />
               <Text style={s.tipTxt}>
-                Still need help? Reach out to your coordinator from the dashboard.
+                Still need help? Reach out to your coordinator from the
+                dashboard.
               </Text>
             </Reveal>
           </View>
@@ -346,7 +400,12 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.14)",
   },
-  eyebrowDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: T.secondary },
+  eyebrowDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: T.secondary,
+  },
   eyebrowTxt: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 9.5,
@@ -441,7 +500,12 @@ const s = StyleSheet.create({
     borderTopColor: T.border,
     marginTop: -2,
   },
-  faqAnswer: { fontSize: 13.5, color: T.textSecondary, lineHeight: 21, paddingTop: 12 },
+  faqAnswer: {
+    fontSize: 13.5,
+    color: T.textSecondary,
+    lineHeight: 21,
+    paddingTop: 12,
+  },
 
   // Tip
   tipRow: {

@@ -35,16 +35,18 @@ import OpportunityEmptyState from "../components/opportunities/OpportunityEmptyS
 import OpportunitySkeleton from "../components/opportunities/OpportunitySkeleton";
 
 type Nav = StackNavigationProp<RootStackParamList, "ClassOpportunities">;
-interface Props { navigation: Nav }
+interface Props {
+  navigation: Nav;
+}
 
 type Filter = "all" | "ONLINE" | "OFFLINE" | "HYBRID" | "match";
 
 const FILTERS: { key: Filter; label: string; icon: any }[] = [
-  { key: "all",     label: "All",        icon: "apps-outline"       },
-  { key: "match",   label: "Top Match",  icon: "star-outline"       },
-  { key: "ONLINE",  label: "Online",     icon: "videocam-outline"   },
-  { key: "OFFLINE", label: "Offline",    icon: "home-outline"       },
-  { key: "HYBRID",  label: "Hybrid",     icon: "git-merge-outline"  },
+  { key: "all", label: "All", icon: "apps-outline" },
+  { key: "match", label: "Top Match", icon: "star-outline" },
+  { key: "ONLINE", label: "Online", icon: "videocam-outline" },
+  { key: "OFFLINE", label: "Offline", icon: "home-outline" },
+  { key: "HYBRID", label: "Hybrid", icon: "git-merge-outline" },
 ];
 
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -66,10 +68,20 @@ const FilterChip = ({
       <Pressable
         onPress={onPress}
         onPressIn={() =>
-          Animated.spring(scale, { toValue: 0.93, useNativeDriver: true, speed: 80, bounciness: 0 }).start()
+          Animated.spring(scale, {
+            toValue: 0.93,
+            useNativeDriver: true,
+            speed: 80,
+            bounciness: 0,
+          }).start()
         }
         onPressOut={() =>
-          Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 4 }).start()
+          Animated.spring(scale, {
+            toValue: 1,
+            useNativeDriver: true,
+            speed: 50,
+            bounciness: 4,
+          }).start()
         }
         style={[chip.pill, active && chip.pillActive]}
       >
@@ -99,8 +111,20 @@ const StatTile = ({
   accent?: string;
 }) => (
   <View style={stat.tile}>
-    <View style={[stat.iconRing, accent && { backgroundColor: `${accent}22`, borderColor: `${accent}40` }]}>
-      <Ionicons name={icon} size={14} color={accent ?? "rgba(255,255,255,0.6)"} />
+    <View
+      style={[
+        stat.iconRing,
+        accent && {
+          backgroundColor: `${accent}22`,
+          borderColor: `${accent}40`,
+        },
+      ]}
+    >
+      <Ionicons
+        name={icon}
+        size={14}
+        color={accent ?? "rgba(255,255,255,0.6)"}
+      />
     </View>
     <Text style={[stat.val, accent && { color: accent }]}>{value}</Text>
     <Text style={stat.lbl}>{label}</Text>
@@ -134,8 +158,8 @@ const Skeleton = ({ count = 3 }: { count?: number }) => (
 // ── Tab indicator (sliding pill) ──────────────────────────────────────────────
 
 const TABS: { key: "browse" | "history"; label: string; icon: any }[] = [
-  { key: "browse",  label: "Browse",       icon: "telescope-outline" },
-  { key: "history", label: "My Interests", icon: "heart-outline"     },
+  { key: "browse", label: "Browse", icon: "telescope-outline" },
+  { key: "history", label: "My Interests", icon: "heart-outline" },
 ];
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -144,12 +168,12 @@ const PAGE_SIZE = 10;
 
 export default function ClassOpportunitiesScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const [items, setItems]               = useState<LeadAnnouncement[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [refreshing, setRefreshing]     = useState(false);
-  const [loadingMore, setLoadingMore]   = useState(false);
-  const [total, setTotal]               = useState(0);
-  const [page, setPage]                 = useState(1);
+  const [items, setItems] = useState<LeadAnnouncement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [interestedIds, setInterestedIds] = useState<Set<string>>(new Set());
   const [myInterestCount, setMyInterestCount] = useState(0);
   const tutorIdRef = useRef<string | null>(null);
@@ -200,9 +224,13 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
       const tid = tutorIdRef.current;
       const appliedInPage = new Set(
         valid
-          .filter((a) =>
-            a.isInterestedByMe ||
-            (tid && a.interestedTutors?.some((t) => t.tutor === tid || t._id === tid || t === tid))
+          .filter(
+            (a) =>
+              a.isInterestedByMe ||
+              (tid &&
+                a.interestedTutors?.some(
+                  (t) => t.tutor === tid || t._id === tid || t === tid,
+                )),
           )
           .map((a) => a._id),
       );
@@ -223,12 +251,17 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
   }, []);
 
   useEffect(() => {
-    getTutorProfile().then((res) => {
-      const data = res.data as any;
-      if (typeof data.interestCount === "number") setMyInterestCount(data.interestCount);
-      if (data._id) tutorIdRef.current = data._id;
-      loadPage(1);
-    }).catch(() => { loadPage(1); });
+    getTutorProfile()
+      .then((res) => {
+        const data = res.data as any;
+        if (typeof data.interestCount === "number")
+          setMyInterestCount(data.interestCount);
+        if (data._id) tutorIdRef.current = data._id;
+        loadPage(1);
+      })
+      .catch(() => {
+        loadPage(1);
+      });
   }, [loadPage]);
 
   const loadHistory = useCallback(async () => {
@@ -254,7 +287,9 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
       setInterestedIds((prev) => new Set(prev).add(id));
       setMyInterestCount((prev) => prev + 1);
       setItems((prev) =>
-        prev.map((a) => a._id === id ? { ...a, interestCount: a.interestCount + 1 } : a),
+        prev.map((a) =>
+          a._id === id ? { ...a, interestCount: a.interestCount + 1 } : a,
+        ),
       );
     } catch {}
     setExpressingId(null);
@@ -262,7 +297,8 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
 
   const filtered = useMemo(() => {
     if (activeFilter === "all") return items;
-    if (activeFilter === "match") return items.filter((i) => (i.matchPercentage ?? 0) >= 75);
+    if (activeFilter === "match")
+      return items.filter((i) => (i.matchPercentage ?? 0) >= 75);
     return items.filter((i) => i.classLead?.mode === activeFilter);
   }, [items, activeFilter]);
 
@@ -270,7 +306,11 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
 
   return (
     <View style={s.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       <ScrollView
         style={s.scroll}
@@ -287,8 +327,13 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
             tintColor={T.secondary}
           />
         }
-        onScroll={({ nativeEvent: { contentOffset, layoutMeasurement, contentSize } }) => {
-          if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 120)
+        onScroll={({
+          nativeEvent: { contentOffset, layoutMeasurement, contentSize },
+        }) => {
+          if (
+            contentOffset.y + layoutMeasurement.height >=
+            contentSize.height - 120
+          )
             loadMore();
         }}
         scrollEventThrottle={300}
@@ -310,14 +355,24 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
               s.navRow,
               {
                 opacity: headerAnim,
-                transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }],
+                transform: [
+                  {
+                    translateY: headerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-8, 0],
+                    }),
+                  },
+                ],
               },
             ]}
           >
             <Pressable
               onPress={() => navigation.goBack()}
               hitSlop={12}
-              style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] }]}
+              style={({ pressed }) => [
+                s.backBtn,
+                pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] },
+              ]}
             >
               <Ionicons name="arrow-back" size={18} color="#fff" />
             </Pressable>
@@ -341,15 +396,32 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
               s.statsRow,
               {
                 opacity: headerAnim,
-                transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
+                transform: [
+                  {
+                    translateY: headerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [12, 0],
+                    }),
+                  },
+                ],
               },
             ]}
           >
-            <StatTile icon="list-outline"      value={total}           label="Total leads"   />
+            <StatTile icon="list-outline" value={total} label="Total leads" />
             <View style={s.statDivider} />
-            <StatTile icon="star-outline"      value={perfectCount}    label="Perfect match" accent="#10B981" />
+            <StatTile
+              icon="star-outline"
+              value={perfectCount}
+              label="Perfect match"
+              accent="#10B981"
+            />
             <View style={s.statDivider} />
-            <StatTile icon="hand-left-outline" value={myInterestCount} label="Applied"       accent={T.secondary} />
+            <StatTile
+              icon="hand-left-outline"
+              value={myInterestCount}
+              label="Applied"
+              accent={T.secondary}
+            />
           </Animated.View>
         </LinearGradient>
 
@@ -371,10 +443,14 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
                   size={13}
                   color={active ? "#fff" : T.mutedFg}
                 />
-                <Text style={[s.tabLabel, active && s.tabLabelActive]}>{tab.label}</Text>
+                <Text style={[s.tabLabel, active && s.tabLabelActive]}>
+                  {tab.label}
+                </Text>
                 {tab.key === "history" && myInterestCount > 0 && (
                   <View style={[s.tabBadge, active && s.tabBadgeActive]}>
-                    <Text style={[s.tabBadgeTxt, active && { color: "#fff" }]}>{myInterestCount}</Text>
+                    <Text style={[s.tabBadgeTxt, active && { color: "#fff" }]}>
+                      {myInterestCount}
+                    </Text>
                   </View>
                 )}
               </Pressable>
@@ -409,7 +485,8 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
               <Text style={s.resultsLabel}>
                 {activeFilter === "all"
                   ? "All opportunities"
-                  : FILTERS.find((f) => f.key === activeFilter)?.label ?? "Results"}
+                  : (FILTERS.find((f) => f.key === activeFilter)?.label ??
+                    "Results")}
               </Text>
               {!loading && filtered.length > 0 && (
                 <View style={s.countPill}>
@@ -425,7 +502,10 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
               {!loading && filtered.length === 0 && items.length === 0 && (
                 <View style={s.emptyWrap}>
                   <OpportunityEmptyState
-                    onRefresh={() => { fetchingRef.current = false; loadPage(1); }}
+                    onRefresh={() => {
+                      fetchingRef.current = false;
+                      loadPage(1);
+                    }}
                   />
                 </View>
               )}
@@ -433,41 +513,54 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
               {!loading && filtered.length === 0 && items.length > 0 && (
                 <View style={s.emptyFilter}>
                   <View style={s.emptyIconBox}>
-                    <Ionicons name="filter-outline" size={24} color={T.mutedFg} />
+                    <Ionicons
+                      name="filter-outline"
+                      size={24}
+                      color={T.mutedFg}
+                    />
                   </View>
                   <Text style={s.emptyTitle}>No results</Text>
-                  <Text style={s.emptyBody}>No leads match this filter right now.</Text>
+                  <Text style={s.emptyBody}>
+                    No leads match this filter right now.
+                  </Text>
                   <Pressable
                     onPress={() => setActiveFilter("all")}
-                    style={({ pressed }) => [s.showAllBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }]}
+                    style={({ pressed }) => [
+                      s.showAllBtn,
+                      pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] },
+                    ]}
                   >
                     <Text style={s.showAllTxt}>Show all</Text>
                   </Pressable>
                 </View>
               )}
 
-              {!loading && filtered.map((item, i) => (
-                <View key={item._id} style={s.cardWrap}>
-                  <OpportunityCard
-                    item={item}
-                    interested={interestedIds.has(item._id)}
-                    expressing={expressingId === item._id}
-                    onInterest={handleInterest}
-                    revealDelay={Math.min(i * 45, 240)}
-                  />
-                </View>
-              ))}
+              {!loading &&
+                filtered.map((item, i) => (
+                  <View key={item._id} style={s.cardWrap}>
+                    <OpportunityCard
+                      item={item}
+                      interested={interestedIds.has(item._id)}
+                      expressing={expressingId === item._id}
+                      onInterest={handleInterest}
+                      revealDelay={Math.min(i * 45, 240)}
+                    />
+                  </View>
+                ))}
 
               {loadingMore && <Skeleton count={2} />}
             </View>
 
-            {!loading && !loadingMore && items.length > 0 && items.length >= total && (
-              <View style={s.endRow}>
-                <View style={s.endLine} />
-                <Text style={s.endTxt}>All caught up</Text>
-                <View style={s.endLine} />
-              </View>
-            )}
+            {!loading &&
+              !loadingMore &&
+              items.length > 0 &&
+              items.length >= total && (
+                <View style={s.endRow}>
+                  <View style={s.endLine} />
+                  <Text style={s.endTxt}>All caught up</Text>
+                  <View style={s.endLine} />
+                </View>
+              )}
           </>
         )}
 
@@ -488,31 +581,43 @@ export default function ClassOpportunitiesScreen({ navigation }: Props) {
 
               {!historyLoading && historyItems.length === 0 && (
                 <View style={s.emptyFilter}>
-                  <View style={[s.emptyIconBox, { backgroundColor: "#FFF1F2" }]}>
-                    <Ionicons name="heart-dislike-outline" size={24} color="#F43F5E" />
+                  <View
+                    style={[s.emptyIconBox, { backgroundColor: "#FFF1F2" }]}
+                  >
+                    <Ionicons
+                      name="heart-dislike-outline"
+                      size={24}
+                      color="#F43F5E"
+                    />
                   </View>
                   <Text style={s.emptyTitle}>No interests yet</Text>
-                  <Text style={s.emptyBody}>Leads you apply to will appear here.</Text>
+                  <Text style={s.emptyBody}>
+                    Leads you apply to will appear here.
+                  </Text>
                   <Pressable
                     onPress={() => handleTabChange("browse")}
-                    style={({ pressed }) => [s.showAllBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }]}
+                    style={({ pressed }) => [
+                      s.showAllBtn,
+                      pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] },
+                    ]}
                   >
                     <Text style={s.showAllTxt}>Browse opportunities</Text>
                   </Pressable>
                 </View>
               )}
 
-              {!historyLoading && historyItems.map((item, i) => (
-                <View key={item._id} style={s.cardWrap}>
-                  <OpportunityCard
-                    item={item}
-                    interested={true}
-                    expressing={false}
-                    onInterest={() => {}}
-                    revealDelay={Math.min(i * 45, 240)}
-                  />
-                </View>
-              ))}
+              {!historyLoading &&
+                historyItems.map((item, i) => (
+                  <View key={item._id} style={s.cardWrap}>
+                    <OpportunityCard
+                      item={item}
+                      interested={true}
+                      expressing={false}
+                      onInterest={() => {}}
+                      revealDelay={Math.min(i * 45, 240)}
+                    />
+                  </View>
+                ))}
             </View>
           </>
         )}
@@ -857,7 +962,7 @@ const chip = StyleSheet.create({
     backgroundColor: T.primary,
     borderColor: T.primaryDark,
     shadowColor: T.primary,
-    shadowOpacity: 0.30,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },

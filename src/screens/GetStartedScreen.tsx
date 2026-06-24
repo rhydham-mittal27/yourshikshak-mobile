@@ -22,29 +22,36 @@ import { T } from "../constants/colors";
 const SCREEN_W = Dimensions.get("window").width;
 const H_PAD = 16;
 const CARD_W = SCREEN_W - H_PAD * 2;
-const VIDEO_H = Math.round(CARD_W * 9 / 16);
+const VIDEO_H = Math.round((CARD_W * 9) / 16);
 
 type Nav = StackNavigationProp<RootStackParamList, "GetStarted">;
-interface Props { navigation: Nav }
+interface Props {
+  navigation: Nav;
+}
 
 const extractYouTubeId = (url: string): string | null => {
   const m = url.match(
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
   );
   return m ? m[1] : null;
 };
 
 // ── Section reveal: fade + lift on mount, staggered (Emil: ease-out, <300ms) ──
-const Reveal: React.FC<{ delay?: number; children: React.ReactNode; style?: any }> = ({
-  delay = 0,
-  children,
-  style,
-}) => {
+const Reveal: React.FC<{
+  delay?: number;
+  children: React.ReactNode;
+  style?: any;
+}> = ({ delay = 0, children, style }) => {
   const op = useRef(new Animated.Value(0)).current;
   const ty = useRef(new Animated.Value(16)).current;
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(op, { toValue: 1, duration: 420, delay, useNativeDriver: true }),
+      Animated.timing(op, {
+        toValue: 1,
+        duration: 420,
+        delay,
+        useNativeDriver: true,
+      }),
       Animated.timing(ty, {
         toValue: 0,
         duration: 420,
@@ -55,7 +62,9 @@ const Reveal: React.FC<{ delay?: number; children: React.ReactNode; style?: any 
     ]).start();
   }, []);
   return (
-    <Animated.View style={[style, { opacity: op, transform: [{ translateY: ty }] }]}>
+    <Animated.View
+      style={[style, { opacity: op, transform: [{ translateY: ty }] }]}
+    >
       {children}
     </Animated.View>
   );
@@ -67,9 +76,17 @@ const Skeleton: React.FC<{ style?: any }> = ({ style }) => {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 0.85, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.4, duration: 700, useNativeDriver: true }),
-      ])
+        Animated.timing(pulse, {
+          toValue: 0.85,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.4,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
     ).start();
   }, []);
   return <Animated.View style={[s.skel, style, { opacity: pulse }]} />;
@@ -89,11 +106,12 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
         const opts = await getOptions("TEACHER_TUTORIAL");
         const tutorial =
           (opts as any)?.data?.[0] ?? (Array.isArray(opts) ? opts[0] : null);
-        if (tutorial?.metadata?.videoUrl) setVideoUrl(tutorial.metadata.videoUrl);
+        if (tutorial?.metadata?.videoUrl)
+          setVideoUrl(tutorial.metadata.videoUrl);
         if (tutorial?.metadata?.description)
           setDescription(tutorial.metadata.description);
-      } catch {}
-      finally {
+      } catch {
+      } finally {
         setLoading(false);
       }
     })();
@@ -107,7 +125,11 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={s.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       {/* ── Hero header (matches IntroScreen language) ───────────────────── */}
       <LinearGradient
@@ -149,17 +171,43 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
       {/* ── Content ───────────────────────────────────────────────────────── */}
       <ScrollView
         style={s.scroll}
-        contentContainerStyle={[s.content, { paddingBottom: Math.max(insets.bottom, 24) + 8 }]}
+        contentContainerStyle={[
+          s.content,
+          { paddingBottom: Math.max(insets.bottom, 24) + 8 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {loading ? (
           <View style={s.stack}>
-            <Skeleton style={{ width: CARD_W, height: VIDEO_H, borderRadius: 18 }} />
+            <Skeleton
+              style={{ width: CARD_W, height: VIDEO_H, borderRadius: 18 }}
+            />
             <View style={s.skelCard}>
               <Skeleton style={{ width: 140, height: 14, borderRadius: 7 }} />
-              <Skeleton style={{ width: "100%", height: 10, borderRadius: 5, marginTop: 14 }} />
-              <Skeleton style={{ width: "92%", height: 10, borderRadius: 5, marginTop: 10 }} />
-              <Skeleton style={{ width: "70%", height: 10, borderRadius: 5, marginTop: 10 }} />
+              <Skeleton
+                style={{
+                  width: "100%",
+                  height: 10,
+                  borderRadius: 5,
+                  marginTop: 14,
+                }}
+              />
+              <Skeleton
+                style={{
+                  width: "92%",
+                  height: 10,
+                  borderRadius: 5,
+                  marginTop: 10,
+                }}
+              />
+              <Skeleton
+                style={{
+                  width: "70%",
+                  height: 10,
+                  borderRadius: 5,
+                  marginTop: 10,
+                }}
+              />
             </View>
           </View>
         ) : isEmpty ? (
@@ -169,8 +217,8 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <Text style={s.emptyHead}>Tutorial coming soon</Text>
             <Text style={s.emptySub}>
-              Your walkthrough video hasn't been published yet. Check back shortly — it'll
-              appear here automatically.
+              Your walkthrough video hasn't been published yet. Check back
+              shortly — it'll appear here automatically.
             </Text>
           </Reveal>
         ) : (
@@ -201,7 +249,11 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={s.descCard}>
                   <View style={s.descHeader}>
                     <View style={s.descIcon}>
-                      <Ionicons name="document-text-outline" size={16} color={T.primary} />
+                      <Ionicons
+                        name="document-text-outline"
+                        size={16}
+                        color={T.primary}
+                      />
                     </View>
                     <Text style={s.descTitle}>About this tutorial</Text>
                   </View>
@@ -213,7 +265,8 @@ const GetStartedScreen: React.FC<Props> = ({ navigation }) => {
             <Reveal delay={200} style={s.tipRow}>
               <Ionicons name="bulb-outline" size={15} color={T.mutedFg} />
               <Text style={s.tipTxt}>
-                Tip: keep your profile and documents ready to finish setup faster.
+                Tip: keep your profile and documents ready to finish setup
+                faster.
               </Text>
             </Reveal>
           </View>
@@ -279,7 +332,12 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.14)",
   },
-  eyebrowDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: T.secondary },
+  eyebrowDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: T.secondary,
+  },
   eyebrowTxt: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 9.5,
@@ -332,7 +390,12 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  videoBarTxt: { color: "#fff", fontSize: 13, fontWeight: "700", letterSpacing: -0.2 },
+  videoBarTxt: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
   videoFrame: { width: CARD_W, height: VIDEO_H, backgroundColor: "#000" },
 
   // Description
@@ -343,7 +406,12 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: T.border,
   },
-  descHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
+  descHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
   descIcon: {
     width: 30,
     height: 30,

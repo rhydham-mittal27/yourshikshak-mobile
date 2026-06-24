@@ -30,7 +30,12 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { loginUser, restoreAccount, setAuthToken, AUTH_STORAGE_KEY } from "../api/client";
+import {
+  loginUser,
+  restoreAccount,
+  setAuthToken,
+  AUTH_STORAGE_KEY,
+} from "../api/client";
 import { registerForPushNotifications } from "../services/pushNotifications";
 import { useModal } from "../context/ModalContext";
 import { T } from "../constants/colors";
@@ -301,12 +306,22 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
       if (user.role === "TUTOR") {
         navigation.reset({
           index: 0,
-          routes: [{ name: "TutorDashboard", params: { userId: user.id, name: user.name, role: user.role } }],
+          routes: [
+            {
+              name: "TutorDashboard",
+              params: { userId: user.id, name: user.name, role: user.role },
+            },
+          ],
         });
       } else if (user.role === "PARENT") {
         navigation.reset({
           index: 0,
-          routes: [{ name: "ParentDashboard", params: { userId: user.id, name: user.name, role: user.role } }],
+          routes: [
+            {
+              name: "ParentDashboard",
+              params: { userId: user.id, name: user.name, role: user.role },
+            },
+          ],
         });
       } else {
         navigation.reset({ index: 0, routes: [{ name: "Intro" }] });
@@ -328,21 +343,45 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
     setRestoreError(null);
     setRestoreLoading(true);
     try {
-      const res = await restoreAccount(pendingCreds.current.email, pendingCreds.current.password);
+      const res = await restoreAccount(
+        pendingCreds.current.email,
+        pendingCreds.current.password,
+      );
       const { accessToken } = res.data.tokens;
       const user = res.data.user;
       setAuthToken(accessToken);
-      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ accessToken, user }));
+      await AsyncStorage.setItem(
+        AUTH_STORAGE_KEY,
+        JSON.stringify({ accessToken, user }),
+      );
       setRestoreModal(false);
       if (user.role === "TUTOR") {
-        navigation.reset({ index: 0, routes: [{ name: "TutorDashboard", params: { userId: user.id, name: user.name, role: user.role } }] });
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "TutorDashboard",
+              params: { userId: user.id, name: user.name, role: user.role },
+            },
+          ],
+        });
       } else if (user.role === "PARENT") {
-        navigation.reset({ index: 0, routes: [{ name: "ParentDashboard", params: { userId: user.id, name: user.name, role: user.role } }] });
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "ParentDashboard",
+              params: { userId: user.id, name: user.name, role: user.role },
+            },
+          ],
+        });
       } else {
         navigation.reset({ index: 0, routes: [{ name: "Intro" }] });
       }
     } catch (err: any) {
-      setRestoreError(err?.message || "Failed to restore account. Please try again.");
+      setRestoreError(
+        err?.message || "Failed to restore account. Please try again.",
+      );
     } finally {
       setRestoreLoading(false);
     }
@@ -507,7 +546,9 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text style={s.signinTxt}>Don't have an account? </Text>
               <Pressable hitSlop={8} onPress={goRegister}>
                 <Text style={s.signinLink}>
-                  {role === "PARENT" ? "Register as Parent / Student" : "Join as Tutor"}
+                  {role === "PARENT"
+                    ? "Register as Parent / Student"
+                    : "Join as Tutor"}
                 </Text>
               </Pressable>
             </View>
@@ -518,41 +559,72 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
       </KeyboardAvoidingView>
 
       {/* Restore account modal */}
-      <Modal visible={restoreModal} transparent animationType="slide" onRequestClose={() => !restoreLoading && setRestoreModal(false)}>
-        <Pressable style={rm.backdrop} onPress={() => !restoreLoading && setRestoreModal(false)}>
+      <Modal
+        visible={restoreModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => !restoreLoading && setRestoreModal(false)}
+      >
+        <Pressable
+          style={rm.backdrop}
+          onPress={() => !restoreLoading && setRestoreModal(false)}
+        >
           <Pressable style={rm.sheet} onPress={() => {}}>
             <View style={rm.handle} />
 
             <View style={rm.iconCircle}>
-              <Ionicons name="refresh-circle-outline" size={30} color="#F59E0B" />
+              <Ionicons
+                name="refresh-circle-outline"
+                size={30}
+                color="#F59E0B"
+              />
             </View>
 
             <Text style={rm.title}>Account Deletion Pending</Text>
             <Text style={rm.body}>
-              You previously submitted a request to delete this account. Your data is still within the{" "}
-              <Text style={rm.bold}>30-day retention period</Text> and can be fully recovered.{"\n\n"}
+              You previously submitted a request to delete this account. Your
+              data is still within the{" "}
+              <Text style={rm.bold}>30-day retention period</Text> and can be
+              fully recovered.{"\n\n"}
               Would you like to restore your account and continue?
             </Text>
 
             <View style={rm.infoRow}>
-              <Ionicons name="shield-checkmark-outline" size={14} color="#065F46" />
-              <Text style={rm.infoText}>All your classes, sessions, and profile data remain intact.</Text>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={14}
+                color="#065F46"
+              />
+              <Text style={rm.infoText}>
+                All your classes, sessions, and profile data remain intact.
+              </Text>
             </View>
 
-            {restoreError ? <Text style={rm.errorText}>{restoreError}</Text> : null}
+            {restoreError ? (
+              <Text style={rm.errorText}>{restoreError}</Text>
+            ) : null}
 
             <View style={rm.actions}>
-              <Pressable style={rm.cancelBtn} onPress={() => setRestoreModal(false)} disabled={restoreLoading}>
+              <Pressable
+                style={rm.cancelBtn}
+                onPress={() => setRestoreModal(false)}
+                disabled={restoreLoading}
+              >
                 <Text style={rm.cancelTxt}>Cancel</Text>
               </Pressable>
-              <Pressable style={[rm.restoreBtn, restoreLoading && rm.restoreBtnDisabled]} onPress={handleRestore} disabled={restoreLoading}>
-                {restoreLoading
-                  ? <ActivityIndicator size="small" color="#fff" />
-                  : <>
-                      <Ionicons name="refresh-outline" size={15} color="#fff" />
-                      <Text style={rm.restoreTxt}>Restore & Login</Text>
-                    </>
-                }
+              <Pressable
+                style={[rm.restoreBtn, restoreLoading && rm.restoreBtnDisabled]}
+                onPress={handleRestore}
+                disabled={restoreLoading}
+              >
+                {restoreLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="refresh-outline" size={15} color="#fff" />
+                    <Text style={rm.restoreTxt}>Restore & Login</Text>
+                  </>
+                )}
               </Pressable>
             </View>
           </Pressable>
@@ -787,52 +859,98 @@ const s = StyleSheet.create({
 });
 
 const rm = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(15,23,42,0.55)", justifyContent: "flex-end" },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15,23,42,0.55)",
+    justifyContent: "flex-end",
+  },
   sheet: {
     backgroundColor: "#fff",
-    borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    paddingHorizontal: 24, paddingTop: 8, paddingBottom: 36,
-    shadowColor: "#000", shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1, shadowRadius: 24, elevation: 20,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 36,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    elevation: 20,
   },
   handle: {
-    width: 36, height: 4, borderRadius: 2,
-    backgroundColor: "#E2E8F0", alignSelf: "center", marginBottom: 20,
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#E2E8F0",
+    alignSelf: "center",
+    marginBottom: 20,
   },
   iconCircle: {
-    width: 64, height: 64, borderRadius: 32,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: "#FFFBEB",
-    borderWidth: 1.5, borderColor: "#FDE68A",
-    alignItems: "center", justifyContent: "center",
-    alignSelf: "center", marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: "#FDE68A",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginBottom: 14,
   },
   title: {
-    color: "#0F172A", fontSize: 18, fontWeight: "800",
-    textAlign: "center", marginBottom: 10, letterSpacing: -0.3,
+    color: "#0F172A",
+    fontSize: 18,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 10,
+    letterSpacing: -0.3,
   },
   body: {
-    color: "#475569", fontSize: 13, lineHeight: 20,
-    textAlign: "center", marginBottom: 14,
+    color: "#475569",
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "center",
+    marginBottom: 14,
   },
   bold: { fontWeight: "700", color: "#0F172A" },
   infoRow: {
-    flexDirection: "row", alignItems: "flex-start", gap: 8,
-    backgroundColor: "#ECFDF5", borderRadius: 12,
-    borderWidth: 1, borderColor: "#A7F3D0",
-    padding: 12, marginBottom: 20,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: "#ECFDF5",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+    padding: 12,
+    marginBottom: 20,
   },
   infoText: { flex: 1, color: "#065F46", fontSize: 12.5, lineHeight: 18 },
-  errorText: { color: "#EF4444", fontSize: 12, textAlign: "center", marginBottom: 10 },
+  errorText: {
+    color: "#EF4444",
+    fontSize: 12,
+    textAlign: "center",
+    marginBottom: 10,
+  },
   actions: { flexDirection: "row", gap: 10 },
   cancelBtn: {
-    flex: 1, paddingVertical: 14, borderRadius: 14,
-    backgroundColor: "#F8FAFC", borderWidth: 1, borderColor: "#E2E8F0",
-    alignItems: "center", justifyContent: "center",
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    alignItems: "center",
+    justifyContent: "center",
   },
   cancelTxt: { color: "#64748B", fontSize: 14, fontWeight: "700" },
   restoreBtn: {
-    flex: 1.4, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 7, paddingVertical: 14, borderRadius: 14,
+    flex: 1.4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    paddingVertical: 14,
+    borderRadius: 14,
     backgroundColor: "#F59E0B",
   },
   restoreBtnDisabled: { backgroundColor: "#FCD34D" },

@@ -102,14 +102,20 @@ const LabeledField = ({
 );
 
 // 2-column grid for locked fields — halves vertical space
-const LockedGrid = ({ fields }: { fields: { label: string; value: string }[] }) => {
+const LockedGrid = ({
+  fields,
+}: {
+  fields: { label: string; value: string }[];
+}) => {
   const pairs: { label: string; value: string }[][] = [];
   for (let i = 0; i < fields.length; i += 2) pairs.push(fields.slice(i, i + 2));
   return (
     <View style={{ gap: 6, marginTop: 2 }}>
       {pairs.map((row, i) => (
         <View key={i} style={{ flexDirection: "row", gap: 6 }}>
-          {row.map((f) => <LockedField key={f.label} label={f.label} value={f.value} flex />)}
+          {row.map((f) => (
+            <LockedField key={f.label} label={f.label} value={f.value} flex />
+          ))}
           {row.length === 1 && <View style={{ flex: 1 }} />}
         </View>
       ))}
@@ -145,7 +151,15 @@ const FieldLabel = ({ label, locked }: { label: string; locked?: boolean }) => (
 );
 
 // Locked field — masked row, tap to toggle reveal
-const LockedField = ({ label, value, flex }: { label: string; value: string; flex?: boolean }) => {
+const LockedField = ({
+  label,
+  value,
+  flex,
+}: {
+  label: string;
+  value: string;
+  flex?: boolean;
+}) => {
   const [show, setShow] = React.useState(false);
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -160,18 +174,31 @@ const LockedField = ({ label, value, flex }: { label: string; value: string; fle
     });
   };
 
-  React.useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  React.useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
 
   return (
-    <Pressable onPress={reveal} style={[styles.lockedRow, flex && { flex: 1 }]} hitSlop={4}>
+    <Pressable
+      onPress={reveal}
+      style={[styles.lockedRow, flex && { flex: 1 }]}
+      hitSlop={4}
+    >
       <View style={{ flex: 1 }}>
         <Text style={styles.lockedLabel}>{label}</Text>
         <Text style={styles.lockedValue} numberOfLines={1}>
-          {show ? (value || "—") : "•  •  •  •  •  •"}
+          {show ? value || "—" : "•  •  •  •  •  •"}
         </Text>
       </View>
       <View style={styles.lockedEye}>
-        <Ionicons name={show ? "eye" : "eye-off-outline"} size={13} color="#7C3AED" />
+        <Ionicons
+          name={show ? "eye" : "eye-off-outline"}
+          size={13}
+          color="#7C3AED"
+        />
       </View>
     </Pressable>
   );
@@ -359,7 +386,9 @@ const CurriculumPickerModal = ({
         <Pressable onPress={onClose} hitSlop={10}>
           <Ionicons name="close" size={22} color={T.textPrimary} />
         </Pressable>
-        <Text style={cp.headerTitle}>Subjects ({selected.length} selected)</Text>
+        <Text style={cp.headerTitle}>
+          Subjects ({selected.length} selected)
+        </Text>
         <Pressable onPress={onClose}>
           <Text style={cp.doneBtn}>Done</Text>
         </Pressable>
@@ -370,15 +399,27 @@ const CurriculumPickerModal = ({
         horizontal
         showsHorizontalScrollIndicator={false}
         style={cp.boardBar}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 8, alignItems: "center" }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          gap: 8,
+          alignItems: "center",
+        }}
       >
         {boards.map((board) => (
           <Pressable
             key={board._id}
             onPress={() => setActiveBoardId(board._id)}
-            style={[cp.boardTab, activeBoardId === board._id && cp.boardTabActive]}
+            style={[
+              cp.boardTab,
+              activeBoardId === board._id && cp.boardTabActive,
+            ]}
           >
-            <Text style={[cp.boardTabTxt, activeBoardId === board._id && cp.boardTabTxtActive]}>
+            <Text
+              style={[
+                cp.boardTabTxt,
+                activeBoardId === board._id && cp.boardTabTxtActive,
+              ]}
+            >
               {board.label}
             </Text>
           </Pressable>
@@ -389,18 +430,28 @@ const CurriculumPickerModal = ({
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
         {grades
           .filter((g) => {
-            const pid = typeof g.parent === "object" ? (g.parent as any)?._id : g.parent;
+            const pid =
+              typeof g.parent === "object" ? (g.parent as any)?._id : g.parent;
             return pid === activeBoardId;
           })
           .map((grade) => {
             const gradeSubs = subjectOpts.filter((s) => {
-              const pid = typeof s.parent === "object" ? (s.parent as any)?._id : s.parent;
+              const pid =
+                typeof s.parent === "object"
+                  ? (s.parent as any)?._id
+                  : s.parent;
               return pid === grade._id;
             });
             if (gradeSubs.length === 0) return null;
-            const allSelected = gradeSubs.every((s) => selected.includes(s._id));
-            const someSelected = gradeSubs.some((s) => selected.includes(s._id));
-            const selectedCount = gradeSubs.filter((s) => selected.includes(s._id)).length;
+            const allSelected = gradeSubs.every((s) =>
+              selected.includes(s._id),
+            );
+            const someSelected = gradeSubs.some((s) =>
+              selected.includes(s._id),
+            );
+            const selectedCount = gradeSubs.filter((s) =>
+              selected.includes(s._id),
+            ).length;
             return (
               <View key={grade._id} style={{ marginBottom: 14 }}>
                 <Pressable
@@ -413,16 +464,42 @@ const CurriculumPickerModal = ({
                   }}
                   style={cp.gradeHeader}
                 >
-                  <View style={[cp.gradeCheck, (allSelected || someSelected) && { backgroundColor: T.primary, borderColor: T.primary }]}>
-                    {allSelected && <Ionicons name="checkmark" size={12} color="#fff" />}
+                  <View
+                    style={[
+                      cp.gradeCheck,
+                      (allSelected || someSelected) && {
+                        backgroundColor: T.primary,
+                        borderColor: T.primary,
+                      },
+                    ]}
+                  >
+                    {allSelected && (
+                      <Ionicons name="checkmark" size={12} color="#fff" />
+                    )}
                     {!allSelected && someSelected && (
-                      <View style={{ width: 8, height: 2, backgroundColor: "#fff", borderRadius: 1 }} />
+                      <View
+                        style={{
+                          width: 8,
+                          height: 2,
+                          backgroundColor: "#fff",
+                          borderRadius: 1,
+                        }}
+                      />
                     )}
                   </View>
                   <Text style={cp.gradeLabel}>{grade.label}</Text>
-                  <Text style={cp.gradeCount}>{selectedCount}/{gradeSubs.length}</Text>
+                  <Text style={cp.gradeCount}>
+                    {selectedCount}/{gradeSubs.length}
+                  </Text>
                 </Pressable>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    marginTop: 8,
+                  }}
+                >
                   {gradeSubs.map((sub) => {
                     const on = selected.includes(sub._id);
                     return (
@@ -431,7 +508,11 @@ const CurriculumPickerModal = ({
                         onPress={() => onToggle(sub._id)}
                         style={[cp.subChip, on && cp.subChipSelected]}
                       >
-                        <Text style={[cp.subChipTxt, on && cp.subChipTxtSelected]}>{sub.label}</Text>
+                        <Text
+                          style={[cp.subChipTxt, on && cp.subChipTxtSelected]}
+                        >
+                          {sub.label}
+                        </Text>
                       </Pressable>
                     );
                   })}
@@ -467,19 +548,38 @@ const FSelect = ({
         <Text style={[sel.val, !value && sel.placeholder]}>
           {value || "Select…"}
         </Text>
-        <Ionicons name={open ? "chevron-up" : "chevron-down"} size={14} color="#94A3B8" />
+        <Ionicons
+          name={open ? "chevron-up" : "chevron-down"}
+          size={14}
+          color="#94A3B8"
+        />
       </Pressable>
       {open && (
         <View style={sel.dropdown}>
-          <ScrollView nestedScrollEnabled style={{ maxHeight: 180 }} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            nestedScrollEnabled
+            style={{ maxHeight: 180 }}
+            showsVerticalScrollIndicator={false}
+          >
             {options.map((opt) => (
               <Pressable
                 key={opt}
                 style={[sel.item, value === opt && sel.itemActive]}
-                onPress={() => { onPick(opt); setOpen(false); }}
+                onPress={() => {
+                  onPick(opt);
+                  setOpen(false);
+                }}
               >
-                <Text style={[sel.itemTxt, value === opt && sel.itemTxtActive]}>{opt}</Text>
-                {value === opt && <Ionicons name="checkmark-circle" size={14} color={T.primary} />}
+                <Text style={[sel.itemTxt, value === opt && sel.itemTxtActive]}>
+                  {opt}
+                </Text>
+                {value === opt && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={14}
+                    color={T.primary}
+                  />
+                )}
               </Pressable>
             ))}
           </ScrollView>
@@ -512,9 +612,19 @@ const ChipSelect = ({
           <Pressable
             key={opt}
             onPress={() => onToggle(opt)}
-            style={[sel.chip, on && { backgroundColor: `${accent}15`, borderColor: `${accent}50` }]}
+            style={[
+              sel.chip,
+              on && {
+                backgroundColor: `${accent}15`,
+                borderColor: `${accent}50`,
+              },
+            ]}
           >
-            <Text style={[sel.chipTxt, on && { color: accent, fontWeight: "700" }]}>{opt}</Text>
+            <Text
+              style={[sel.chipTxt, on && { color: accent, fontWeight: "700" }]}
+            >
+              {opt}
+            </Text>
           </Pressable>
         );
       })}
@@ -559,7 +669,11 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
   const isVerified = data?.verificationStatus === "VERIFIED";
 
   const parentId = (o?: Option): string | undefined =>
-    o ? (typeof o.parent === "object" ? (o.parent as any)?._id : o.parent) : undefined;
+    o
+      ? typeof o.parent === "object"
+        ? (o.parent as any)?._id
+        : o.parent
+      : undefined;
 
   // Group the selected subjects into a Board → Class → Subjects tree
   const subjectTree = (() => {
@@ -571,7 +685,9 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
       const sub = subjectOpts.find((s) => s._id === id);
       if (!sub) return;
       const grade = grades.find((g) => g._id === parentId(sub));
-      const board = grade ? boards.find((b) => b._id === parentId(grade)) : undefined;
+      const board = grade
+        ? boards.find((b) => b._id === parentId(grade))
+        : undefined;
       const bKey = board?._id ?? "_";
       const gKey = grade?._id ?? "_";
       if (!boardMap.has(bKey))
@@ -596,13 +712,14 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [profileRes, boardsRes, gradesRes, subsRes, citiesRes] = await Promise.all([
-        getMyProfileForEdit(),
-        getOptions("BOARD"),
-        getOptions("GRADE"),
-        getOptions("SUBJECT"),
-        getOptions("CITY"),
-      ]);
+      const [profileRes, boardsRes, gradesRes, subsRes, citiesRes] =
+        await Promise.all([
+          getMyProfileForEdit(),
+          getOptions("BOARD"),
+          getOptions("GRADE"),
+          getOptions("SUBJECT"),
+          getOptions("CITY"),
+        ]);
       const p = profileRes.data;
       setData(p);
       setFullName(p.fullName);
@@ -692,7 +809,9 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
         payload.residentialAddress = residentialAddress;
       }
       await updateMyProfile(payload);
-      showSuccess("Saved", "Profile updated successfully", () => navigation.goBack());
+      showSuccess("Saved", "Profile updated successfully", () =>
+        navigation.goBack(),
+      );
     } catch (e: any) {
       showError("Error", e?.message ?? "Failed to save profile");
     } finally {
@@ -730,14 +849,22 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
       >
         {/* Top bar */}
         <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+            hitSlop={12}
+          >
             <Ionicons name="chevron-back" size={20} color="#fff" />
           </Pressable>
           <Text style={styles.heroTitle}>Edit Profile</Text>
           <Pressable
             onPress={save}
             disabled={saving}
-            style={({ pressed }) => [styles.saveBtn, pressed && { opacity: 0.75 }, saving && { opacity: 0.5 }]}
+            style={({ pressed }) => [
+              styles.saveBtn,
+              pressed && { opacity: 0.75 },
+              saving && { opacity: 0.5 },
+            ]}
           >
             {saving ? (
               <ActivityIndicator size="small" color="#7C3AED" />
@@ -752,19 +879,29 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
           <View style={styles.avatar}>
             <Text style={styles.avatarTxt}>
               {fullName
-                ? fullName.trim().split(/\s+/).map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
+                ? fullName
+                    .trim()
+                    .split(/\s+/)
+                    .map((w: string) => w[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()
                 : "?"}
             </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.heroName} numberOfLines={1}>{fullName || "Your Profile"}</Text>
+            <Text style={styles.heroName} numberOfLines={1}>
+              {fullName || "Your Profile"}
+            </Text>
             {isVerified ? (
               <View style={styles.verifiedBadge}>
                 <Ionicons name="shield-checkmark" size={10} color="#10B981" />
                 <Text style={styles.verifiedTxt}>Verified Tutor</Text>
               </View>
             ) : (
-              <Text style={styles.heroSub}>Complete your profile to get more students</Text>
+              <Text style={styles.heroSub}>
+                Complete your profile to get more students
+              </Text>
             )}
           </View>
         </View>
@@ -784,56 +921,114 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
         >
           {/* ── Personal Info ── */}
           <View style={styles.card}>
-            <SectionHeader icon="person-outline" title="Personal Info" accent={T.primary} />
+            <SectionHeader
+              icon="person-outline"
+              title="Personal Info"
+              accent={T.primary}
+            />
 
             {isVerified ? (
-              <LockedGrid fields={[
-                { label: "Full Name", value: fullName },
-                { label: "Email", value: email },
-                { label: "Phone", value: phoneNumber },
-                { label: "Gender", value: gender },
-              ]} />
+              <LockedGrid
+                fields={[
+                  { label: "Full Name", value: fullName },
+                  { label: "Email", value: email },
+                  { label: "Phone", value: phoneNumber },
+                  { label: "Gender", value: gender },
+                ]}
+              />
             ) : (
               <>
                 <LockedField label="Email" value={email} />
-                <LabeledField label="Full Name" value={fullName} onChange={setFullName} placeholder="Full name" />
-                <LabeledField label="Phone" value={phoneNumber} onChange={setPhoneNumber} placeholder="Phone number" keyboardType="phone-pad" />
+                <LabeledField
+                  label="Full Name"
+                  value={fullName}
+                  onChange={setFullName}
+                  placeholder="Full name"
+                />
+                <LabeledField
+                  label="Phone"
+                  value={phoneNumber}
+                  onChange={setPhoneNumber}
+                  placeholder="Phone number"
+                  keyboardType="phone-pad"
+                />
                 <FieldLabel label="Gender" />
-                <SingleSelect options={GENDERS} value={gender} onChange={setGender} color="#7C3AED" />
+                <SingleSelect
+                  options={GENDERS}
+                  value={gender}
+                  onChange={setGender}
+                  color="#7C3AED"
+                />
               </>
             )}
-            <LabeledField label="Alternate Phone" value={alternatePhone} onChange={setAlternatePhone} placeholder="Optional" keyboardType="phone-pad" />
+            <LabeledField
+              label="Alternate Phone"
+              value={alternatePhone}
+              onChange={setAlternatePhone}
+              placeholder="Optional"
+              keyboardType="phone-pad"
+            />
           </View>
 
           {/* ── Qualifications & Teaching ── */}
           <View style={styles.card}>
-            <SectionHeader icon="school-outline" title="Qualifications & Teaching" accent="#7C3AED" />
+            <SectionHeader
+              icon="school-outline"
+              title="Qualifications & Teaching"
+              accent="#7C3AED"
+            />
 
             {isVerified ? (
-              <LockedGrid fields={[
-                { label: "Qualification", value: qualification },
-                { label: "Experience", value: experience },
-              ]} />
+              <LockedGrid
+                fields={[
+                  { label: "Qualification", value: qualification },
+                  { label: "Experience", value: experience },
+                ]}
+              />
             ) : (
               <>
-                <LabeledField label="Qualification" value={qualification} onChange={setQualification} placeholder="e.g. B.Ed, M.Sc" />
+                <LabeledField
+                  label="Qualification"
+                  value={qualification}
+                  onChange={setQualification}
+                  placeholder="e.g. B.Ed, M.Sc"
+                />
                 <FieldLabel label="Experience" />
-                <SingleSelect options={EXP_OPTIONS} value={experience} onChange={setExperience} color="#7C3AED" />
+                <SingleSelect
+                  options={EXP_OPTIONS}
+                  value={experience}
+                  onChange={setExperience}
+                  color="#7C3AED"
+                />
               </>
             )}
 
             <FieldLabel label="Teaching Mode" />
-            <SingleSelect options={MODES} value={preferredMode} onChange={setPreferredMode} color="#F59E0B" />
+            <SingleSelect
+              options={MODES}
+              value={preferredMode}
+              onChange={setPreferredMode}
+              color="#F59E0B"
+            />
 
-            <Pressable onPress={() => setSubjectModal(true)} style={[styles.subjectPickerBtn, { marginTop: 4 }]}>
+            <Pressable
+              onPress={() => setSubjectModal(true)}
+              style={[styles.subjectPickerBtn, { marginTop: 4 }]}
+            >
               <View style={styles.subjectPickerLeft}>
                 <Ionicons name="book-outline" size={14} color="#7C3AED" />
                 <Text style={styles.subjectPickerTxt}>
-                  {selectedSubjects.length === 0 ? "Choose subjects you teach" : `${selectedSubjects.length} subject${selectedSubjects.length > 1 ? "s" : ""} selected`}
+                  {selectedSubjects.length === 0
+                    ? "Choose subjects you teach"
+                    : `${selectedSubjects.length} subject${selectedSubjects.length > 1 ? "s" : ""} selected`}
                 </Text>
               </View>
               {selectedSubjects.length > 0 ? (
-                <View style={styles.subjectCount}><Text style={styles.subjectCountTxt}>{selectedSubjects.length}</Text></View>
+                <View style={styles.subjectCount}>
+                  <Text style={styles.subjectCountTxt}>
+                    {selectedSubjects.length}
+                  </Text>
+                </View>
               ) : (
                 <Ionicons name="chevron-forward" size={14} color="#7C3AED" />
               )}
@@ -843,7 +1038,11 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
                 {subjectTree.map(({ board, grades: gs }) => (
                   <View key={board._id} style={styles.subjBoard}>
                     <View style={styles.subjBoardHead}>
-                      <Ionicons name="school-outline" size={13} color={T.primary} />
+                      <Ionicons
+                        name="school-outline"
+                        size={13}
+                        color={T.primary}
+                      />
                       <Text style={styles.subjBoardTxt}>{board.label}</Text>
                     </View>
                     {gs.map(({ grade, subs }) => (
@@ -851,9 +1050,21 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
                         <Text style={styles.subjGradeTxt}>{grade.label}</Text>
                         <View style={styles.subjChips}>
                           {subs.map((sub) => (
-                            <View key={sub._id}
-                              style={[styles.pill, { backgroundColor: `${T.primary}15`, borderColor: `${T.primary}30` }]}>
-                              <Text style={[styles.pillTxt, { color: T.primary }]}>{sub.label}</Text>
+                            <View
+                              key={sub._id}
+                              style={[
+                                styles.pill,
+                                {
+                                  backgroundColor: `${T.primary}15`,
+                                  borderColor: `${T.primary}30`,
+                                },
+                              ]}
+                            >
+                              <Text
+                                style={[styles.pillTxt, { color: T.primary }]}
+                              >
+                                {sub.label}
+                              </Text>
                             </View>
                           ))}
                         </View>
@@ -867,19 +1078,48 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
 
           {/* ── Location ── */}
           <View style={styles.card}>
-            <SectionHeader icon="location-outline" title="Location" accent="#E11D48" />
+            <SectionHeader
+              icon="location-outline"
+              title="Location"
+              accent="#E11D48"
+            />
 
             <FSelect
               label="City"
-              options={cityOpts.length > 0 ? cityOpts : ["Mumbai", "Delhi", "Bangalore", "Pune", "Hyderabad", "Chennai"]}
+              options={
+                cityOpts.length > 0
+                  ? cityOpts
+                  : [
+                      "Mumbai",
+                      "Delhi",
+                      "Bangalore",
+                      "Pune",
+                      "Hyderabad",
+                      "Chennai",
+                    ]
+              }
               value={city}
-              onPick={(v) => { setCity(v); setPreferredAreas([]); loadAreas(v); }}
+              onPick={(v) => {
+                setCity(v);
+                setPreferredAreas([]);
+                loadAreas(v);
+              }}
             />
 
             {city ? (
               <ChipSelect
                 label="Preferred Areas"
-                options={areaOpts.length > 0 ? areaOpts : [`${city} North`, `${city} South`, `${city} East`, `${city} West`, `${city} Central`]}
+                options={
+                  areaOpts.length > 0
+                    ? areaOpts
+                    : [
+                        `${city} North`,
+                        `${city} South`,
+                        `${city} East`,
+                        `${city} West`,
+                        `${city} Central`,
+                      ]
+                }
                 selected={preferredAreas}
                 onToggle={toggleArea}
                 accent="#E11D48"
@@ -887,34 +1127,75 @@ const EditProfileScreen = ({ navigation }: { navigation: Nav }) => {
             ) : null}
 
             {isVerified ? (
-              <LockedGrid fields={[
-                { label: "Permanent Address", value: permanentAddress },
-                { label: "Residential Address", value: residentialAddress },
-              ]} />
+              <LockedGrid
+                fields={[
+                  { label: "Permanent Address", value: permanentAddress },
+                  { label: "Residential Address", value: residentialAddress },
+                ]}
+              />
             ) : (
               <>
-                <LabeledField label="Permanent Address" value={permanentAddress} onChange={setPermanentAddress} placeholder="Permanent address" multiline />
-                <LabeledField label="Residential Address" value={residentialAddress} onChange={setResidentialAddress} placeholder="Residential address" multiline />
+                <LabeledField
+                  label="Permanent Address"
+                  value={permanentAddress}
+                  onChange={setPermanentAddress}
+                  placeholder="Permanent address"
+                  multiline
+                />
+                <LabeledField
+                  label="Residential Address"
+                  value={residentialAddress}
+                  onChange={setResidentialAddress}
+                  placeholder="Residential address"
+                  multiline
+                />
               </>
             )}
           </View>
 
           {/* ── Bio & Skills ── */}
           <View style={styles.card}>
-            <SectionHeader icon="flash-outline" title="Bio & Skills" accent="#10B981" />
+            <SectionHeader
+              icon="flash-outline"
+              title="Bio & Skills"
+              accent="#10B981"
+            />
 
-            <LabeledField label="Bio" value={bio} onChange={setBio} placeholder="Tell students about yourself…" multiline />
+            <LabeledField
+              label="Bio"
+              value={bio}
+              onChange={setBio}
+              placeholder="Tell students about yourself…"
+              multiline
+            />
 
             <FieldLabel label="Languages" />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 6, paddingVertical: 2 }}
+            >
               {COMMON_LANGUAGES.map((l) => {
                 const on = languagesKnown.includes(l);
                 return (
-                  <Pressable key={l} onPress={() =>
-                    setLanguagesKnown((p) => p.includes(l) ? p.filter((x) => x !== l) : [...p, l])}
-                    style={[styles.pill, on && { backgroundColor: "#10B98120", borderColor: "#10B981" }]}>
-                    <Text style={[styles.pillTxt, on && { color: "#10B981" }]}>{l}</Text>
+                  <Pressable
+                    key={l}
+                    onPress={() =>
+                      setLanguagesKnown((p) =>
+                        p.includes(l) ? p.filter((x) => x !== l) : [...p, l],
+                      )
+                    }
+                    style={[
+                      styles.pill,
+                      on && {
+                        backgroundColor: "#10B98120",
+                        borderColor: "#10B981",
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.pillTxt, on && { color: "#10B981" }]}>
+                      {l}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -963,7 +1244,11 @@ const sel = StyleSheet.create({
     backgroundColor: "#f7f7f7",
     marginTop: 4,
   },
-  boxOpen: { borderColor: T.primary, borderWidth: 1.5, backgroundColor: "#fff" },
+  boxOpen: {
+    borderColor: T.primary,
+    borderWidth: 1.5,
+    backgroundColor: "#fff",
+  },
   val: { fontSize: 14, color: "#0a0b0d", flex: 1, fontWeight: "400" },
   placeholder: { color: "#a8acb3" },
   dropdown: {
@@ -1008,7 +1293,12 @@ const sel = StyleSheet.create({
 const styles = StyleSheet.create({
   // ── Hero ───────────────────────────────────────────────────────────────────
   hero: { paddingHorizontal: 20, paddingBottom: 16 },
-  topBar: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 14 },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 14,
+  },
   backBtn: {
     width: 34,
     height: 34,
@@ -1017,11 +1307,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  heroTitle: { flex: 1, fontSize: 16, fontWeight: "600", color: "#fff", letterSpacing: -0.2 },
+  heroTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+    letterSpacing: -0.2,
+  },
   saveBtn: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    borderRadius: 100,           // pill
+    borderRadius: 100, // pill
     backgroundColor: T.primary,
     minWidth: 64,
     alignItems: "center",
@@ -1033,7 +1329,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 42,
     height: 42,
-    borderRadius: 100,           // full circle
+    borderRadius: 100, // full circle
     backgroundColor: "rgba(255,255,255,0.15)",
     borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.25)",
@@ -1041,7 +1337,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarTxt: { fontSize: 14, fontWeight: "700", color: "#fff" },
-  heroName: { fontSize: 15, fontWeight: "600", color: "#fff", letterSpacing: -0.2 },
+  heroName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
+    letterSpacing: -0.2,
+  },
   heroSub: { fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 },
   verifiedBadge: {
     flexDirection: "row",
@@ -1060,14 +1361,14 @@ const styles = StyleSheet.create({
   scroll: { padding: 12, gap: 8 },
   card: {
     backgroundColor: "#ffffff",
-    borderRadius: 24,            // rounded.xl from design.md
+    borderRadius: 24, // rounded.xl from design.md
     padding: 14,
     gap: 6,
     borderWidth: 1,
-    borderColor: "#dee1e6",     // hairline from design.md
+    borderColor: "#dee1e6", // hairline from design.md
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,        // single shadow tier from design.md
+    shadowOpacity: 0.04, // single shadow tier from design.md
     shadowRadius: 12,
     elevation: 2,
   },
@@ -1080,23 +1381,28 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#eef0f3",  // hairline-soft from design.md
+    borderBottomColor: "#eef0f3", // hairline-soft from design.md
   },
-  sectionIcon: {},               // unused but kept for TS compat
+  sectionIcon: {}, // unused but kept for TS compat
   sectionTitle: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#5b616e",             // body gray from design.md
+    color: "#5b616e", // body gray from design.md
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
 
   // ── Field label ────────────────────────────────────────────────────────────
-  fieldLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+  fieldLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
   fieldLabel: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#7c828a",             // muted from design.md
+    color: "#7c828a", // muted from design.md
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginTop: 4,
@@ -1117,11 +1423,11 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#dee1e6",
-    borderRadius: 12,            // rounded.md from design.md
+    borderRadius: 12, // rounded.md from design.md
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 14,
-    color: "#0a0b0d",            // ink from design.md
+    color: "#0a0b0d", // ink from design.md
     backgroundColor: "#f7f7f7", // surface-soft
   },
   inputMulti: { height: 64, paddingTop: 10 },
@@ -1130,10 +1436,10 @@ const styles = StyleSheet.create({
   lockedRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f7f7f7",  // surface-soft — neutral, not purple
+    backgroundColor: "#f7f7f7", // surface-soft — neutral, not purple
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#dee1e6",      // hairline
+    borderColor: "#dee1e6", // hairline
     paddingHorizontal: 14,
     paddingVertical: 8,
     marginTop: 2,
@@ -1142,12 +1448,17 @@ const styles = StyleSheet.create({
   lockedLabel: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#7c828a",            // muted
+    color: "#7c828a", // muted
     textTransform: "uppercase",
     letterSpacing: 0.4,
     marginBottom: 2,
   },
-  lockedValue: { fontSize: 13, color: "#0a0b0d", fontWeight: "500", letterSpacing: 1.5 },
+  lockedValue: {
+    fontSize: 13,
+    color: "#0a0b0d",
+    fontWeight: "500",
+    letterSpacing: 1.5,
+  },
   lockedEye: {
     width: 26,
     height: 26,
@@ -1165,7 +1476,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 100,           // pill shape from design.md
+    borderRadius: 100, // pill shape from design.md
     borderWidth: 1,
     borderColor: "#dee1e6",
     backgroundColor: "#eef0f3", // surface-strong
@@ -1207,8 +1518,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#f7f7f7",
     marginTop: 4,
   },
-  subjectPickerLeft: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
-  subjectPickerTxt: { fontSize: 13, color: "#5b616e", fontWeight: "500", flex: 1 },
+  subjectPickerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  subjectPickerTxt: {
+    fontSize: 13,
+    color: "#5b616e",
+    fontWeight: "500",
+    flex: 1,
+  },
   subjectCount: {
     minWidth: 22,
     height: 22,
@@ -1327,7 +1648,12 @@ const cp = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  gradeLabel: { flex: 1, fontSize: 14, fontWeight: "700", color: T.textPrimary },
+  gradeLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "700",
+    color: T.textPrimary,
+  },
   gradeCount: { fontSize: 12, color: T.textSecondary, fontWeight: "600" },
   subChip: {
     paddingHorizontal: 12,

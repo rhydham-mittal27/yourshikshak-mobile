@@ -89,7 +89,10 @@ export default function MyClassesScreen({ navigation, route }: Props) {
       setError(null);
       try {
         const status = filter === "ALL" ? undefined : filter;
-        const res = await getMyClasses(status || "ACTIVE", resolvedUid ?? undefined);
+        const res = await getMyClasses(
+          status || "ACTIVE",
+          resolvedUid ?? undefined,
+        );
         // If ALL, fetch all statuses
         if (filter === "ALL") {
           const [active, completed, paused] = await Promise.all([
@@ -158,9 +161,17 @@ export default function MyClassesScreen({ navigation, route }: Props) {
       setHighlightedId(highlightClassId);
       highlightAnim.setValue(0);
       Animated.sequence([
-        Animated.timing(highlightAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(highlightAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
         Animated.delay(800),
-        Animated.timing(highlightAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+        Animated.timing(highlightAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
       ]).start(() => setHighlightedId(null));
 
       setTimeout(() => openAttendance(target), 500);

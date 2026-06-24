@@ -122,8 +122,16 @@ const Skeleton = ({
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(anim, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim, {
+          toValue: 0.4,
+          duration: 700,
+          useNativeDriver: true,
+        }),
       ]),
     ).start();
   }, []);
@@ -185,7 +193,10 @@ const KpiCard = ({
   }, []);
   return (
     <Animated.View
-      style={[kpi.outer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+      style={[
+        kpi.outer,
+        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+      ]}
     >
       <View style={kpi.card}>
         <View style={kpi.topRow}>
@@ -268,7 +279,11 @@ const EmptyTabState = ({
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
     Animated.loop(
       Animated.sequence([
         Animated.timing(bounceAnim, {
@@ -292,7 +307,10 @@ const EmptyTabState = ({
       <Animated.View
         style={[
           emp.iconRing,
-          { borderColor: `${iconColor}25`, transform: [{ translateY: bounceAnim }] },
+          {
+            borderColor: `${iconColor}25`,
+            transform: [{ translateY: bounceAnim }],
+          },
         ]}
       >
         <View style={[emp.iconInner, { backgroundColor: `${iconColor}12` }]}>
@@ -330,16 +348,26 @@ const RequestSheet = ({
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => setKbHeight(0),
     );
-    return () => { show.remove(); hide.remove(); };
+    return () => {
+      show.remove();
+      hide.remove();
+    };
   }, []);
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={am.overlay}>
         <Pressable style={{ flex: 1 }} onPress={onClose} />
         <View style={[am.sheet, { marginBottom: kbHeight }]}>
           <View style={am.handle} />
           <View style={am.header}>
-            <View style={[am.headerIcon, { backgroundColor: `${T.primary}12` }]}>
+            <View
+              style={[am.headerIcon, { backgroundColor: `${T.primary}12` }]}
+            >
               <Ionicons name="school-outline" size={20} color={T.primary} />
             </View>
             <View style={{ flex: 1 }}>
@@ -367,7 +395,12 @@ const RequestSheet = ({
             onChangeText={setGrade}
           />
           <Pressable
-            style={[am.submitBtn, (submitting || !subject.trim() || !grade.trim()) && { opacity: 0.5 }]}
+            style={[
+              am.submitBtn,
+              (submitting || !subject.trim() || !grade.trim()) && {
+                opacity: 0.5,
+              },
+            ]}
             onPress={() => onSubmit(subject, grade)}
             disabled={submitting || !subject.trim() || !grade.trim()}
           >
@@ -410,10 +443,18 @@ const ConcernSheet = ({
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => setKbHeight(0),
     );
-    return () => { show.remove(); hide.remove(); };
+    return () => {
+      show.remove();
+      hide.remove();
+    };
   }, []);
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={am.overlay}>
         <Pressable style={{ flex: 1 }} onPress={onClose} />
         <View style={[am.sheet, { marginBottom: kbHeight }]}>
@@ -441,7 +482,11 @@ const ConcernSheet = ({
             maxLength={500}
           />
           <Pressable
-            style={[am.submitBtn, { backgroundColor: T.error }, (!msg.trim() || submitting) && { opacity: 0.5 }]}
+            style={[
+              am.submitBtn,
+              { backgroundColor: T.error },
+              (!msg.trim() || submitting) && { opacity: 0.5 },
+            ]}
             onPress={() => onSubmit(msg)}
             disabled={!msg.trim() || submitting}
           >
@@ -483,14 +528,21 @@ const Sidebar = ({
     {sidebarOpen && (
       <TouchableWithoutFeedback onPress={closeSidebar}>
         <Animated.View
-          style={[StyleSheet.absoluteFill, sb.overlay, { opacity: overlayAnim }]}
+          style={[
+            StyleSheet.absoluteFill,
+            sb.overlay,
+            { opacity: overlayAnim },
+          ]}
         />
       </TouchableWithoutFeedback>
     )}
     <Animated.View
       style={[
         sb.drawer,
-        { transform: [{ translateX: sidebarAnim }], paddingTop: Math.max(insets.top, 20) },
+        {
+          transform: [{ translateX: sidebarAnim }],
+          paddingTop: Math.max(insets.top, 20),
+        },
       ]}
       pointerEvents={sidebarOpen ? "auto" : "none"}
     >
@@ -501,7 +553,9 @@ const Sidebar = ({
           </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={sb.drawerName} numberOfLines={1}>{name}</Text>
+          <Text style={sb.drawerName} numberOfLines={1}>
+            {name}
+          </Text>
           <View style={sb.drawerBadge}>
             <View style={sb.drawerBadgeDot} />
             <Text style={sb.drawerBadgeTxt}>PARENT</Text>
@@ -530,7 +584,11 @@ const Sidebar = ({
           <Ionicons name="log-out-outline" size={18} color={T.error} />
         </View>
         <Text style={[sb.navLabel, { color: T.error }]}>Sign Out</Text>
-        <Ionicons name="chevron-forward" size={14} color="rgba(239,68,68,0.3)" />
+        <Ionicons
+          name="chevron-forward"
+          size={14}
+          color="rgba(239,68,68,0.3)"
+        />
       </Pressable>
     </Animated.View>
   </>
@@ -538,27 +596,55 @@ const Sidebar = ({
 
 // ─── Pending Request Card ─────────────────────────────────────────────────────
 
-const PendingRequestCard = ({ pendingRequest }: { pendingRequest: ParentTutorRequest }) => {
+const PendingRequestCard = ({
+  pendingRequest,
+}: {
+  pendingRequest: ParentTutorRequest;
+}) => {
   const pulse = useRef(new Animated.Value(0.6)).current;
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1,   duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.6, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.6,
+          duration: 900,
+          useNativeDriver: true,
+        }),
       ]),
     ).start();
   }, []);
 
-  const visibleStage = (
+  const visibleStage =
     pendingRequest.stage === "LEAD_CREATED" ||
     pendingRequest.stage === "TEACHER_ASSIGNED_FOR_DEMO"
-  ) ? "REQUEST_RECEIVED" : pendingRequest.stage;
+      ? "REQUEST_RECEIVED"
+      : pendingRequest.stage;
   const currentIdx = STAGE_ORDER.indexOf(visibleStage);
 
   const STEP_META = [
-    { icon: "send-outline",             color: T.primary,  label: "Request Received", desc: "We've got your request and are reviewing it"        },
-    { icon: "calendar-outline",         color: T.warning,  label: "Demo Scheduled",   desc: "A demo class has been arranged with your tutor"    },
-    { icon: "checkmark-circle-outline", color: T.success,  label: "Awaiting Approval", desc: "Almost there — confirm to begin classes"          },
+    {
+      icon: "send-outline",
+      color: T.primary,
+      label: "Request Received",
+      desc: "We've got your request and are reviewing it",
+    },
+    {
+      icon: "calendar-outline",
+      color: T.warning,
+      label: "Demo Scheduled",
+      desc: "A demo class has been arranged with your tutor",
+    },
+    {
+      icon: "checkmark-circle-outline",
+      color: T.success,
+      label: "Awaiting Approval",
+      desc: "Almost there — confirm to begin classes",
+    },
   ];
 
   return (
@@ -566,7 +652,8 @@ const PendingRequestCard = ({ pendingRequest }: { pendingRequest: ParentTutorReq
       {/* gradient header */}
       <LinearGradient
         colors={[T.darkBg, T.darkBgMid]}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={prc.header}
       >
         <View style={prc.orbA} pointerEvents="none" />
@@ -583,11 +670,21 @@ const PendingRequestCard = ({ pendingRequest }: { pendingRequest: ParentTutorReq
           {pendingRequest.subject ?? "Tutor Request"}
           {pendingRequest.grade ? `  ·  Grade ${pendingRequest.grade}` : ""}
         </Text>
-        <Text style={prc.headerSub}>Your request is being processed by our team</Text>
+        <Text style={prc.headerSub}>
+          Your request is being processed by our team
+        </Text>
 
         {/* horizontal progress bar */}
         <View style={prc.barTrack}>
-          <View style={[prc.barFill, { width: `${((currentIdx + 0.5) / STAGE_ORDER.length) * 100}%` as any }]} />
+          <View
+            style={[
+              prc.barFill,
+              {
+                width:
+                  `${((currentIdx + 0.5) / STAGE_ORDER.length) * 100}%` as any,
+              },
+            ]}
+          />
         </View>
         <Text style={prc.barLabel}>
           Step {currentIdx + 1} of {STAGE_ORDER.length}
@@ -597,22 +694,31 @@ const PendingRequestCard = ({ pendingRequest }: { pendingRequest: ParentTutorReq
       {/* steps */}
       <View style={prc.stepsWrap}>
         {STEP_META.map((step, idx) => {
-          const done   = idx < currentIdx;
+          const done = idx < currentIdx;
           const active = idx === currentIdx;
           return (
             <View key={step.label} style={prc.stepRow}>
               {/* connector line */}
               {idx < STEP_META.length - 1 && (
-                <View style={[prc.connector, { backgroundColor: done ? T.success : T.border }]} />
+                <View
+                  style={[
+                    prc.connector,
+                    { backgroundColor: done ? T.success : T.border },
+                  ]}
+                />
               )}
 
               {/* circle */}
-              <View style={[
-                prc.circle,
-                done   ? { backgroundColor: T.success, borderColor: T.success } :
-                active ? { backgroundColor: T.primary, borderColor: T.primary } :
-                         { backgroundColor: "#F1F5F9", borderColor: T.border },
-              ]}>
+              <View
+                style={[
+                  prc.circle,
+                  done
+                    ? { backgroundColor: T.success, borderColor: T.success }
+                    : active
+                      ? { backgroundColor: T.primary, borderColor: T.primary }
+                      : { backgroundColor: "#F1F5F9", borderColor: T.border },
+                ]}
+              >
                 {done ? (
                   <Ionicons name="checkmark" size={13} color="#fff" />
                 ) : active ? (
@@ -624,12 +730,16 @@ const PendingRequestCard = ({ pendingRequest }: { pendingRequest: ParentTutorReq
 
               {/* text */}
               <View style={prc.stepText}>
-                <Text style={[
-                  prc.stepLabel,
-                  done   ? { color: T.success }  :
-                  active ? { color: T.primary }   :
-                           { color: T.textDisabled },
-                ]}>
+                <Text
+                  style={[
+                    prc.stepLabel,
+                    done
+                      ? { color: T.success }
+                      : active
+                        ? { color: T.primary }
+                        : { color: T.textDisabled },
+                  ]}
+                >
                   {step.label}
                 </Text>
                 {(done || active) && (
@@ -639,13 +749,31 @@ const PendingRequestCard = ({ pendingRequest }: { pendingRequest: ParentTutorReq
 
               {/* badge */}
               {done && (
-                <View style={[prc.badge, { backgroundColor: `${T.success}18`, borderColor: `${T.success}30` }]}>
+                <View
+                  style={[
+                    prc.badge,
+                    {
+                      backgroundColor: `${T.success}18`,
+                      borderColor: `${T.success}30`,
+                    },
+                  ]}
+                >
                   <Text style={[prc.badgeTxt, { color: T.success }]}>Done</Text>
                 </View>
               )}
               {active && (
-                <View style={[prc.badge, { backgroundColor: `${T.primary}12`, borderColor: `${T.primary}25` }]}>
-                  <Text style={[prc.badgeTxt, { color: T.primary }]}>Active</Text>
+                <View
+                  style={[
+                    prc.badge,
+                    {
+                      backgroundColor: `${T.primary}12`,
+                      borderColor: `${T.primary}25`,
+                    },
+                  ]}
+                >
+                  <Text style={[prc.badgeTxt, { color: T.primary }]}>
+                    Active
+                  </Text>
                 </View>
               )}
             </View>
@@ -655,7 +783,11 @@ const PendingRequestCard = ({ pendingRequest }: { pendingRequest: ParentTutorReq
 
       {/* footer tip */}
       <View style={prc.tip}>
-        <Ionicons name="information-circle-outline" size={14} color={T.primary} />
+        <Ionicons
+          name="information-circle-outline"
+          size={14}
+          color={T.primary}
+        />
         <Text style={prc.tipTxt}>
           We'll notify you as soon as there's an update on your request.
         </Text>
@@ -665,33 +797,129 @@ const PendingRequestCard = ({ pendingRequest }: { pendingRequest: ParentTutorReq
 };
 
 const prc = StyleSheet.create({
-  wrap:       { backgroundColor: T.paper, borderRadius: T.radiusXl, overflow: "hidden", marginBottom: 16, borderWidth: 1, borderColor: T.border },
-  header:     { padding: 18, paddingBottom: 20, overflow: "hidden", position: "relative" },
-  orbA:       { position: "absolute", width: 160, height: 160, borderRadius: 80, backgroundColor: `${T.primary}12`, top: -50, right: -40 } as any,
-  orbB:       { position: "absolute", width: 100, height: 100, borderRadius: 50, backgroundColor: `${T.secondary}08`, bottom: -30, left: 20 } as any,
-  liveRow:    { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
-  liveDot:    { width: 8, height: 8, borderRadius: 4, backgroundColor: T.warning },
-  liveTxt:    { fontSize: 11, fontWeight: "700", color: T.warning, letterSpacing: 0.5, textTransform: "uppercase" },
-  subject:    { fontSize: 17, fontWeight: "800", color: "#fff", letterSpacing: -0.3, marginBottom: 4 },
-  headerSub:  { fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 },
-  barTrack:   { height: 4, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 2, overflow: "hidden", marginBottom: 6 },
-  barFill:    { height: 4, backgroundColor: T.secondary, borderRadius: 2 },
-  barLabel:   { fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: "600" },
+  wrap: {
+    backgroundColor: T.paper,
+    borderRadius: T.radiusXl,
+    overflow: "hidden",
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: T.border,
+  },
+  header: {
+    padding: 18,
+    paddingBottom: 20,
+    overflow: "hidden",
+    position: "relative",
+  },
+  orbA: {
+    position: "absolute",
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: `${T.primary}12`,
+    top: -50,
+    right: -40,
+  } as any,
+  orbB: {
+    position: "absolute",
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: `${T.secondary}08`,
+    bottom: -30,
+    left: 20,
+  } as any,
+  liveRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+  },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: T.warning },
+  liveTxt: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: T.warning,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  subject: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  headerSub: { fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 },
+  barTrack: {
+    height: 4,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 2,
+    overflow: "hidden",
+    marginBottom: 6,
+  },
+  barFill: { height: 4, backgroundColor: T.secondary, borderRadius: 2 },
+  barLabel: { fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: "600" },
 
-  stepsWrap:  { padding: 18, gap: 0 },
-  stepRow:    { flexDirection: "row", alignItems: "flex-start", gap: 12, paddingBottom: 20, position: "relative" },
-  connector:  { position: "absolute", left: 15, top: 28, width: 2, bottom: 0, borderRadius: 1 } as any,
-  circle:     { width: 30, height: 30, borderRadius: 15, borderWidth: 2, alignItems: "center", justifyContent: "center", flexShrink: 0, zIndex: 1 },
-  activeDot:  { width: 10, height: 10, borderRadius: 5, backgroundColor: "#fff" },
-  idleDot:    { width: 8,  height: 8,  borderRadius: 4,  backgroundColor: T.border },
-  stepText:   { flex: 1, paddingTop: 4 },
-  stepLabel:  { fontSize: 14, fontWeight: "700" },
-  stepDesc:   { fontSize: 11, color: T.textSecondary, marginTop: 3, lineHeight: 16 },
-  badge:      { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, borderWidth: 1, alignSelf: "flex-start", marginTop: 5 },
-  badgeTxt:   { fontSize: 10, fontWeight: "700" },
+  stepsWrap: { padding: 18, gap: 0 },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    paddingBottom: 20,
+    position: "relative",
+  },
+  connector: {
+    position: "absolute",
+    left: 15,
+    top: 28,
+    width: 2,
+    bottom: 0,
+    borderRadius: 1,
+  } as any,
+  circle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    zIndex: 1,
+  },
+  activeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+  },
+  idleDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: T.border },
+  stepText: { flex: 1, paddingTop: 4 },
+  stepLabel: { fontSize: 14, fontWeight: "700" },
+  stepDesc: {
+    fontSize: 11,
+    color: T.textSecondary,
+    marginTop: 3,
+    lineHeight: 16,
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 99,
+    borderWidth: 1,
+    alignSelf: "flex-start",
+    marginTop: 5,
+  },
+  badgeTxt: { fontSize: 10, fontWeight: "700" },
 
-  tip:        { flexDirection: "row", alignItems: "flex-start", gap: 7, paddingHorizontal: 16, paddingBottom: 16 },
-  tipTxt:     { flex: 1, fontSize: 11, color: T.textSecondary, lineHeight: 16 },
+  tip: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 7,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  tipTxt: { flex: 1, fontSize: 11, color: T.textSecondary, lineHeight: 16 },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -706,7 +934,9 @@ const ParentDashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"overview" | "activity">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "activity">(
+    "overview",
+  );
 
   const [showConcern, setShowConcern] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -719,15 +949,31 @@ const ParentDashboardScreen = () => {
   const openSidebar = () => {
     setSidebarOpen(true);
     Animated.parallel([
-      Animated.spring(sidebarAnim, { toValue: 0, useNativeDriver: true, bounciness: 0 }),
-      Animated.timing(overlayAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+      Animated.spring(sidebarAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        bounciness: 0,
+      }),
+      Animated.timing(overlayAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
     ]).start();
   };
 
   const closeSidebar = () => {
     Animated.parallel([
-      Animated.spring(sidebarAnim, { toValue: -SIDEBAR_W, useNativeDriver: true, bounciness: 0 }),
-      Animated.timing(overlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.spring(sidebarAnim, {
+        toValue: -SIDEBAR_W,
+        useNativeDriver: true,
+        bounciness: 0,
+      }),
+      Animated.timing(overlayAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
     ]).start(() => setSidebarOpen(false));
   };
 
@@ -752,7 +998,9 @@ const ParentDashboardScreen = () => {
     }
   }, []);
 
-  useEffect(() => { void loadData(); }, [loadData]);
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -775,7 +1023,10 @@ const ParentDashboardScreen = () => {
     if (!data?.activeClass) return;
     setSubmitting(true);
     try {
-      await raiseParentConcern({ finalClassId: data.activeClass._id, message: msg });
+      await raiseParentConcern({
+        finalClassId: data.activeClass._id,
+        message: msg,
+      });
       setShowConcern(false);
       showSuccess("Concern Raised", "Our team will follow up with you.");
     } catch (e: any) {
@@ -812,14 +1063,22 @@ const ParentDashboardScreen = () => {
 
   return (
     <View style={s.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       <ScrollView
         style={s.scroll}
         contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={T.primary}
+          />
         }
       >
         {/* ── Hero Header ─────────────────────────────────────────────────── */}
@@ -836,7 +1095,10 @@ const ParentDashboardScreen = () => {
           <View style={s.topBar}>
             <View style={s.brandRow}>
               <View style={s.logoRing}>
-                <Image source={require("../../assets/logo.jpg")} style={s.logoImg} />
+                <Image
+                  source={require("../../assets/logo.jpg")}
+                  style={s.logoImg}
+                />
               </View>
               <Text style={s.brandName}>YourShikshak</Text>
             </View>
@@ -893,8 +1155,14 @@ const ParentDashboardScreen = () => {
           ) : (
             <View style={s.stripRow}>
               <View style={[s.stripItem, { flex: 1 }]}>
-                <Ionicons name="school-outline" size={18} color="rgba(255,255,255,0.5)" />
-                <Text style={[s.stripLbl, { marginTop: 4, textAlign: "center" }]}>
+                <Ionicons
+                  name="school-outline"
+                  size={18}
+                  color="rgba(255,255,255,0.5)"
+                />
+                <Text
+                  style={[s.stripLbl, { marginTop: 4, textAlign: "center" }]}
+                >
                   No active class yet.{"\n"}Request a tutor to get started.
                 </Text>
               </View>
@@ -933,14 +1201,47 @@ const ParentDashboardScreen = () => {
                   <View style={how.card}>
                     <Text style={how.title}>How it works</Text>
                     {[
-                      { icon: "send-outline",     color: T.primary,   step: "1", label: "Request a Tutor",  desc: "Tell us your child's subject & grade" },
-                      { icon: "search-outline",   color: T.secondary, step: "2", label: "We Find a Match",  desc: "Manager reviews and creates a lead"  },
-                      { icon: "videocam-outline", color: "#7C3AED",   step: "3", label: "Demo Class",        desc: "Meet the teacher before committing"  },
-                      { icon: "checkmark-circle-outline", color: T.success, step: "4", label: "Classes Begin", desc: "Your child starts learning!" },
+                      {
+                        icon: "send-outline",
+                        color: T.primary,
+                        step: "1",
+                        label: "Request a Tutor",
+                        desc: "Tell us your child's subject & grade",
+                      },
+                      {
+                        icon: "search-outline",
+                        color: T.secondary,
+                        step: "2",
+                        label: "We Find a Match",
+                        desc: "Manager reviews and creates a lead",
+                      },
+                      {
+                        icon: "videocam-outline",
+                        color: "#7C3AED",
+                        step: "3",
+                        label: "Demo Class",
+                        desc: "Meet the teacher before committing",
+                      },
+                      {
+                        icon: "checkmark-circle-outline",
+                        color: T.success,
+                        step: "4",
+                        label: "Classes Begin",
+                        desc: "Your child starts learning!",
+                      },
                     ].map((item) => (
                       <View key={item.step} style={how.row}>
-                        <View style={[how.iconBox, { backgroundColor: `${item.color}15` }]}>
-                          <Ionicons name={item.icon as any} size={18} color={item.color} />
+                        <View
+                          style={[
+                            how.iconBox,
+                            { backgroundColor: `${item.color}15` },
+                          ]}
+                        >
+                          <Ionicons
+                            name={item.icon as any}
+                            size={18}
+                            color={item.color}
+                          />
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={how.label}>{item.label}</Text>
@@ -952,7 +1253,10 @@ const ParentDashboardScreen = () => {
 
                   {/* CTA button */}
                   <Pressable
-                    style={({ pressed }) => [how.ctaBtn, pressed && { opacity: 0.87 }]}
+                    style={({ pressed }) => [
+                      how.ctaBtn,
+                      pressed && { opacity: 0.87 },
+                    ]}
                     onPress={() => navigation.navigate("RequestTutor")}
                   >
                     <LinearGradient
@@ -961,9 +1265,17 @@ const ParentDashboardScreen = () => {
                       end={{ x: 1, y: 0 }}
                       style={how.ctaGrad}
                     >
-                      <Ionicons name="add-circle-outline" size={20} color="#fff" />
+                      <Ionicons
+                        name="add-circle-outline"
+                        size={20}
+                        color="#fff"
+                      />
                       <Text style={how.ctaTxt}>Request a Tutor</Text>
-                      <Ionicons name="arrow-forward" size={16} color="rgba(255,255,255,0.7)" />
+                      <Ionicons
+                        name="arrow-forward"
+                        size={16}
+                        color="rgba(255,255,255,0.7)"
+                      />
                     </LinearGradient>
                   </Pressable>
 
@@ -987,8 +1299,12 @@ const ParentDashboardScreen = () => {
                   iconColor={T.primary}
                   iconBg={`${T.primary}15`}
                   label="Next Class"
-                  value={cls?.nextSessionDate ? fmtDate(cls.nextSessionDate) : "—"}
-                  sub={cls?.nextSessionTime ?? cls?.schedule?.timeSlot ?? undefined}
+                  value={
+                    cls?.nextSessionDate ? fmtDate(cls.nextSessionDate) : "—"
+                  }
+                  sub={
+                    cls?.nextSessionTime ?? cls?.schedule?.timeSlot ?? undefined
+                  }
                   subIcon="time-outline"
                 />
                 <KpiCard
@@ -999,7 +1315,8 @@ const ParentDashboardScreen = () => {
                   label="Attendance"
                   value={attPct}
                   sub={
-                    cls?.attendanceThisMonth != null && cls?.totalSessionsThisMonth != null
+                    cls?.attendanceThisMonth != null &&
+                    cls?.totalSessionsThisMonth != null
                       ? `${cls.attendanceThisMonth}/${cls.totalSessionsThisMonth} this month`
                       : undefined
                   }
@@ -1038,7 +1355,9 @@ const ParentDashboardScreen = () => {
                       ? `★ ${cls.tutor.rating.toFixed(1)} rating`
                       : undefined
                   }
-                  subIcon={cls?.tutor?.rating != null ? "star-outline" : undefined}
+                  subIcon={
+                    cls?.tutor?.rating != null ? "star-outline" : undefined
+                  }
                   subColor="#F59E0B"
                 />
               </View>
@@ -1053,7 +1372,9 @@ const ParentDashboardScreen = () => {
                         prog.pct,
                         {
                           color:
-                            cls.attendancePercentage >= 80 ? T.success : T.warning,
+                            cls.attendancePercentage >= 80
+                              ? T.success
+                              : T.warning,
                         },
                       ]}
                     >
@@ -1065,9 +1386,12 @@ const ParentDashboardScreen = () => {
                       style={[
                         prog.fill,
                         {
-                          width: `${Math.min(cls.attendancePercentage, 100)}%` as any,
+                          width:
+                            `${Math.min(cls.attendancePercentage, 100)}%` as any,
                           backgroundColor:
-                            cls.attendancePercentage >= 80 ? T.success : T.warning,
+                            cls.attendancePercentage >= 80
+                              ? T.success
+                              : T.warning,
                         },
                       ]}
                     />
@@ -1078,20 +1402,62 @@ const ParentDashboardScreen = () => {
               {/* Quick actions row */}
               <View style={qa.row}>
                 {[
-                  { icon: "calendar-outline",     color: T.primary,   label: "Reschedule",   onPress: () => showError("Coming Soon", "Reschedule will be available soon.") },
-                  { icon: "pause-circle-outline",  color: T.warning,   label: "Pause Class",  onPress: () => showError("Coming Soon", "Pause class will be available soon.") },
-                  { icon: "alert-circle-outline",  color: T.error,     label: "Raise Concern",onPress: () => setShowConcern(true) },
-                  { icon: "add-circle-outline",    color: T.secondary, label: "Add Subject",  onPress: () => navigation.navigate("RequestTutor") },
+                  {
+                    icon: "calendar-outline",
+                    color: T.primary,
+                    label: "Reschedule",
+                    onPress: () =>
+                      showError(
+                        "Coming Soon",
+                        "Reschedule will be available soon.",
+                      ),
+                  },
+                  {
+                    icon: "pause-circle-outline",
+                    color: T.warning,
+                    label: "Pause Class",
+                    onPress: () =>
+                      showError(
+                        "Coming Soon",
+                        "Pause class will be available soon.",
+                      ),
+                  },
+                  {
+                    icon: "alert-circle-outline",
+                    color: T.error,
+                    label: "Raise Concern",
+                    onPress: () => setShowConcern(true),
+                  },
+                  {
+                    icon: "add-circle-outline",
+                    color: T.secondary,
+                    label: "Add Subject",
+                    onPress: () => navigation.navigate("RequestTutor"),
+                  },
                 ].map((item) => (
                   <Pressable
                     key={item.label}
-                    style={({ pressed }) => [qa.btn, pressed && { opacity: 0.75 }]}
+                    style={({ pressed }) => [
+                      qa.btn,
+                      pressed && { opacity: 0.75 },
+                    ]}
                     onPress={item.onPress}
                   >
-                    <View style={[qa.iconBox, { backgroundColor: `${item.color}15` }]}>
-                      <Ionicons name={item.icon as any} size={20} color={item.color} />
+                    <View
+                      style={[
+                        qa.iconBox,
+                        { backgroundColor: `${item.color}15` },
+                      ]}
+                    >
+                      <Ionicons
+                        name={item.icon as any}
+                        size={20}
+                        color={item.color}
+                      />
                     </View>
-                    <Text style={qa.label} numberOfLines={2}>{item.label}</Text>
+                    <Text style={qa.label} numberOfLines={2}>
+                      {item.label}
+                    </Text>
                   </Pressable>
                 ))}
               </View>
@@ -1107,7 +1473,12 @@ const ParentDashboardScreen = () => {
                     size={14}
                     color={activeTab === "overview" ? "#fff" : T.mutedFg}
                   />
-                  <Text style={[tab.label, activeTab === "overview" && tab.labelActive]}>
+                  <Text
+                    style={[
+                      tab.label,
+                      activeTab === "overview" && tab.labelActive,
+                    ]}
+                  >
                     Upcoming Sessions
                   </Text>
                 </Pressable>
@@ -1120,7 +1491,12 @@ const ParentDashboardScreen = () => {
                     size={14}
                     color={activeTab === "activity" ? "#fff" : T.mutedFg}
                   />
-                  <Text style={[tab.label, activeTab === "activity" && tab.labelActive]}>
+                  <Text
+                    style={[
+                      tab.label,
+                      activeTab === "activity" && tab.labelActive,
+                    ]}
+                  >
                     Activity Feed
                   </Text>
                 </Pressable>
@@ -1132,7 +1508,10 @@ const ParentDashboardScreen = () => {
                   {/* Teacher card */}
                   {cls?.tutor && (
                     <>
-                      <SectionHead icon="person-circle-outline" title="Your Teacher" />
+                      <SectionHead
+                        icon="person-circle-outline"
+                        title="Your Teacher"
+                      />
                       <View style={tc.card}>
                         <View style={tc.avatar}>
                           <Text style={tc.avatarTxt}>
@@ -1161,14 +1540,18 @@ const ParentDashboardScreen = () => {
                                   : "home-outline"
                             }
                             size={11}
-                            color={cls.mode === "ONLINE" ? T.primary : T.secondary}
+                            color={
+                              cls.mode === "ONLINE" ? T.primary : T.secondary
+                            }
                           />
                           <Text
                             style={[
                               tc.modeTxt,
                               {
                                 color:
-                                  cls.mode === "ONLINE" ? T.primary : T.secondary,
+                                  cls.mode === "ONLINE"
+                                    ? T.primary
+                                    : T.secondary,
                               },
                             ]}
                           >
@@ -1257,14 +1640,26 @@ const ParentDashboardScreen = () => {
                     data!.recentActivity!.map((item) => {
                       const meta =
                         item.type === "ATTENDANCE"
-                          ? { icon: "checkmark-circle-outline", color: T.success }
+                          ? {
+                              icon: "checkmark-circle-outline",
+                              color: T.success,
+                            }
                           : item.type === "TEST"
-                            ? { icon: "document-text-outline", color: T.primary }
+                            ? {
+                                icon: "document-text-outline",
+                                color: T.primary,
+                              }
                             : item.type === "MESSAGE"
-                              ? { icon: "chatbubble-outline", color: T.secondary }
+                              ? {
+                                  icon: "chatbubble-outline",
+                                  color: T.secondary,
+                                }
                               : item.type === "RESCHEDULE"
                                 ? { icon: "calendar-outline", color: T.warning }
-                                : { icon: "information-circle-outline", color: T.mutedFg };
+                                : {
+                                    icon: "information-circle-outline",
+                                    color: T.mutedFg,
+                                  };
                       return (
                         <View key={item._id} style={act.card}>
                           <View
@@ -1287,7 +1682,9 @@ const ParentDashboardScreen = () => {
                               {item.description}
                             </Text>
                           </View>
-                          <Text style={act.time}>{timeAgo(item.createdAt)}</Text>
+                          <Text style={act.time}>
+                            {timeAgo(item.createdAt)}
+                          </Text>
                         </View>
                       );
                     })
@@ -1324,198 +1721,670 @@ const ParentDashboardScreen = () => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root:          { flex: 1, backgroundColor: T.background },
-  scroll:        { flex: 1 },
+  root: { flex: 1, backgroundColor: T.background },
+  scroll: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingBottom: 60 },
 
-  header:   { paddingHorizontal: 22, paddingBottom: 48, overflow: "hidden" },
-  orbA:     { position: "absolute", width: 0, height: 0 },
-  orbB:     { position: "absolute", width: 0, height: 0 },
+  header: { paddingHorizontal: 22, paddingBottom: 48, overflow: "hidden" },
+  orbA: { position: "absolute", width: 0, height: 0 },
+  orbB: { position: "absolute", width: 0, height: 0 },
 
-  topBar:   { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  logoRing: { width: 32, height: 32, borderRadius: 8, overflow: "hidden", borderWidth: 1.2, borderColor: "rgba(255,255,255,0.22)" },
-  logoImg:  { width: 32, height: 32 },
-  brandName:{ color: "#fff", fontSize: 14, fontWeight: "700" },
+  logoRing: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    overflow: "hidden",
+    borderWidth: 1.2,
+    borderColor: "rgba(255,255,255,0.22)",
+  },
+  logoImg: { width: 32, height: 32 },
+  brandName: { color: "#fff", fontSize: 14, fontWeight: "700" },
 
-  avatarBtn:    { width: 38, height: 38, borderRadius: 19, overflow: "hidden" },
-  avatarInner:  { width: 38, height: 38, borderRadius: 19, backgroundColor: T.primary, borderWidth: 2, borderColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center" },
-  avatarInitial:{ color: "#fff", fontSize: 15, fontWeight: "700" },
+  avatarBtn: { width: 38, height: 38, borderRadius: 19, overflow: "hidden" },
+  avatarInner: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: T.primary,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarInitial: { color: "#fff", fontSize: 15, fontWeight: "700" },
 
-  greetBlock:  { marginBottom: 24 },
-  greetSub:    { color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: "500", marginBottom: 3 },
-  greetName:   { color: "#fff", fontSize: 28, fontWeight: "800", letterSpacing: -0.7, marginBottom: 10 },
-  parentBadge: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.1)", borderWidth: 1, borderColor: "rgba(255,255,255,0.15)" },
-  badgeDot:    { width: 6, height: 6, borderRadius: 3, backgroundColor: T.success },
-  badgeTxt:    { color: "rgba(255,255,255,0.85)", fontSize: 9, fontWeight: "800", letterSpacing: 0.8 },
+  greetBlock: { marginBottom: 24 },
+  greetSub: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 3,
+  },
+  greetName: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.7,
+    marginBottom: 10,
+  },
+  parentBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  badgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: T.success,
+  },
+  badgeTxt: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+  },
 
-  stripRow:  { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 14, paddingVertical: 13, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" },
+  stripRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 14,
+    paddingVertical: 13,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
   stripItem: { flex: 1, alignItems: "center", gap: 3 },
-  stripVal:  { color: "#fff", fontSize: 16, fontWeight: "800", letterSpacing: -0.5 },
-  stripLbl:  { color: "rgba(255,255,255,0.45)", fontSize: 9, fontWeight: "600", textAlign: "center", letterSpacing: 0.2 },
-  stripSep:  { width: 1, height: 30, backgroundColor: "rgba(255,255,255,0.12)" },
+  stripVal: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  stripLbl: {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 9,
+    fontWeight: "600",
+    textAlign: "center",
+    letterSpacing: 0.2,
+  },
+  stripSep: { width: 1, height: 30, backgroundColor: "rgba(255,255,255,0.12)" },
 
-  card:        { flexGrow: 1, backgroundColor: "#F4F7FB", borderTopLeftRadius: 28, borderTopRightRadius: 28, marginTop: -28, padding: 20, paddingTop: 14, shadowColor: "#0F172A", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 6 },
+  card: {
+    flexGrow: 1,
+    backgroundColor: "#F4F7FB",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    padding: 20,
+    paddingTop: 14,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 6,
+  },
 
-  sectionHead:      { flexDirection: "row", alignItems: "center", marginBottom: 14, marginTop: 20, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: T.border },
-  sectionIconBg:    { width: 28, height: 28, borderRadius: 9, alignItems: "center", justifyContent: "center", marginRight: 9 },
-  sectionHeadTxt:   { flex: 1, fontSize: 14, fontWeight: "700", color: T.textPrimary, letterSpacing: -0.1 },
-  sectionBadge:     { backgroundColor: T.primary, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, marginLeft: 6 },
-  sectionBadgeTxt:  { color: "#fff", fontSize: 10, fontWeight: "700" },
+  sectionHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+    marginTop: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  sectionIconBg: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 9,
+  },
+  sectionHeadTxt: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "700",
+    color: T.textPrimary,
+    letterSpacing: -0.1,
+  },
+  sectionBadge: {
+    backgroundColor: T.primary,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginLeft: 6,
+  },
+  sectionBadgeTxt: { color: "#fff", fontSize: 10, fontWeight: "700" },
 
-  kpiGrid:   { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 8 },
+  kpiGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 8 },
 });
 
 // KPI card
 const kpi = StyleSheet.create({
-  outer:  { width: "48%" },
-  card:   { backgroundColor: T.paper, borderRadius: T.radiusLg, padding: 15, borderWidth: 0.5, borderColor: "#CBD5E1" },
-  topRow: { flexDirection: "row", alignItems: "flex-start", gap: 9, marginBottom: 12 },
-  iconBox:{ width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  label:  { flex: 1, fontSize: 11, color: T.mutedFg, fontWeight: "600", lineHeight: 15, marginTop: 2 },
-  value:  { fontSize: 26, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.8, marginBottom: 5 },
+  outer: { width: "48%" },
+  card: {
+    backgroundColor: T.paper,
+    borderRadius: T.radiusLg,
+    padding: 15,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 9,
+    marginBottom: 12,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  label: {
+    flex: 1,
+    fontSize: 11,
+    color: T.mutedFg,
+    fontWeight: "600",
+    lineHeight: 15,
+    marginTop: 2,
+  },
+  value: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: T.textPrimary,
+    letterSpacing: -0.8,
+    marginBottom: 5,
+  },
   subRow: { flexDirection: "row", alignItems: "center" },
-  sub:    { fontSize: 11, color: T.mutedFg, fontWeight: "500" },
+  sub: { fontSize: 11, color: T.mutedFg, fontWeight: "500" },
 });
 
 // Tab bar
 const tab = StyleSheet.create({
-  bar:         { flexDirection: "row", backgroundColor: "#DDE8F5", borderRadius: 14, padding: 4, marginBottom: 20, gap: 4, marginTop: 8 },
-  btn:         { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 10 },
-  btnActive:   { backgroundColor: T.primary, shadowColor: T.primary, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 },
-  label:       { fontSize: 12, fontWeight: "600", color: T.mutedFg },
+  bar: {
+    flexDirection: "row",
+    backgroundColor: "#DDE8F5",
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 20,
+    gap: 4,
+    marginTop: 8,
+  },
+  btn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  btnActive: {
+    backgroundColor: T.primary,
+    shadowColor: T.primary,
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  label: { fontSize: 12, fontWeight: "600", color: T.mutedFg },
   labelActive: { color: "#fff", fontWeight: "700" },
 });
 
 // Attendance progress bar
 const prog = StyleSheet.create({
-  wrap:  { backgroundColor: T.paper, borderRadius: T.radiusLg, padding: 14, marginBottom: 8, borderWidth: 0.5, borderColor: "#CBD5E1" },
-  row:   { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
+  wrap: {
+    backgroundColor: T.paper,
+    borderRadius: T.radiusLg,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
   label: { fontSize: 12, color: T.textSecondary, fontWeight: "500" },
-  pct:   { fontSize: 13, fontWeight: "700" },
-  track: { height: 6, backgroundColor: T.muted, borderRadius: 3, overflow: "hidden" },
-  fill:  { height: 6, borderRadius: 3 },
+  pct: { fontSize: 13, fontWeight: "700" },
+  track: {
+    height: 6,
+    backgroundColor: T.muted,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  fill: { height: 6, borderRadius: 3 },
 });
 
 // Quick actions
 const qa = StyleSheet.create({
-  row:     { flexDirection: "row", gap: 8, marginBottom: 4 },
-  btn:     { flex: 1, alignItems: "center", gap: 6, paddingVertical: 10 },
-  iconBox: { width: 48, height: 48, borderRadius: T.radiusLg, alignItems: "center", justifyContent: "center" },
-  label:   { fontSize: 10, color: T.textSecondary, fontWeight: "600", textAlign: "center", lineHeight: 13 },
+  row: { flexDirection: "row", gap: 8, marginBottom: 4 },
+  btn: { flex: 1, alignItems: "center", gap: 6, paddingVertical: 10 },
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: T.radiusLg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  label: {
+    fontSize: 10,
+    color: T.textSecondary,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 13,
+  },
 });
 
 // Upcoming sessions
 const up = StyleSheet.create({
-  card:       { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: T.paper, borderRadius: T.radiusLg, borderWidth: 0.5, borderColor: "#CBD5E1", padding: 14, marginBottom: 8 },
-  dateBox:    { width: 44, alignItems: "center", backgroundColor: `${T.primary}10`, borderRadius: T.radiusMd, paddingVertical: 6 },
-  month:      { fontSize: 9, color: T.primary, fontWeight: "700", letterSpacing: 0.5 },
-  day:        { fontSize: 20, color: T.primary, fontWeight: "800", lineHeight: 24 },
-  subject:    { fontSize: 13, fontWeight: "700", color: T.textPrimary },
-  time:       { fontSize: 11, color: T.textSecondary, marginTop: 2 },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: T.paper,
+    borderRadius: T.radiusLg,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
+    padding: 14,
+    marginBottom: 8,
+  },
+  dateBox: {
+    width: 44,
+    alignItems: "center",
+    backgroundColor: `${T.primary}10`,
+    borderRadius: T.radiusMd,
+    paddingVertical: 6,
+  },
+  month: {
+    fontSize: 9,
+    color: T.primary,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  day: { fontSize: 20, color: T.primary, fontWeight: "800", lineHeight: 24 },
+  subject: { fontSize: 13, fontWeight: "700", color: T.textPrimary },
+  time: { fontSize: 11, color: T.textSecondary, marginTop: 2 },
   statusPill: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
-  statusTxt:  { fontSize: 11, fontWeight: "600" },
+  statusTxt: { fontSize: 11, fontWeight: "600" },
 });
 
 // Teacher card
 const tc = StyleSheet.create({
-  card:      { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: T.paper, borderRadius: T.radiusLg, borderWidth: 0.5, borderColor: "#CBD5E1", padding: 14, marginBottom: 8 },
-  avatar:    { width: 48, height: 48, borderRadius: 24, backgroundColor: "#7C3AED18", alignItems: "center", justifyContent: "center" },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: T.paper,
+    borderRadius: T.radiusLg,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
+    padding: 14,
+    marginBottom: 8,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#7C3AED18",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   avatarTxt: { fontSize: 20, color: "#7C3AED", fontWeight: "700" },
-  name:      { fontSize: 14, fontWeight: "700", color: T.textPrimary },
-  sub:       { fontSize: 11, color: T.textSecondary, marginTop: 1 },
-  ratingRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 },
+  name: { fontSize: 14, fontWeight: "700", color: T.textPrimary },
+  sub: { fontSize: 11, color: T.textSecondary, marginTop: 1 },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: 2,
+  },
   ratingTxt: { fontSize: 11, color: "#F59E0B", fontWeight: "600" },
-  modePill:  { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${T.primary}10`, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
-  modeTxt:   { fontSize: 10, fontWeight: "600" },
+  modePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: `${T.primary}10`,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  modeTxt: { fontSize: 10, fontWeight: "600" },
 });
 
 // Activity feed
 const act = StyleSheet.create({
-  card:    { flexDirection: "row", alignItems: "flex-start", gap: 10, backgroundColor: T.paper, borderRadius: T.radiusLg, borderWidth: 0.5, borderColor: "#CBD5E1", padding: 13, marginBottom: 8 },
-  iconBox: { width: 34, height: 34, borderRadius: 9, alignItems: "center", justifyContent: "center", marginTop: 1 },
-  title:   { fontSize: 13, fontWeight: "700", color: T.textPrimary },
-  desc:    { fontSize: 11, color: T.textSecondary, marginTop: 2, lineHeight: 15 },
-  time:    { fontSize: 10, color: T.textDisabled, marginTop: 2 },
+  card: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    backgroundColor: T.paper,
+    borderRadius: T.radiusLg,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
+    padding: 13,
+    marginBottom: 8,
+  },
+  iconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+  title: { fontSize: 13, fontWeight: "700", color: T.textPrimary },
+  desc: { fontSize: 11, color: T.textSecondary, marginTop: 2, lineHeight: 15 },
+  time: { fontSize: 10, color: T.textDisabled, marginTop: 2 },
 });
 
 // How it works (empty state)
 const how = StyleSheet.create({
-  card:    { backgroundColor: T.paper, borderRadius: T.radiusLg, borderWidth: 0.5, borderColor: "#CBD5E1", padding: 16, marginBottom: 16 },
-  title:   { fontSize: 12, fontWeight: "700", color: T.mutedFg, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 14 },
-  row:     { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 14 },
-  iconBox: { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  label:   { fontSize: 13, fontWeight: "700", color: T.textPrimary },
-  desc:    { fontSize: 11, color: T.textSecondary, marginTop: 1 },
-  ctaBtn:  { borderRadius: T.radiusLg, overflow: "hidden", marginBottom: 8 },
-  ctaGrad: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 15, paddingHorizontal: 20 },
-  ctaTxt:  { fontSize: 15, fontWeight: "700", color: "#fff", flex: 1, textAlign: "center" },
+  card: {
+    backgroundColor: T.paper,
+    borderRadius: T.radiusLg,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
+    padding: 16,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: T.mutedFg,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginBottom: 14,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 14,
+  },
+  iconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  label: { fontSize: 13, fontWeight: "700", color: T.textPrimary },
+  desc: { fontSize: 11, color: T.textSecondary, marginTop: 1 },
+  ctaBtn: { borderRadius: T.radiusLg, overflow: "hidden", marginBottom: 8 },
+  ctaGrad: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  ctaTxt: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#fff",
+    flex: 1,
+    textAlign: "center",
+  },
 });
 
 // Pending request card
 const req = StyleSheet.create({
-  card:       { backgroundColor: T.paper, borderRadius: T.radiusLg, borderWidth: 0.5, borderColor: "#CBD5E1", padding: 16, marginBottom: 12 },
-  headerRow:  { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 },
-  dot:        { width: 8, height: 8, borderRadius: 4 },
-  subject:    { fontSize: 13, fontWeight: "700", color: T.textPrimary, flex: 1 },
-  stageRow:   { flexDirection: "row", alignItems: "flex-start", gap: 10, minHeight: 32 },
-  stageLeft:  { alignItems: "center", width: 20 },
-  circle:     { width: 20, height: 20, borderRadius: 10, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  innerDot:   { width: 6, height: 6, borderRadius: 3 },
-  line:       { width: 2, flex: 1, marginTop: 3, marginBottom: -6, minHeight: 12 },
+  card: {
+    backgroundColor: T.paper,
+    borderRadius: T.radiusLg,
+    borderWidth: 0.5,
+    borderColor: "#CBD5E1",
+    padding: 16,
+    marginBottom: 12,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  subject: { fontSize: 13, fontWeight: "700", color: T.textPrimary, flex: 1 },
+  stageRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    minHeight: 32,
+  },
+  stageLeft: { alignItems: "center", width: 20 },
+  circle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  innerDot: { width: 6, height: 6, borderRadius: 3 },
+  line: { width: 2, flex: 1, marginTop: 3, marginBottom: -6, minHeight: 12 },
   stageLabel: { fontSize: 12, color: T.textSecondary, paddingTop: 2, flex: 1 },
 });
 
 // Bottom sheet modal (shared)
 const am = StyleSheet.create({
-  overlay:     { flex: 1, backgroundColor: "rgba(0,0,0,0.45)" },
-  sheet:       { backgroundColor: T.paper, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingBottom: 36 },
-  handle:      { width: 36, height: 4, borderRadius: 2, backgroundColor: T.border, alignSelf: "center", marginBottom: 20 },
-  header:      { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20 },
-  headerIcon:  { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)" },
+  sheet: {
+    backgroundColor: T.paper,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 20,
+    paddingBottom: 36,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: T.border,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 20,
+  },
+  headerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   headerTitle: { fontSize: 16, fontWeight: "700", color: T.textPrimary },
-  headerSub:   { fontSize: 12, color: T.textSecondary, marginTop: 1 },
-  fieldLabel:  { fontSize: 12, fontWeight: "600", color: T.textSecondary, marginBottom: 6, marginTop: 4 },
-  input:       { backgroundColor: T.muted, borderRadius: T.radiusMd, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: T.textPrimary, borderWidth: 1, borderColor: T.border, marginBottom: 4 },
-  submitBtn:   { backgroundColor: T.primary, borderRadius: T.radiusMd, paddingVertical: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 16 },
-  submitTxt:   { fontSize: 15, fontWeight: "700", color: "#fff" },
+  headerSub: { fontSize: 12, color: T.textSecondary, marginTop: 1 },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: T.textSecondary,
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  input: {
+    backgroundColor: T.muted,
+    borderRadius: T.radiusMd,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: T.textPrimary,
+    borderWidth: 1,
+    borderColor: T.border,
+    marginBottom: 4,
+  },
+  submitBtn: {
+    backgroundColor: T.primary,
+    borderRadius: T.radiusMd,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+  },
+  submitTxt: { fontSize: 15, fontWeight: "700", color: "#fff" },
 
   // status row (unused here but kept for consistency)
-  statusRow:    { flexDirection: "row", gap: 10, marginBottom: 8 },
-  statusBtn:    { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: T.radiusMd, borderWidth: 1.5, borderColor: T.border },
+  statusRow: { flexDirection: "row", gap: 10, marginBottom: 8 },
+  statusBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: T.radiusMd,
+    borderWidth: 1.5,
+    borderColor: T.border,
+  },
   statusBtnActive: { backgroundColor: `${T.success}08` },
   statusBtnTxt: { fontSize: 13, fontWeight: "600" },
 });
 
 // Sidebar drawer
 const sb = StyleSheet.create({
-  overlay:        { backgroundColor: "rgba(0,0,0,0.45)", zIndex: 10 },
-  drawer:         { position: "absolute", left: 0, top: 0, bottom: 0, width: SIDEBAR_W, backgroundColor: T.darkBg, zIndex: 20, paddingHorizontal: 20 },
-  drawerHeader:   { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16, marginTop: 24 },
-  drawerAvatar:   { width: 46, height: 46, borderRadius: 23, backgroundColor: T.primary, alignItems: "center", justifyContent: "center" },
-  drawerAvatarTxt:{ fontSize: 20, color: "#fff", fontWeight: "700" },
-  drawerName:     { fontSize: 15, color: "#fff", fontWeight: "700", flex: 1 },
-  drawerBadge:    { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
-  drawerBadgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: T.success },
-  drawerBadgeTxt: { color: "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: "700", letterSpacing: 0.8 },
-  closeBtn:       { padding: 4 },
-  divider:        { height: 1, backgroundColor: "rgba(255,255,255,0.08)", marginVertical: 8 },
-  navItem:        { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13, borderRadius: T.radiusMd },
+  overlay: { backgroundColor: "rgba(0,0,0,0.45)", zIndex: 10 },
+  drawer: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: SIDEBAR_W,
+    backgroundColor: T.darkBg,
+    zIndex: 20,
+    paddingHorizontal: 20,
+  },
+  drawerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
+    marginTop: 24,
+  },
+  drawerAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: T.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  drawerAvatarTxt: { fontSize: 20, color: "#fff", fontWeight: "700" },
+  drawerName: { fontSize: 15, color: "#fff", fontWeight: "700", flex: 1 },
+  drawerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 3,
+  },
+  drawerBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: T.success,
+  },
+  drawerBadgeTxt: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+  },
+  closeBtn: { padding: 4 },
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    marginVertical: 8,
+  },
+  navItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 13,
+    borderRadius: T.radiusMd,
+  },
   navItemPressed: { backgroundColor: "rgba(255,255,255,0.05)" },
-  navIconBg:      { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  navLabel:       { flex: 1, fontSize: 14, color: "#fff", fontWeight: "600" },
-  badge:          { position: "absolute", top: 0, right: 0, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: T.error, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 },
-  badgeTxt:       { color: "#fff", fontSize: 9, fontWeight: "700" },
+  navIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navLabel: { flex: 1, fontSize: 14, color: "#fff", fontWeight: "600" },
+  badge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: T.error,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  badgeTxt: { color: "#fff", fontSize: 9, fontWeight: "700" },
 });
 
 // Empty state
 const emp = StyleSheet.create({
-  wrap:      { alignItems: "center", paddingVertical: 28, paddingHorizontal: 16, gap: 10 },
-  iconRing:  { width: 90, height: 90, borderRadius: 45, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center", marginBottom: 4 },
-  iconInner: { width: 74, height: 74, borderRadius: 37, alignItems: "center", justifyContent: "center" },
-  emoji:     { fontSize: 36 },
-  headline:  { fontSize: 16, fontWeight: "800", color: T.textPrimary, textAlign: "center", letterSpacing: -0.3 },
-  sub:       { fontSize: 13, color: T.mutedFg, textAlign: "center", lineHeight: 20 },
+  wrap: {
+    alignItems: "center",
+    paddingVertical: 28,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  iconRing: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  iconInner: {
+    width: 74,
+    height: 74,
+    borderRadius: 37,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emoji: { fontSize: 36 },
+  headline: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: T.textPrimary,
+    textAlign: "center",
+    letterSpacing: -0.3,
+  },
+  sub: { fontSize: 13, color: T.mutedFg, textAlign: "center", lineHeight: 20 },
 });
 
 export default ParentDashboardScreen;

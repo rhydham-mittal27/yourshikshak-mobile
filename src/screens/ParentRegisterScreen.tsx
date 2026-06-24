@@ -206,7 +206,9 @@ const ChipRow = ({
           <Pressable
             key={opt}
             onPress={() => onSelect(active ? "" : opt)}
-            style={active ? ch.chipPressable : [ch.chipPressable, ch.chipInactive]}
+            style={
+              active ? ch.chipPressable : [ch.chipPressable, ch.chipInactive]
+            }
           >
             {active ? (
               <LinearGradient
@@ -215,7 +217,12 @@ const ChipRow = ({
                 end={{ x: 1, y: 0 }}
                 style={ch.chipActive}
               >
-                <Ionicons name="checkmark" size={11} color="#fff" style={{ marginRight: 3 }} />
+                <Ionicons
+                  name="checkmark"
+                  size={11}
+                  color="#fff"
+                  style={{ marginRight: 3 }}
+                />
                 <Text style={ch.chipTxtActive}>{opt}</Text>
               </LinearGradient>
             ) : (
@@ -259,7 +266,9 @@ const SuccessView = ({ onBack }: { onBack: () => void }) => {
         </LinearGradient>
         <Text style={sv.title}>Account Created! 🎉</Text>
         <Text style={sv.body}>
-          {"Welcome! Your account is ready.\n\nYou can now sign in and browse verified tutors for your child."}
+          {
+            "Welcome! Your account is ready.\n\nYou can now sign in and browse verified tutors for your child."
+          }
         </Text>
         <View style={sv.featureRow}>
           {["Verified Tutor", "Free Demo", "Instant Login"].map((f) => (
@@ -449,7 +458,9 @@ const ParentRegisterScreen: React.FC<Props> = ({ navigation }) => {
               </View>
               <Text style={s.heroTitle}>{"Find the Perfect\nTutor Today"}</Text>
               <Text style={s.heroSub}>
-                {"Tell us about your child and we'll match you with a verified expert within 24 hours."}
+                {
+                  "Tell us about your child and we'll match you with a verified expert within 24 hours."
+                }
               </Text>
             </View>
 
