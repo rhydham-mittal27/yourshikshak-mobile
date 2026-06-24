@@ -5,6 +5,7 @@ import * as Notifications from "expo-notifications";
 import {
   NavigationContainer,
   NavigationContainerRef,
+  LinkingOptions,
 } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import AuthScreen from "../screens/AuthScreen";
@@ -43,7 +44,7 @@ import FAQScreen from "../screens/FAQScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
-  ForgotPassword: undefined;
+  ForgotPassword: { token?: string } | undefined;
   RoleSelect: { name: string; email: string; phone: string; city: string; password: string };
   TutorCompleteProfile: { name: string; email: string; phone: string; city: string; password: string };
   ParentCompleteProfile: { name: string; email: string; phone: string; city: string; password: string };
@@ -74,6 +75,18 @@ export type RootStackParamList = {
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
+
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ["yourshikshak://"],
+  config: {
+    screens: {
+      ForgotPassword: {
+        path: "reset-password",
+        parse: { token: (token: string) => token },
+      },
+    },
+  },
+};
 
 const AppNavigator = () => {
   const [initialRoute, setInitialRoute] = useState<
@@ -171,7 +184,7 @@ const AppNavigator = () => {
           onDone={() => setPendingCycles([])}
         />
       )}
-      <NavigationContainer ref={navRef}>
+      <NavigationContainer ref={navRef} linking={linking}>
         <Stack.Navigator
           initialRouteName={initialRoute}
           screenOptions={{
