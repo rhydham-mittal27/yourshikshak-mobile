@@ -33,12 +33,42 @@ const STATUS_META: Record<
   string,
   { label: string; color: string; icon: any; bg: string }
 > = {
-  APPROVED: { label: "Approved", color: "#10B981", icon: "checkmark-circle", bg: "#10B98118" },
-  REJECTED: { label: "Rejected", color: "#EF4444", icon: "close-circle", bg: "#EF444418" },
-  COMPLETED: { label: "Completed", color: "#2D68C4", icon: "checkmark-done-circle", bg: "#2D68C418" },
-  PENDING: { label: "Pending", color: "#F59E0B", icon: "time", bg: "#F59E0B18" },
-  SCHEDULED: { label: "Scheduled", color: "#8B5CF6", icon: "calendar", bg: "#8B5CF618" },
-  CANCELLED: { label: "Cancelled", color: "#64748B", icon: "ban", bg: "#64748B18" },
+  APPROVED: {
+    label: "Approved",
+    color: "#10B981",
+    icon: "checkmark-circle",
+    bg: "#10B98118",
+  },
+  REJECTED: {
+    label: "Rejected",
+    color: "#EF4444",
+    icon: "close-circle",
+    bg: "#EF444418",
+  },
+  COMPLETED: {
+    label: "Completed",
+    color: "#2D68C4",
+    icon: "checkmark-done-circle",
+    bg: "#2D68C418",
+  },
+  PENDING: {
+    label: "Pending",
+    color: "#F59E0B",
+    icon: "time",
+    bg: "#F59E0B18",
+  },
+  SCHEDULED: {
+    label: "Scheduled",
+    color: "#8B5CF6",
+    icon: "calendar",
+    bg: "#8B5CF618",
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    color: "#64748B",
+    icon: "ban",
+    bg: "#64748B18",
+  },
 };
 
 const FILTERS = [
@@ -65,7 +95,8 @@ const AVATAR_GRADIENTS: [string, string][] = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const isSubmittable = (status: string) => SUBMITTABLE.has(status?.toUpperCase());
+const isSubmittable = (status: string) =>
+  SUBMITTABLE.has(status?.toUpperCase());
 
 const getStatusMeta = (status: string) =>
   STATUS_META[status?.toUpperCase()] ?? {
@@ -98,8 +129,21 @@ const getAvatarGradient = (name: string): [string, string] => {
 
 // ─── MetaChip ─────────────────────────────────────────────────────────────────
 
-const MetaChip = ({ icon, value, color }: { icon: any; value: string; color: string }) => (
-  <View style={[s.metaChip, { backgroundColor: `${color}10`, borderColor: `${color}28` }]}>
+const MetaChip = ({
+  icon,
+  value,
+  color,
+}: {
+  icon: any;
+  value: string;
+  color: string;
+}) => (
+  <View
+    style={[
+      s.metaChip,
+      { backgroundColor: `${color}10`, borderColor: `${color}28` },
+    ]}
+  >
     <Ionicons name={icon} size={10} color={color} />
     <Text style={[s.metaChipTxt, { color }]}>{value}</Text>
   </View>
@@ -146,10 +190,22 @@ const DemoCard = ({
     <Animated.View
       style={{
         opacity: anim,
-        transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+        transform: [
+          {
+            translateY: anim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [10, 0],
+            }),
+          },
+        ],
       }}
     >
-      <View style={[s.card, highlighted && { borderColor: meta.color, borderWidth: 1.5 }]}>
+      <View
+        style={[
+          s.card,
+          highlighted && { borderColor: meta.color, borderWidth: 1.5 },
+        ]}
+      >
         <Pressable
           onPress={onPress}
           style={({ pressed }) => [pressed && { transform: [{ scale: 0.98 }] }]}
@@ -157,40 +213,82 @@ const DemoCard = ({
           <View style={s.cardBody}>
             {/* ── Avatar + name + status ── */}
             <View style={s.cardTop}>
-              <LinearGradient colors={avatarGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.avatar}>
+              <LinearGradient
+                colors={avatarGrad}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={s.avatar}
+              >
                 <Text style={s.avatarTxt}>{getInitials(studentName)}</Text>
               </LinearGradient>
               <View style={{ flex: 1 }}>
-                <Text style={s.studentName} numberOfLines={1}>{studentName}</Text>
-                {subjects ? <Text style={s.subjectTxt} numberOfLines={1}>{subjects}</Text> : null}
+                <Text style={s.studentName} numberOfLines={1}>
+                  {studentName}
+                </Text>
+                {subjects ? (
+                  <Text style={s.subjectTxt} numberOfLines={1}>
+                    {subjects}
+                  </Text>
+                ) : null}
               </View>
-              <View style={[s.statusBadge, { backgroundColor: meta.bg, borderColor: `${meta.color}40` }]}>
+              <View
+                style={[
+                  s.statusBadge,
+                  { backgroundColor: meta.bg, borderColor: `${meta.color}40` },
+                ]}
+              >
                 <Ionicons name={meta.icon} size={11} color={meta.color} />
-                <Text style={[s.statusTxt, { color: meta.color }]}>{meta.label}</Text>
+                <Text style={[s.statusTxt, { color: meta.color }]}>
+                  {meta.label}
+                </Text>
               </View>
             </View>
 
             {/* ── Meta chips ── */}
             <View style={s.metaRow}>
-              <MetaChip icon="calendar-outline" value={formatDate(demo.demoDate)} color="#8B5CF6" />
-              <MetaChip icon="time-outline" value={demo.demoTime ?? "—"} color={T.primary} />
-              {demo.classLead?.mode ? <MetaChip icon="tv-outline" value={demo.classLead.mode} color="#F59E0B" /> : null}
-              {demo.classLead?.grade ? <MetaChip icon="school-outline" value={`Gr. ${demo.classLead.grade}`} color="#10B981" /> : null}
+              <MetaChip
+                icon="calendar-outline"
+                value={formatDate(demo.demoDate)}
+                color="#8B5CF6"
+              />
+              <MetaChip
+                icon="time-outline"
+                value={demo.demoTime ?? "—"}
+                color={T.primary}
+              />
+              {demo.classLead?.mode ? (
+                <MetaChip
+                  icon="tv-outline"
+                  value={demo.classLead.mode}
+                  color="#F59E0B"
+                />
+              ) : null}
+              {demo.classLead?.grade ? (
+                <MetaChip
+                  icon="school-outline"
+                  value={`Gr. ${demo.classLead.grade}`}
+                  color="#10B981"
+                />
+              ) : null}
             </View>
 
             {/* ── Location ── */}
-            {(demo.classLead?.city || demo.classLead?.area) ? (
+            {demo.classLead?.city || demo.classLead?.area ? (
               <View style={s.locRow}>
                 <Ionicons name="location-outline" size={11} color={T.mutedFg} />
                 <Text style={s.locTxt} numberOfLines={1}>
-                  {[demo.classLead.area, demo.classLead.city].filter(Boolean).join(", ")}
+                  {[demo.classLead.area, demo.classLead.city]
+                    .filter(Boolean)
+                    .join(", ")}
                 </Text>
               </View>
             ) : null}
 
             {/* ── Notes ── */}
             {demo.notes ? (
-              <Text style={s.notesPreview} numberOfLines={1}>{demo.notes}</Text>
+              <Text style={s.notesPreview} numberOfLines={1}>
+                {demo.notes}
+              </Text>
             ) : null}
           </View>
         </Pressable>
@@ -201,7 +299,10 @@ const DemoCard = ({
             <View style={s.cardDivider} />
             <Pressable
               onPress={() => onSubmit(demo)}
-              style={({ pressed }) => [s.submitBar, pressed && { transform: [{ scale: 0.98 }] }]}
+              style={({ pressed }) => [
+                s.submitBar,
+                pressed && { transform: [{ scale: 0.98 }] },
+              ]}
             >
               <Ionicons name="clipboard-outline" size={13} color="#7C3AED" />
               <Text style={s.submitBarTxt}>Submit Demo Result</Text>
@@ -216,10 +317,22 @@ const DemoCard = ({
 
 // ─── StatsStrip ───────────────────────────────────────────────────────────────
 
-const StatsStrip = ({ demos, total }: { demos: TutorDemo[]; total: number }) => {
-  const scheduled = demos.filter((d) => d.status?.toUpperCase() === "SCHEDULED").length;
-  const pending = demos.filter((d) => d.status?.toUpperCase() === "PENDING").length;
-  const completed = demos.filter((d) => d.status?.toUpperCase() === "COMPLETED").length;
+const StatsStrip = ({
+  demos,
+  total,
+}: {
+  demos: TutorDemo[];
+  total: number;
+}) => {
+  const scheduled = demos.filter(
+    (d) => d.status?.toUpperCase() === "SCHEDULED",
+  ).length;
+  const pending = demos.filter(
+    (d) => d.status?.toUpperCase() === "PENDING",
+  ).length;
+  const completed = demos.filter(
+    (d) => d.status?.toUpperCase() === "COMPLETED",
+  ).length;
   return (
     <View style={s.strip}>
       <View style={s.stripItem}>
@@ -250,16 +363,39 @@ const StatsStrip = ({ demos, total }: { demos: TutorDemo[]; total: number }) => 
 type DTab = "overview" | "student" | "class" | "outcome";
 
 const DTABS: { key: DTab; label: string; icon: any; color: string }[] = [
-  { key: "overview", label: "Overview", icon: "grid-outline", color: T.primary },
-  { key: "student", label: "Student", icon: "person-outline", color: "#8B5CF6" },
+  {
+    key: "overview",
+    label: "Overview",
+    icon: "grid-outline",
+    color: T.primary,
+  },
+  {
+    key: "student",
+    label: "Student",
+    icon: "person-outline",
+    color: "#8B5CF6",
+  },
   { key: "class", label: "Class", icon: "layers-outline", color: "#F59E0B" },
-  { key: "outcome", label: "Outcome", icon: "checkmark-circle-outline", color: "#10B981" },
+  {
+    key: "outcome",
+    label: "Outcome",
+    icon: "checkmark-circle-outline",
+    color: "#10B981",
+  },
 ];
 
-const DemoDetailModal = ({ demo, onClose }: { demo: TutorDemo | null; onClose: () => void }) => {
+const DemoDetailModal = ({
+  demo,
+  onClose,
+}: {
+  demo: TutorDemo | null;
+  onClose: () => void;
+}) => {
   const [dtab, setDtab] = useState<DTab>("overview");
 
-  useEffect(() => { if (demo) setDtab("overview"); }, [demo?._id]);
+  useEffect(() => {
+    if (demo) setDtab("overview");
+  }, [demo?._id]);
 
   if (!demo) return null;
 
@@ -269,14 +405,26 @@ const DemoDetailModal = ({ demo, onClose }: { demo: TutorDemo | null; onClose: (
     .map((s: any) => s?.label ?? s?.value ?? "")
     .filter(Boolean)
     .join(", ");
-  const location = [cl?.area, cl?.city].filter(Boolean).join(", ") || cl?.location || null;
-  const genderLabel = (g?: string) => g === "M" ? "Male" : g === "F" ? "Female" : (g ?? null);
+  const location =
+    [cl?.area, cl?.city].filter(Boolean).join(", ") || cl?.location || null;
+  const genderLabel = (g?: string) =>
+    g === "M" ? "Male" : g === "F" ? "Female" : (g ?? null);
   const studentName = cl?.studentName ?? "Student";
   const avatarGrad = getAvatarGradient(studentName);
 
   const Row = ({
-    icon, label, value, color = "#64748B", last = false,
-  }: { icon: any; label: string; value?: string | number | null; color?: string; last?: boolean }) => {
+    icon,
+    label,
+    value,
+    color = "#64748B",
+    last = false,
+  }: {
+    icon: any;
+    label: string;
+    value?: string | number | null;
+    color?: string;
+    last?: boolean;
+  }) => {
     if (value === undefined || value === null || value === "") return null;
     return (
       <View style={[dm.row, last && { borderBottomWidth: 0 }]}>
@@ -300,15 +448,36 @@ const DemoDetailModal = ({ demo, onClose }: { demo: TutorDemo | null; onClose: (
           {/* ── Header ── */}
           <View style={dm.headerWrap}>
             <View style={dm.headerTop}>
-              <LinearGradient colors={avatarGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={dm.headerAvatar}>
-                <Text style={dm.headerAvatarTxt}>{getInitials(studentName)}</Text>
+              <LinearGradient
+                colors={avatarGrad}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={dm.headerAvatar}
+              >
+                <Text style={dm.headerAvatarTxt}>
+                  {getInitials(studentName)}
+                </Text>
               </LinearGradient>
               <View style={{ flex: 1 }}>
-                <Text style={dm.headerName} numberOfLines={1}>{studentName}</Text>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
-                  {subjects ? <Text style={dm.headerSubject}>{subjects}</Text> : null}
+                <Text style={dm.headerName} numberOfLines={1}>
+                  {studentName}
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                    marginTop: 2,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {subjects ? (
+                    <Text style={dm.headerSubject}>{subjects}</Text>
+                  ) : null}
                   {cl?.leadId ? (
-                    <View style={dm.leadPill}><Text style={dm.leadId}>#{cl.leadId}</Text></View>
+                    <View style={dm.leadPill}>
+                      <Text style={dm.leadId}>#{cl.leadId}</Text>
+                    </View>
                   ) : null}
                 </View>
               </View>
@@ -317,25 +486,45 @@ const DemoDetailModal = ({ demo, onClose }: { demo: TutorDemo | null; onClose: (
               </Pressable>
             </View>
 
-            <View style={{ flexDirection: "row", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
-              <View style={[dm.bigBadge, { backgroundColor: sm.bg, borderColor: `${sm.color}50` }]}>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 6,
+                marginTop: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <View
+                style={[
+                  dm.bigBadge,
+                  { backgroundColor: sm.bg, borderColor: `${sm.color}50` },
+                ]}
+              >
                 <Ionicons name={sm.icon} size={12} color={sm.color} />
-                <Text style={[dm.bigBadgeTxt, { color: sm.color }]}>{sm.label}</Text>
+                <Text style={[dm.bigBadgeTxt, { color: sm.color }]}>
+                  {sm.label}
+                </Text>
               </View>
               <View style={dm.infoPill}>
                 <Ionicons name="calendar-outline" size={11} color="#8B5CF6" />
-                <Text style={[dm.infoPillTxt, { color: "#8B5CF6" }]}>{formatDate(demo.demoDate)}</Text>
+                <Text style={[dm.infoPillTxt, { color: "#8B5CF6" }]}>
+                  {formatDate(demo.demoDate)}
+                </Text>
               </View>
               {demo.demoTime ? (
                 <View style={dm.infoPill}>
                   <Ionicons name="time-outline" size={11} color={T.primary} />
-                  <Text style={[dm.infoPillTxt, { color: T.primary }]}>{demo.demoTime}</Text>
+                  <Text style={[dm.infoPillTxt, { color: T.primary }]}>
+                    {demo.demoTime}
+                  </Text>
                 </View>
               ) : null}
               {cl?.mode ? (
                 <View style={dm.infoPill}>
                   <Ionicons name="tv-outline" size={11} color="#F59E0B" />
-                  <Text style={[dm.infoPillTxt, { color: "#F59E0B" }]}>{cl.mode}</Text>
+                  <Text style={[dm.infoPillTxt, { color: "#F59E0B" }]}>
+                    {cl.mode}
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -351,8 +540,17 @@ const DemoDetailModal = ({ demo, onClose }: { demo: TutorDemo | null; onClose: (
                   onPress={() => setDtab(t.key)}
                   style={[dm.tabItem, active && { backgroundColor: "#fff" }]}
                 >
-                  <Ionicons name={t.icon} size={13} color={active ? t.color : T.mutedFg} />
-                  <Text style={[dm.tabLabel, active && { color: t.color, fontWeight: "800" }]}>
+                  <Ionicons
+                    name={t.icon}
+                    size={13}
+                    color={active ? t.color : T.mutedFg}
+                  />
+                  <Text
+                    style={[
+                      dm.tabLabel,
+                      active && { color: t.color, fontWeight: "800" },
+                    ]}
+                  >
                     {t.label}
                   </Text>
                 </Pressable>
@@ -363,116 +561,378 @@ const DemoDetailModal = ({ demo, onClose }: { demo: TutorDemo | null; onClose: (
           {/* ── Tab content ── */}
           <View style={dm.tabContent}>
             {dtab === "overview" && (
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={dm.rows}>
-                <Row icon="calendar-outline" label="Demo Date" value={formatDate(demo.demoDate)} color="#8B5CF6" />
-                <Row icon="time-outline" label="Demo Time" value={demo.demoTime} color={T.primary} />
-                <Row icon="person-outline" label="Assigned By" value={demo.assignedBy?.name} color="#10B981" />
-                <Row icon="log-in-outline" label="Assigned At" value={demo.assignedAt ? formatDate(demo.assignedAt) : null} color="#10B981" />
-                <Row icon="checkmark-done-outline" label="Completed At" value={demo.completedAt ? formatDate(demo.completedAt) : null} color="#8B5CF6" />
-                <Row icon="location-outline" label="Location" value={location} color="#E11D48" />
-                <Row icon="home-outline" label="Address" value={cl?.address} color="#E11D48" />
-                {(location || cl?.address) && (() => {
-                  const fullAddr = [cl?.address, cl?.area, cl?.city].filter(Boolean).join(", ");
-                  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddr)}`;
-                  return (
-                    <Pressable
-                      onPress={() => Linking.openURL(mapsUrl)}
-                      style={({ pressed }) => [dm.mapsBtn, pressed && { transform: [{ scale: 0.97 }] }]}
-                    >
-                      <View style={dm.mapsBtnIcon}>
-                        <Ionicons name="map-outline" size={14} color="#fff" />
-                      </View>
-                      <Text style={dm.mapsBtnTxt}>Open in Google Maps</Text>
-                      <Ionicons name="open-outline" size={13} color={T.primary} />
-                    </Pressable>
-                  );
-                })()}
-                <Row icon="log-in-outline" label="Created" value={demo.createdAt ? formatDate(demo.createdAt) : null} color="#64748B" />
-                <Row icon="refresh-outline" label="Last Updated" value={demo.updatedAt ? formatDate(demo.updatedAt) : null} color="#64748B" last />
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={dm.rows}
+              >
+                <Row
+                  icon="calendar-outline"
+                  label="Demo Date"
+                  value={formatDate(demo.demoDate)}
+                  color="#8B5CF6"
+                />
+                <Row
+                  icon="time-outline"
+                  label="Demo Time"
+                  value={demo.demoTime}
+                  color={T.primary}
+                />
+                <Row
+                  icon="person-outline"
+                  label="Assigned By"
+                  value={demo.assignedBy?.name}
+                  color="#10B981"
+                />
+                <Row
+                  icon="log-in-outline"
+                  label="Assigned At"
+                  value={demo.assignedAt ? formatDate(demo.assignedAt) : null}
+                  color="#10B981"
+                />
+                <Row
+                  icon="checkmark-done-outline"
+                  label="Completed At"
+                  value={demo.completedAt ? formatDate(demo.completedAt) : null}
+                  color="#8B5CF6"
+                />
+                <Row
+                  icon="location-outline"
+                  label="Location"
+                  value={location}
+                  color="#E11D48"
+                />
+                <Row
+                  icon="home-outline"
+                  label="Address"
+                  value={cl?.address}
+                  color="#E11D48"
+                />
+                {(location || cl?.address) &&
+                  (() => {
+                    const fullAddr = [cl?.address, cl?.area, cl?.city]
+                      .filter(Boolean)
+                      .join(", ");
+                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddr)}`;
+                    return (
+                      <Pressable
+                        onPress={() => Linking.openURL(mapsUrl)}
+                        style={({ pressed }) => [
+                          dm.mapsBtn,
+                          pressed && { transform: [{ scale: 0.97 }] },
+                        ]}
+                      >
+                        <View style={dm.mapsBtnIcon}>
+                          <Ionicons name="map-outline" size={14} color="#fff" />
+                        </View>
+                        <Text style={dm.mapsBtnTxt}>Open in Google Maps</Text>
+                        <Ionicons
+                          name="open-outline"
+                          size={13}
+                          color={T.primary}
+                        />
+                      </Pressable>
+                    );
+                  })()}
+                <Row
+                  icon="log-in-outline"
+                  label="Created"
+                  value={demo.createdAt ? formatDate(demo.createdAt) : null}
+                  color="#64748B"
+                />
+                <Row
+                  icon="refresh-outline"
+                  label="Last Updated"
+                  value={demo.updatedAt ? formatDate(demo.updatedAt) : null}
+                  color="#64748B"
+                  last
+                />
               </ScrollView>
             )}
 
             {dtab === "student" && (
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={dm.rows}>
-                <Row icon="person-outline" label="Name" value={cl?.studentName} color={T.primary} />
-                <Row icon="male-female-outline" label="Gender" value={genderLabel(cl?.studentGender)} color="#8B5CF6" />
-                <Row icon="school-outline" label="Grade" value={cl?.grade} color="#10B981" />
-                <Row icon="book-outline" label="Board" value={cl?.board} color="#F59E0B" />
-                <Row icon="library-outline" label="Subjects" value={subjects || null} color={T.primary} />
-                <Row icon="people-outline" label="Student Type" value={cl?.studentType} color="#64748B" />
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={dm.rows}
+              >
+                <Row
+                  icon="person-outline"
+                  label="Name"
+                  value={cl?.studentName}
+                  color={T.primary}
+                />
+                <Row
+                  icon="male-female-outline"
+                  label="Gender"
+                  value={genderLabel(cl?.studentGender)}
+                  color="#8B5CF6"
+                />
+                <Row
+                  icon="school-outline"
+                  label="Grade"
+                  value={cl?.grade}
+                  color="#10B981"
+                />
+                <Row
+                  icon="book-outline"
+                  label="Board"
+                  value={cl?.board}
+                  color="#F59E0B"
+                />
+                <Row
+                  icon="library-outline"
+                  label="Subjects"
+                  value={subjects || null}
+                  color={T.primary}
+                />
+                <Row
+                  icon="people-outline"
+                  label="Student Type"
+                  value={cl?.studentType}
+                  color="#64748B"
+                />
                 {cl?.studentType === "GROUP" && (
-                  <Row icon="people-circle-outline" label="No. of Students" value={cl?.numberOfStudents?.toString()} color="#EC4899" />
+                  <Row
+                    icon="people-circle-outline"
+                    label="No. of Students"
+                    value={cl?.numberOfStudents?.toString()}
+                    color="#EC4899"
+                  />
                 )}
-                <Row icon="person-outline" label="Parent Name" value={cl?.parentName} color="#64748B" />
-                <Row icon="call-outline" label="Parent Phone" value={cl?.parentPhone} color="#10B981" />
-                <Row icon="mail-outline" label="Parent Email" value={cl?.parentEmail} color={T.primary} last />
+                <Row
+                  icon="person-outline"
+                  label="Parent Name"
+                  value={cl?.parentName}
+                  color="#64748B"
+                />
+                <Row
+                  icon="call-outline"
+                  label="Parent Phone"
+                  value={cl?.parentPhone}
+                  color="#10B981"
+                />
+                <Row
+                  icon="mail-outline"
+                  label="Parent Email"
+                  value={cl?.parentEmail}
+                  color={T.primary}
+                  last
+                />
               </ScrollView>
             )}
 
             {dtab === "class" && (
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={dm.rows}>
-                <Row icon="tv-outline" label="Mode" value={cl?.mode} color="#F59E0B" />
-                <Row icon="time-outline" label="Timing" value={cl?.timing} color="#8B5CF6" />
-                <Row icon="calendar-outline" label="Weekdays" value={cl?.weekdays?.join(", ") || null} color="#8B5CF6" />
-                <Row icon="repeat-outline" label="Classes / Month" value={cl?.classesPerMonth?.toString() ?? null} color={T.primary} />
-                <Row icon="hourglass-outline" label="Class Duration" value={cl?.classDurationHours ? `${cl.classDurationHours} hr` : null} color={T.primary} />
-                <Row icon="cash-outline" label="Student Fees" value={cl?.paymentAmount ? `₹${cl.paymentAmount}` : null} color="#10B981" />
-                <Row icon="wallet-outline" label="Tutor Fees" value={cl?.tutorFees ? `₹${cl.tutorFees}` : null} color="#10B981" />
-                <Row icon="male-female-outline" label="Preferred Tutor Gender" value={cl?.preferredTutorGender} color="#64748B" />
-                <Row icon="megaphone-outline" label="Lead Source" value={cl?.leadSource} color="#64748B" last />
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={dm.rows}
+              >
+                <Row
+                  icon="tv-outline"
+                  label="Mode"
+                  value={cl?.mode}
+                  color="#F59E0B"
+                />
+                <Row
+                  icon="time-outline"
+                  label="Timing"
+                  value={cl?.timing}
+                  color="#8B5CF6"
+                />
+                <Row
+                  icon="calendar-outline"
+                  label="Weekdays"
+                  value={cl?.weekdays?.join(", ") || null}
+                  color="#8B5CF6"
+                />
+                <Row
+                  icon="repeat-outline"
+                  label="Classes / Month"
+                  value={cl?.classesPerMonth?.toString() ?? null}
+                  color={T.primary}
+                />
+                <Row
+                  icon="hourglass-outline"
+                  label="Class Duration"
+                  value={
+                    cl?.classDurationHours
+                      ? `${cl.classDurationHours} hr`
+                      : null
+                  }
+                  color={T.primary}
+                />
+                <Row
+                  icon="cash-outline"
+                  label="Student Fees"
+                  value={cl?.paymentAmount ? `₹${cl.paymentAmount}` : null}
+                  color="#10B981"
+                />
+                <Row
+                  icon="wallet-outline"
+                  label="Tutor Fees"
+                  value={cl?.tutorFees ? `₹${cl.tutorFees}` : null}
+                  color="#10B981"
+                />
+                <Row
+                  icon="male-female-outline"
+                  label="Preferred Tutor Gender"
+                  value={cl?.preferredTutorGender}
+                  color="#64748B"
+                />
+                <Row
+                  icon="megaphone-outline"
+                  label="Lead Source"
+                  value={cl?.leadSource}
+                  color="#64748B"
+                  last
+                />
               </ScrollView>
             )}
 
             {dtab === "outcome" && (
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={dm.rows}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={dm.rows}
+              >
                 <Row
                   icon="person-done-outline"
                   label="Attendance"
                   value={demo.attendanceStatus}
-                  color={demo.attendanceStatus === "PRESENT" ? "#10B981" : demo.attendanceStatus === "ABSENT" ? "#EF4444" : "#64748B"}
+                  color={
+                    demo.attendanceStatus === "PRESENT"
+                      ? "#10B981"
+                      : demo.attendanceStatus === "ABSENT"
+                        ? "#EF4444"
+                        : "#64748B"
+                  }
                 />
-                <Row icon="document-text-outline" label="Topic Covered" value={demo.topicCovered} color={T.primary} />
-                <Row icon="hourglass-outline" label="Duration" value={demo.duration} color="#8B5CF6" />
-                <Row icon="refresh-outline" label="Result Updated" value={demo.resultUpdatedAt ? formatDate(demo.resultUpdatedAt) : null} color="#64748B" />
+                <Row
+                  icon="document-text-outline"
+                  label="Topic Covered"
+                  value={demo.topicCovered}
+                  color={T.primary}
+                />
+                <Row
+                  icon="hourglass-outline"
+                  label="Duration"
+                  value={demo.duration}
+                  color="#8B5CF6"
+                />
+                <Row
+                  icon="refresh-outline"
+                  label="Result Updated"
+                  value={
+                    demo.resultUpdatedAt
+                      ? formatDate(demo.resultUpdatedAt)
+                      : null
+                  }
+                  color="#64748B"
+                />
                 {demo.feedback ? (
                   <View style={[dm.row, { alignItems: "flex-start" }]}>
-                    <View style={[dm.rowIcon, { backgroundColor: "#F59E0B15", marginTop: 2 }]}>
-                      <Ionicons name="chatbubble-outline" size={13} color="#F59E0B" />
+                    <View
+                      style={[
+                        dm.rowIcon,
+                        { backgroundColor: "#F59E0B15", marginTop: 2 },
+                      ]}
+                    >
+                      <Ionicons
+                        name="chatbubble-outline"
+                        size={13}
+                        color="#F59E0B"
+                      />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={dm.rowLabel}>Feedback</Text>
-                      <Text style={[dm.rowValue, { lineHeight: 20, fontWeight: "500" }]}>{demo.feedback}</Text>
+                      <Text
+                        style={[
+                          dm.rowValue,
+                          { lineHeight: 20, fontWeight: "500" },
+                        ]}
+                      >
+                        {demo.feedback}
+                      </Text>
                     </View>
                   </View>
                 ) : null}
                 {demo.rejectionReason ? (
                   <View style={[dm.row, { alignItems: "flex-start" }]}>
-                    <View style={[dm.rowIcon, { backgroundColor: "#EF444415", marginTop: 2 }]}>
-                      <Ionicons name="close-circle-outline" size={13} color="#EF4444" />
+                    <View
+                      style={[
+                        dm.rowIcon,
+                        { backgroundColor: "#EF444415", marginTop: 2 },
+                      ]}
+                    >
+                      <Ionicons
+                        name="close-circle-outline"
+                        size={13}
+                        color="#EF4444"
+                      />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={dm.rowLabel}>Rejection Reason</Text>
-                      <Text style={[dm.rowValue, { lineHeight: 20, fontWeight: "500", color: "#EF4444" }]}>{demo.rejectionReason}</Text>
+                      <Text
+                        style={[
+                          dm.rowValue,
+                          {
+                            lineHeight: 20,
+                            fontWeight: "500",
+                            color: "#EF4444",
+                          },
+                        ]}
+                      >
+                        {demo.rejectionReason}
+                      </Text>
                     </View>
                   </View>
                 ) : null}
                 {demo.notes ? (
-                  <View style={[dm.row, { alignItems: "flex-start", borderBottomWidth: 0 }]}>
-                    <View style={[dm.rowIcon, { backgroundColor: `${T.primary}15`, marginTop: 2 }]}>
-                      <Ionicons name="pencil-outline" size={13} color={T.primary} />
+                  <View
+                    style={[
+                      dm.row,
+                      { alignItems: "flex-start", borderBottomWidth: 0 },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        dm.rowIcon,
+                        { backgroundColor: `${T.primary}15`, marginTop: 2 },
+                      ]}
+                    >
+                      <Ionicons
+                        name="pencil-outline"
+                        size={13}
+                        color={T.primary}
+                      />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={dm.rowLabel}>Notes</Text>
-                      <Text style={[dm.rowValue, { lineHeight: 20, fontWeight: "500" }]}>{demo.notes}</Text>
+                      <Text
+                        style={[
+                          dm.rowValue,
+                          { lineHeight: 20, fontWeight: "500" },
+                        ]}
+                      >
+                        {demo.notes}
+                      </Text>
                     </View>
                   </View>
                 ) : null}
-                {!demo.attendanceStatus && !demo.topicCovered && !demo.duration && !demo.feedback && !demo.rejectionReason && !demo.notes ? (
+                {!demo.attendanceStatus &&
+                !demo.topicCovered &&
+                !demo.duration &&
+                !demo.feedback &&
+                !demo.rejectionReason &&
+                !demo.notes ? (
                   <View style={dm.outcomeEmpty}>
                     <View style={dm.outcomeEmptyIcon}>
-                      <Ionicons name="hourglass-outline" size={24} color={T.mutedFg} />
+                      <Ionicons
+                        name="hourglass-outline"
+                        size={24}
+                        color={T.mutedFg}
+                      />
                     </View>
-                    <Text style={dm.outcomeEmptyTxt}>No outcome recorded yet</Text>
+                    <Text style={dm.outcomeEmptyTxt}>
+                      No outcome recorded yet
+                    </Text>
                   </View>
                 ) : null}
               </ScrollView>
@@ -508,7 +968,6 @@ const MyDemosScreen = ({
   const [selected, setSelected] = useState<TutorDemo | null>(null);
   const flatListRef = React.useRef<FlatList>(null);
 
-
   const [kbHeight, setKbHeight] = useState(0);
   useEffect(() => {
     const show = Keyboard.addListener(
@@ -519,15 +978,22 @@ const MyDemosScreen = ({
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => setKbHeight(0),
     );
-    return () => { show.remove(); hide.remove(); };
+    return () => {
+      show.remove();
+      hide.remove();
+    };
   }, []);
 
   const [submitItem, setSubmitItem] = useState<TutorDemo | null>(null);
   const [submitTopic, setSubmitTopic] = useState("");
   const [submitFeedback, setSubmitFeedback] = useState("");
-  const [submitAttStatus, setSubmitAttStatus] = useState<"PRESENT" | "ABSENT" | "">("");
+  const [submitAttStatus, setSubmitAttStatus] = useState<
+    "PRESENT" | "ABSENT" | ""
+  >("");
   const [submitSubmitting, setSubmitSubmitting] = useState(false);
-  const [localSubmittedIds, setLocalSubmittedIds] = useState<Set<string>>(new Set());
+  const [localSubmittedIds, setLocalSubmittedIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   const load = useCallback(
     async (p = 1, f = filter, append = false) => {
@@ -551,17 +1017,26 @@ const MyDemosScreen = ({
     [filter],
   );
 
-  useEffect(() => { load(1, filter); }, [filter]);
+  useEffect(() => {
+    load(1, filter);
+  }, [filter]);
 
   useEffect(() => {
     if (!highlightId || demos.length === 0) return;
     const idx = demos.findIndex((d) => d._id === highlightId);
     if (idx === -1) return;
     setSelected(demos[idx]);
-    flatListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
+    flatListRef.current?.scrollToIndex({
+      index: idx,
+      animated: true,
+      viewPosition: 0.3,
+    });
   }, [highlightId, demos]);
 
-  const onRefresh = () => { setRefreshing(true); load(1, filter); };
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(1, filter);
+  };
   const onLoadMore = () => {
     if (loadingMore || !hasMore || loading) return;
     setLoadingMore(true);
@@ -584,12 +1059,15 @@ const MyDemosScreen = ({
     if (!submitItem || !submitAttStatus) return;
     setSubmitSubmitting(true);
     try {
-      await submitDemoResult((submitItem.classLead as any)?._id ?? submitItem._id, {
-        status: "COMPLETED",
-        attendanceStatus: submitAttStatus,
-        topicCovered: submitTopic,
-        feedback: submitFeedback,
-      });
+      await submitDemoResult(
+        (submitItem.classLead as any)?._id ?? submitItem._id,
+        {
+          status: "COMPLETED",
+          attendanceStatus: submitAttStatus,
+          topicCovered: submitTopic,
+          feedback: submitFeedback,
+        },
+      );
       setLocalSubmittedIds((prev) => new Set(prev).add(submitItem._id));
       setSubmitItem(null);
     } catch {
@@ -609,7 +1087,11 @@ const MyDemosScreen = ({
         style={[s.hero, { paddingTop: Math.max(insets.top, 16) + 8 }]}
       >
         <View style={s.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={s.backBtn} hitSlop={12}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={s.backBtn}
+            hitSlop={12}
+          >
             <Ionicons name="chevron-back" size={20} color="#fff" />
           </Pressable>
           <View style={{ flex: 1 }}>
@@ -645,8 +1127,19 @@ const MyDemosScreen = ({
                   pressed && { transform: [{ scale: 0.96 }] },
                 ]}
               >
-                {meta ? <Ionicons name={meta.icon} size={11} color={active ? "#1a1a1a" : "rgba(255,255,255,0.85)"} /> : null}
-                <Text style={[s.filterTxt, active && { color: "#1a1a1a", fontWeight: "800" }]}>
+                {meta ? (
+                  <Ionicons
+                    name={meta.icon}
+                    size={11}
+                    color={active ? "#1a1a1a" : "rgba(255,255,255,0.85)"}
+                  />
+                ) : null}
+                <Text
+                  style={[
+                    s.filterTxt,
+                    active && { color: "#1a1a1a", fontWeight: "800" },
+                  ]}
+                >
                   {f.label}
                 </Text>
               </Pressable>
@@ -671,7 +1164,10 @@ const MyDemosScreen = ({
             <Text style={s.errorTxt}>{error}</Text>
             <Pressable
               onPress={() => load()}
-              style={({ pressed }) => [s.retryBtn, pressed && { transform: [{ scale: 0.97 }] }]}
+              style={({ pressed }) => [
+                s.retryBtn,
+                pressed && { transform: [{ scale: 0.97 }] },
+              ]}
             >
               <Text style={s.retryTxt}>Try Again</Text>
             </Pressable>
@@ -683,7 +1179,9 @@ const MyDemosScreen = ({
             </View>
             <Text style={s.emptyTitle}>No Demos Found</Text>
             <Text style={s.emptyTxt}>
-              {filter ? `No ${filter.toLowerCase()} demos yet.` : "You have no demos assigned yet."}
+              {filter
+                ? `No ${filter.toLowerCase()} demos yet.`
+                : "You have no demos assigned yet."}
             </Text>
           </View>
         ) : (
@@ -701,10 +1199,18 @@ const MyDemosScreen = ({
                 submitted={localSubmittedIds.has(item._id)}
               />
             )}
-            contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24, gap: 10 }}
+            contentContainerStyle={{
+              padding: 16,
+              paddingBottom: insets.bottom + 24,
+              gap: 10,
+            }}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.primary} />
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={T.primary}
+              />
             }
             onEndReached={onLoadMore}
             onEndReachedThreshold={0.3}
@@ -723,105 +1229,130 @@ const MyDemosScreen = ({
 
       {/* ── Submit Demo Modal ── */}
       {submitItem ? (
-        <Modal visible animationType="slide" transparent onRequestClose={() => setSubmitItem(null)}>
-            <View style={mds.backdrop}>
-              <View style={[mds.sheet, { marginBottom: kbHeight }]}>
-                <View style={mds.handle} />
+        <Modal
+          visible
+          animationType="slide"
+          transparent
+          onRequestClose={() => setSubmitItem(null)}
+        >
+          <View style={mds.backdrop}>
+            <View style={[mds.sheet, { marginBottom: kbHeight }]}>
+              <View style={mds.handle} />
 
-                <View style={mds.header}>
-                  <View style={mds.headerRow}>
-                    <View style={mds.headerIconWrap}>
-                      <Ionicons name="clipboard-outline" size={18} color="#7C3AED" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={mds.headerTitle}>Submit Demo Result</Text>
-                      <Text style={mds.headerSub} numberOfLines={1}>
-                        {submitItem.classLead?.studentName ?? "Student"}
-                      </Text>
-                    </View>
-                    <Pressable onPress={() => setSubmitItem(null)} style={mds.xBtn} hitSlop={8}>
-                      <Ionicons name="close" size={16} color={T.mutedFg} />
-                    </Pressable>
+              <View style={mds.header}>
+                <View style={mds.headerRow}>
+                  <View style={mds.headerIconWrap}>
+                    <Ionicons
+                      name="clipboard-outline"
+                      size={18}
+                      color="#7C3AED"
+                    />
                   </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={mds.headerTitle}>Submit Demo Result</Text>
+                    <Text style={mds.headerSub} numberOfLines={1}>
+                      {submitItem.classLead?.studentName ?? "Student"}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => setSubmitItem(null)}
+                    style={mds.xBtn}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="close" size={16} color={T.mutedFg} />
+                  </Pressable>
                 </View>
+              </View>
 
-                <ScrollView
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={mds.body}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  <Text style={mds.sectionLabel}>Attendance *</Text>
-                  <View style={mds.attRow}>
-                    {(["PRESENT", "ABSENT"] as const).map((a) => {
-                      const isActive = submitAttStatus === a;
-                      const col = a === "PRESENT" ? "#10B981" : "#EF4444";
-                      return (
-                        <Pressable
-                          key={a}
-                          onPress={() => setSubmitAttStatus(a)}
-                          style={({ pressed }) => [
-                            mds.attChip,
-                            isActive && { backgroundColor: col, borderColor: col },
-                            pressed && { transform: [{ scale: 0.97 }] },
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={mds.body}
+                keyboardShouldPersistTaps="handled"
+              >
+                <Text style={mds.sectionLabel}>Attendance *</Text>
+                <View style={mds.attRow}>
+                  {(["PRESENT", "ABSENT"] as const).map((a) => {
+                    const isActive = submitAttStatus === a;
+                    const col = a === "PRESENT" ? "#10B981" : "#EF4444";
+                    return (
+                      <Pressable
+                        key={a}
+                        onPress={() => setSubmitAttStatus(a)}
+                        style={({ pressed }) => [
+                          mds.attChip,
+                          isActive && {
+                            backgroundColor: col,
+                            borderColor: col,
+                          },
+                          pressed && { transform: [{ scale: 0.97 }] },
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            a === "PRESENT"
+                              ? "checkmark-circle"
+                              : "close-circle"
+                          }
+                          size={16}
+                          color={isActive ? "#fff" : col}
+                        />
+                        <Text
+                          style={[
+                            mds.attChipTxt,
+                            isActive && { color: "#fff" },
                           ]}
                         >
-                          <Ionicons
-                            name={a === "PRESENT" ? "checkmark-circle" : "close-circle"}
-                            size={16}
-                            color={isActive ? "#fff" : col}
-                          />
-                          <Text style={[mds.attChipTxt, isActive && { color: "#fff" }]}>
-                            {a === "PRESENT" ? "Present" : "Absent"}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
+                          {a === "PRESENT" ? "Present" : "Absent"}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                <Text style={mds.sectionLabel}>Topic Covered</Text>
+                <TextInput
+                  value={submitTopic}
+                  onChangeText={setSubmitTopic}
+                  style={mds.input}
+                  placeholder="e.g. Introduction to Algebra"
+                  placeholderTextColor={T.mutedFg}
+                />
+
+                <Text style={mds.sectionLabel}>Feedback</Text>
+                <TextInput
+                  value={submitFeedback}
+                  onChangeText={setSubmitFeedback}
+                  style={[mds.input, mds.inputMulti]}
+                  placeholder="How did the demo go?"
+                  placeholderTextColor={T.mutedFg}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+
+                <Pressable
+                  onPress={submitDemo}
+                  disabled={!submitAttStatus || submitSubmitting}
+                  style={({ pressed }) => [
+                    mds.submitBtn,
+                    (!submitAttStatus || submitSubmitting) && { opacity: 0.45 },
+                    pressed && { transform: [{ scale: 0.97 }] },
+                  ]}
+                >
+                  <View style={mds.submitBtnInner}>
+                    {submitSubmitting ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <>
+                        <Ionicons name="send-outline" size={15} color="#fff" />
+                        <Text style={mds.submitBtnTxt}>Submit Result</Text>
+                      </>
+                    )}
                   </View>
-
-                  <Text style={mds.sectionLabel}>Topic Covered</Text>
-                  <TextInput
-                    value={submitTopic}
-                    onChangeText={setSubmitTopic}
-                    style={mds.input}
-                    placeholder="e.g. Introduction to Algebra"
-                    placeholderTextColor={T.mutedFg}
-                  />
-
-                  <Text style={mds.sectionLabel}>Feedback</Text>
-                  <TextInput
-                    value={submitFeedback}
-                    onChangeText={setSubmitFeedback}
-                    style={[mds.input, mds.inputMulti]}
-                    placeholder="How did the demo go?"
-                    placeholderTextColor={T.mutedFg}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                  />
-
-                  <Pressable
-                    onPress={submitDemo}
-                    disabled={!submitAttStatus || submitSubmitting}
-                    style={({ pressed }) => [
-                      mds.submitBtn,
-                      (!submitAttStatus || submitSubmitting) && { opacity: 0.45 },
-                      pressed && { transform: [{ scale: 0.97 }] },
-                    ]}
-                  >
-                    <View style={mds.submitBtnInner}>
-                      {submitSubmitting ? (
-                        <ActivityIndicator color="#fff" size="small" />
-                      ) : (
-                        <>
-                          <Ionicons name="send-outline" size={15} color="#fff" />
-                          <Text style={mds.submitBtnTxt}>Submit Result</Text>
-                        </>
-                      )}
-                    </View>
-                  </Pressable>
-                </ScrollView>
-              </View>
+                </Pressable>
+              </ScrollView>
             </View>
+          </View>
         </Modal>
       ) : null}
     </View>
@@ -836,7 +1367,12 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#F4F7FB" },
 
   hero: { paddingHorizontal: 20, paddingBottom: 16, overflow: "hidden" },
-  topBar: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
+  },
   backBtn: {
     width: 38,
     height: 38,
@@ -847,7 +1383,12 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  heroTitle: { fontSize: 22, fontWeight: "800", color: "#fff", letterSpacing: -0.5 },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: -0.5,
+  },
   heroSub: { fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 2 },
   countPill: {
     flexDirection: "row",
@@ -860,7 +1401,12 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.15)",
   },
-  countDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: T.success },
+  countDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: T.success,
+  },
   countTxt: { fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.9)" },
 
   strip: {
@@ -873,8 +1419,20 @@ const s = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.08)",
   },
   stripItem: { flex: 1, alignItems: "center" },
-  stripVal: { color: "#fff", fontSize: 18, fontWeight: "800", letterSpacing: -0.5 },
-  stripLbl: { color: "rgba(255,255,255,0.45)", fontSize: 9, fontWeight: "600", textAlign: "center", marginTop: 3, letterSpacing: 0.2 },
+  stripVal: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  stripLbl: {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 9,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 3,
+    letterSpacing: 0.2,
+  },
   stripSep: { width: 1, height: 30, backgroundColor: "rgba(255,255,255,0.12)" },
 
   filterRow: { gap: 8, paddingRight: 4 },
@@ -889,31 +1447,69 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.15)",
     borderColor: "rgba(255,255,255,0.25)",
   },
-  filterTxt: { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.85)" },
+  filterTxt: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.85)",
+  },
 
   listWrap: { flex: 1 },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 32 },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    padding: 32,
+  },
   loadingTxt: { fontSize: 13, color: T.mutedFg },
 
   errorIconWrap: {
-    width: 60, height: 60, borderRadius: 30,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: "#FEF2F2",
-    alignItems: "center", justifyContent: "center",
-    borderWidth: 1.5, borderColor: "#FECACA",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#FECACA",
   },
-  errorTitle: { fontSize: 16, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.3 },
+  errorTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: T.textPrimary,
+    letterSpacing: -0.3,
+  },
   errorTxt: { fontSize: 13, color: T.mutedFg, textAlign: "center" },
-  retryBtn: { backgroundColor: T.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 10 },
+  retryBtn: {
+    backgroundColor: T.primary,
+    borderRadius: 10,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+  },
   retryTxt: { color: "#fff", fontWeight: "700", fontSize: 13 },
 
   emptyIcon: {
-    width: 88, height: 88, borderRadius: 44,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: "#8B5CF608",
-    alignItems: "center", justifyContent: "center",
-    borderWidth: 1.5, borderColor: "#8B5CF630",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#8B5CF630",
   },
-  emptyTitle: { fontSize: 18, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.3 },
-  emptyTxt: { fontSize: 13, color: T.mutedFg, textAlign: "center", lineHeight: 20 },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: T.textPrimary,
+    letterSpacing: -0.3,
+  },
+  emptyTxt: {
+    fontSize: 13,
+    color: T.mutedFg,
+    textAlign: "center",
+    lineHeight: 20,
+  },
 
   card: {
     backgroundColor: "#fff",
@@ -924,30 +1520,67 @@ const s = StyleSheet.create({
   },
   cardBody: { padding: 16, gap: 10 },
   cardTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  avatar: { width: 44, height: 44, borderRadius: 13, alignItems: "center", justifyContent: "center" },
-  avatarTxt: { color: "#fff", fontSize: 15, fontWeight: "800", letterSpacing: -0.3 },
-  studentName: { fontSize: 15, fontWeight: "800", color: "#0F172A", letterSpacing: -0.3 },
-  subjectTxt: { fontSize: 11, color: T.mutedFg, marginTop: 2, fontWeight: "500" },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarTxt: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  studentName: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.3,
+  },
+  subjectTxt: {
+    fontSize: 11,
+    color: T.mutedFg,
+    marginTop: 2,
+    fontWeight: "500",
+  },
   statusBadge: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    paddingHorizontal: 8, paddingVertical: 4,
-    borderRadius: 20, borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   statusTxt: { fontSize: 10, fontWeight: "800" },
   metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   metaChip: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    paddingHorizontal: 8, paddingVertical: 4,
-    borderRadius: 20, borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   metaChipTxt: { fontSize: 10, fontWeight: "700" },
   locRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   locTxt: { fontSize: 11, color: T.mutedFg, flex: 1, fontWeight: "500" },
-  notesPreview: { fontSize: 11, color: T.mutedFg, fontStyle: "italic", lineHeight: 16 },
+  notesPreview: {
+    fontSize: 11,
+    color: T.mutedFg,
+    fontStyle: "italic",
+    lineHeight: 16,
+  },
   cardDivider: { height: 1, backgroundColor: "#F1F5F9" },
   submitBar: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    paddingHorizontal: 16, paddingVertical: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
     backgroundColor: "#7C3AED08",
   },
   submitBarTxt: { flex: 1, fontSize: 12, fontWeight: "700", color: "#7C3AED" },
@@ -956,33 +1589,89 @@ const s = StyleSheet.create({
 // ─── Detail Modal Styles ──────────────────────────────────────────────────────
 
 const dm = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "flex-end",
+  },
   sheet: {
     backgroundColor: "#F8FAFC",
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    height: "88%", overflow: "hidden",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: "88%",
+    overflow: "hidden",
   },
   handle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: "#CBD5E1", alignSelf: "center",
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#CBD5E1",
+    alignSelf: "center",
     marginTop: 12,
   },
   headerWrap: {
     backgroundColor: "#fff",
-    paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16,
-    borderBottomWidth: 1, borderBottomColor: "#F1F5F9",
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
   headerTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  headerAvatar: { width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  headerAvatarTxt: { color: "#fff", fontSize: 16, fontWeight: "800", letterSpacing: -0.3 },
-  headerName: { fontSize: 16, fontWeight: "800", color: "#0F172A", letterSpacing: -0.3 },
+  headerAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerAvatarTxt: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  headerName: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.3,
+  },
   headerSubject: { fontSize: 11, color: T.mutedFg, fontWeight: "500" },
-  leadPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: "#F1F5F9" },
+  leadPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: "#F1F5F9",
+  },
   leadId: { fontSize: 10, color: T.mutedFg, fontWeight: "700" },
-  xBtn: { width: 30, height: 30, borderRadius: 8, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
-  bigBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
+  xBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bigBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
   bigBadgeTxt: { fontSize: 11, fontWeight: "800" },
-  infoPill: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20, backgroundColor: "#F1F5F9" },
+  infoPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+    backgroundColor: "#F1F5F9",
+  },
   infoPillTxt: { fontSize: 11, fontWeight: "700" },
 
   tabContainer: {
@@ -993,8 +1682,13 @@ const dm = StyleSheet.create({
     padding: 3,
   },
   tabItem: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    paddingVertical: 7, gap: 4, borderRadius: 9,
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 7,
+    gap: 4,
+    borderRadius: 9,
   },
   tabLabel: { fontSize: 11, fontWeight: "600", color: T.mutedFg },
 
@@ -1002,70 +1696,172 @@ const dm = StyleSheet.create({
   rows: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 24 },
 
   row: {
-    flexDirection: "row", alignItems: "center", gap: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     paddingVertical: 11,
-    borderBottomWidth: 1, borderBottomColor: T.border,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
   },
-  rowIcon: { width: 30, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  rowLabel: { fontSize: 10, fontWeight: "700", color: T.mutedFg, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 },
+  rowIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rowLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: T.mutedFg,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
   rowValue: { fontSize: 13, fontWeight: "600", color: T.textPrimary },
 
   mapsBtn: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: "#EFF6FF", borderWidth: 1, borderColor: "#BFDBFE",
-    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11,
-    marginTop: 8, marginBottom: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    marginTop: 8,
+    marginBottom: 4,
   },
-  mapsBtnIcon: { width: 26, height: 26, borderRadius: 8, backgroundColor: T.primary, alignItems: "center", justifyContent: "center" },
+  mapsBtnIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: T.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   mapsBtnTxt: { flex: 1, fontSize: 13, fontWeight: "700", color: T.primary },
 
   outcomeEmpty: { alignItems: "center", paddingVertical: 28, gap: 10 },
-  outcomeEmptyIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
+  outcomeEmptyIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   outcomeEmptyTxt: { fontSize: 13, color: T.mutedFg },
 });
 
 // ─── Submit Modal Styles ──────────────────────────────────────────────────────
 
 const mds = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "85%", overflow: "hidden" },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: "#CBD5E1", alignSelf: "center", marginTop: 12 },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "85%",
+    overflow: "hidden",
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#CBD5E1",
+    alignSelf: "center",
+    marginTop: 12,
+  },
   header: {
-    paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16,
-    borderBottomWidth: 1, borderBottomColor: "#F1F5F9",
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
   headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   headerIconWrap: {
-    width: 44, height: 44, borderRadius: 13,
-    backgroundColor: "#7C3AED10", borderWidth: 1, borderColor: "#7C3AED20",
-    alignItems: "center", justifyContent: "center",
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: "#7C3AED10",
+    borderWidth: 1,
+    borderColor: "#7C3AED20",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  headerTitle: { fontSize: 16, fontWeight: "800", color: "#0F172A", letterSpacing: -0.3 },
-  headerSub: { fontSize: 12, color: T.mutedFg, marginTop: 1, fontWeight: "500" },
-  xBtn: { width: 30, height: 30, borderRadius: 8, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.3,
+  },
+  headerSub: {
+    fontSize: 12,
+    color: T.mutedFg,
+    marginTop: 1,
+    fontWeight: "500",
+  },
+  xBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   body: { paddingHorizontal: 16, paddingBottom: 32, gap: 10 },
-  sectionLabel: { fontSize: 11, fontWeight: "800", color: T.mutedFg, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: T.mutedFg,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 4,
+  },
 
   attRow: { flexDirection: "row", gap: 10 },
   attChip: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
-    paddingVertical: 13, borderRadius: 12, borderWidth: 1.5,
-    backgroundColor: "transparent", borderColor: T.border,
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    paddingVertical: 13,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    backgroundColor: "transparent",
+    borderColor: T.border,
   },
   attChipTxt: { fontSize: 13, fontWeight: "800", color: T.textPrimary },
 
   input: {
-    borderWidth: 1, borderColor: T.border, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 13, color: T.textPrimary, backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: T.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 13,
+    color: T.textPrimary,
+    backgroundColor: "#F8FAFC",
   },
   inputMulti: { height: 90, paddingTop: 12 },
 
   submitBtn: { marginTop: 4, borderRadius: 13, overflow: "hidden" },
   submitBtnInner: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8, paddingVertical: 14, backgroundColor: T.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    backgroundColor: T.primary,
   },
   submitBtnTxt: { fontSize: 14, fontWeight: "800", color: "#fff" },
 });

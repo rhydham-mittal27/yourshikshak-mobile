@@ -69,14 +69,24 @@ const ScalePressable = ({
   return (
     <Pressable
       onPressIn={() =>
-        Animated.timing(scale, { toValue: 0.97, duration: 100, useNativeDriver: true }).start()
+        Animated.timing(scale, {
+          toValue: 0.97,
+          duration: 100,
+          useNativeDriver: true,
+        }).start()
       }
       onPressOut={() =>
-        Animated.timing(scale, { toValue: 1, duration: 160, useNativeDriver: true }).start()
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 160,
+          useNativeDriver: true,
+        }).start()
       }
       onPress={onPress}
     >
-      <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
+      <Animated.View style={[style, { transform: [{ scale }] }]}>
+        {children}
+      </Animated.View>
     </Pressable>
   );
 };
@@ -135,7 +145,9 @@ const InfoRow = ({
       <Ionicons name={icon as any} size={14} color={T.primary} />
     </View>
     <Text style={cd.infoLabel}>{label}</Text>
-    <Text style={[cd.infoValue, valueColor ? { color: valueColor } : {}]}>{value}</Text>
+    <Text style={[cd.infoValue, valueColor ? { color: valueColor } : {}]}>
+      {value}
+    </Text>
   </View>
 );
 
@@ -149,15 +161,30 @@ const ClassDetailsScreen = () => {
 
   const headerAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(headerAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+    Animated.timing(headerAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const statusColor =
-    cls.status === "ACTIVE" ? T.success : cls.status === "PAUSED" ? T.warning : T.error;
+    cls.status === "ACTIVE"
+      ? T.success
+      : cls.status === "PAUSED"
+        ? T.warning
+        : T.error;
   const feeColor =
-    cls.fee.status === "PAID" ? T.success : cls.fee.status === "DUE" ? T.warning : T.error;
+    cls.fee.status === "PAID"
+      ? T.success
+      : cls.fee.status === "DUE"
+        ? T.warning
+        : T.error;
 
-  const stars = Array.from({ length: 5 }, (_, i) => i < Math.round(cls.teacher.rating));
+  const stars = Array.from(
+    { length: 5 },
+    (_, i) => i < Math.round(cls.teacher.rating),
+  );
 
   return (
     <View style={cd.root}>
@@ -176,31 +203,57 @@ const ClassDetailsScreen = () => {
         <Animated.View style={{ opacity: headerAnim }}>
           <View style={cd.heroTop}>
             <Pressable onPress={() => navigation.goBack()} style={cd.backBtn}>
-              <Ionicons name="chevron-back" size={22} color="rgba(255,255,255,0.8)" />
+              <Ionicons
+                name="chevron-back"
+                size={22}
+                color="rgba(255,255,255,0.8)"
+              />
             </Pressable>
-            <View style={[cd.statusPill, { backgroundColor: `${statusColor}22`, borderColor: `${statusColor}44` }]}>
+            <View
+              style={[
+                cd.statusPill,
+                {
+                  backgroundColor: `${statusColor}22`,
+                  borderColor: `${statusColor}44`,
+                },
+              ]}
+            >
               <View style={[cd.statusDot, { backgroundColor: statusColor }]} />
-              <Text style={[cd.statusTxt, { color: statusColor }]}>{cls.status}</Text>
+              <Text style={[cd.statusTxt, { color: statusColor }]}>
+                {cls.status}
+              </Text>
             </View>
           </View>
 
           <Text style={cd.heroSubject}>{cls.subject}</Text>
           <View style={cd.heroMeta}>
             <View style={cd.metaChip}>
-              <Ionicons name="school-outline" size={11} color="rgba(255,255,255,0.6)" />
+              <Ionicons
+                name="school-outline"
+                size={11}
+                color="rgba(255,255,255,0.6)"
+              />
               <Text style={cd.metaChipTxt}>{cls.board}</Text>
             </View>
             <View style={cd.metaChip}>
-              <Ionicons name="layers-outline" size={11} color="rgba(255,255,255,0.6)" />
+              <Ionicons
+                name="layers-outline"
+                size={11}
+                color="rgba(255,255,255,0.6)"
+              />
               <Text style={cd.metaChipTxt}>Grade {cls.grade}</Text>
             </View>
             <View style={cd.metaChip}>
               <Ionicons
-                name={cls.mode === "ONLINE" ? "videocam-outline" : "home-outline"}
+                name={
+                  cls.mode === "ONLINE" ? "videocam-outline" : "home-outline"
+                }
                 size={11}
                 color="rgba(255,255,255,0.6)"
               />
-              <Text style={cd.metaChipTxt}>{cls.mode === "ONLINE" ? "Online" : "Offline"}</Text>
+              <Text style={cd.metaChipTxt}>
+                {cls.mode === "ONLINE" ? "Online" : "Offline"}
+              </Text>
             </View>
           </View>
         </Animated.View>
@@ -208,7 +261,10 @@ const ClassDetailsScreen = () => {
 
       <ScrollView
         style={cd.scroll}
-        contentContainerStyle={[cd.content, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[
+          cd.content,
+          { paddingBottom: insets.bottom + 100 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Teacher Card ── */}
@@ -241,7 +297,9 @@ const ClassDetailsScreen = () => {
                   {cls.teacher.rating} · {cls.teacher.reviews} reviews
                 </Text>
               </View>
-              <Text style={cd.expTxt}>{cls.teacher.experience} years experience</Text>
+              <Text style={cd.expTxt}>
+                {cls.teacher.experience} years experience
+              </Text>
             </View>
             <ScalePressable
               onPress={() => Linking.openURL(`tel:${cls.teacher.phone}`)}
@@ -278,7 +336,11 @@ const ClassDetailsScreen = () => {
             value={`${cls.schedule.duration} minutes`}
           />
           {cls.mode === "OFFLINE" && (
-            <InfoRow icon="location-outline" label="Location" value={cls.location} />
+            <InfoRow
+              icon="location-outline"
+              label="Location"
+              value={cls.location}
+            />
           )}
         </SectionCard>
 
@@ -287,14 +349,34 @@ const ClassDetailsScreen = () => {
           <Text style={cd.sectionHead}>Fees & Payment</Text>
           <View style={cd.feeRow}>
             <View>
-              <Text style={cd.feeAmount}>₹{cls.fee.amount.toLocaleString("en-IN")}</Text>
+              <Text style={cd.feeAmount}>
+                ₹{cls.fee.amount.toLocaleString("en-IN")}
+              </Text>
               <Text style={cd.feeCycle}>per {cls.fee.cycle}</Text>
             </View>
-            <View style={[cd.feeBadge, { backgroundColor: `${feeColor}15`, borderColor: `${feeColor}30` }]}>
-              <Text style={[cd.feeBadgeTxt, { color: feeColor }]}>{cls.fee.status}</Text>
+            <View
+              style={[
+                cd.feeBadge,
+                {
+                  backgroundColor: `${feeColor}15`,
+                  borderColor: `${feeColor}30`,
+                },
+              ]}
+            >
+              <Text style={[cd.feeBadgeTxt, { color: feeColor }]}>
+                {cls.fee.status}
+              </Text>
             </View>
           </View>
-          <InfoRow icon="calendar-outline" label="Next Due" value={new Date(cls.fee.nextDue).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} />
+          <InfoRow
+            icon="calendar-outline"
+            label="Next Due"
+            value={new Date(cls.fee.nextDue).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })}
+          />
         </SectionCard>
 
         {/* ── Actions ── */}
@@ -302,16 +384,59 @@ const ClassDetailsScreen = () => {
           <Text style={cd.sectionHead}>Actions</Text>
           <View style={cd.actionsGrid}>
             {[
-              { icon: "calendar-outline",     label: "Reschedule",      color: T.primary,   onPress: () => navigation.navigate("RescheduleClass", { classId: cls.id, subject: cls.subject }) },
-              { icon: "pause-circle-outline", label: "Pause Class",     color: T.warning,   onPress: () => navigation.navigate("PauseClass", { classId: cls.id, subject: cls.subject }) },
-              { icon: "swap-horizontal-outline", label: "Change Teacher", color: T.info,    onPress: () => {} },
-              { icon: "close-circle-outline", label: "Discontinue",     color: T.error,     onPress: () => {} },
+              {
+                icon: "calendar-outline",
+                label: "Reschedule",
+                color: T.primary,
+                onPress: () =>
+                  navigation.navigate("RescheduleClass", {
+                    classId: cls.id,
+                    subject: cls.subject,
+                  }),
+              },
+              {
+                icon: "pause-circle-outline",
+                label: "Pause Class",
+                color: T.warning,
+                onPress: () =>
+                  navigation.navigate("PauseClass", {
+                    classId: cls.id,
+                    subject: cls.subject,
+                  }),
+              },
+              {
+                icon: "swap-horizontal-outline",
+                label: "Change Teacher",
+                color: T.info,
+                onPress: () => {},
+              },
+              {
+                icon: "close-circle-outline",
+                label: "Discontinue",
+                color: T.error,
+                onPress: () => {},
+              },
             ].map((action, i) => (
-              <ScalePressable key={i} onPress={action.onPress} style={cd.actionTile}>
-                <View style={[cd.actionIcon, { backgroundColor: `${action.color}12` }]}>
-                  <Ionicons name={action.icon as any} size={20} color={action.color} />
+              <ScalePressable
+                key={i}
+                onPress={action.onPress}
+                style={cd.actionTile}
+              >
+                <View
+                  style={[
+                    cd.actionIcon,
+                    { backgroundColor: `${action.color}12` },
+                  ]}
+                >
+                  <Ionicons
+                    name={action.icon as any}
+                    size={20}
+                    color={action.color}
+                  />
                 </View>
-                <Text style={[cd.actionLabel, { color: action.color }]}>{action.label}</Text>
+                <Text style={[cd.actionLabel, { color: action.color }]}>
+                  {action.label}
+                </Text>
               </ScalePressable>
             ))}
           </View>
@@ -320,7 +445,9 @@ const ClassDetailsScreen = () => {
 
       {/* ── Calendar FAB ── */}
       <ScalePressable
-        onPress={() => navigation.navigate("ClassCalendar", { classId: cls.id })}
+        onPress={() =>
+          navigation.navigate("ClassCalendar", { classId: cls.id })
+        }
         style={[cd.fab, { bottom: insets.bottom + 16 }]}
       >
         <LinearGradient colors={[T.primary, T.primaryDark]} style={cd.fabGrad}>
@@ -335,59 +462,242 @@ const ClassDetailsScreen = () => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const cd = StyleSheet.create({
-  root:         { flex: 1, backgroundColor: T.background },
-  hero:         { paddingHorizontal: T.base, paddingBottom: T.lg, overflow: "hidden" },
-  orbA:         { position: "absolute", width: 200, height: 200, borderRadius: 100, backgroundColor: `${T.primary}10`, top: -60, right: -50 } as any,
-  orbB:         { position: "absolute", width: 120, height: 120, borderRadius: 60,  backgroundColor: `${T.secondary}08`, bottom: -40, left: 30 } as any,
-  heroTop:      { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: T.md },
-  backBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" },
-  statusPill:   { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, borderWidth: 1 },
-  statusDot:    { width: 6, height: 6, borderRadius: 3 },
-  statusTxt:    { fontSize: 11, fontWeight: "700", letterSpacing: 0.4 },
-  heroSubject:  { fontSize: 26, fontWeight: "800", color: "#fff", letterSpacing: -0.5, marginBottom: 10 },
-  heroMeta:     { flexDirection: "row", gap: 8 },
-  metaChip:     { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "rgba(255,255,255,0.08)", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99 },
-  metaChipTxt:  { fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: "600" },
+  root: { flex: 1, backgroundColor: T.background },
+  hero: { paddingHorizontal: T.base, paddingBottom: T.lg, overflow: "hidden" },
+  orbA: {
+    position: "absolute",
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: `${T.primary}10`,
+    top: -60,
+    right: -50,
+  } as any,
+  orbB: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: `${T.secondary}08`,
+    bottom: -40,
+    left: 30,
+  } as any,
+  heroTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: T.md,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 99,
+    borderWidth: 1,
+  },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusTxt: { fontSize: 11, fontWeight: "700", letterSpacing: 0.4 },
+  heroSubject: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: -0.5,
+    marginBottom: 10,
+  },
+  heroMeta: { flexDirection: "row", gap: 8 },
+  metaChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 99,
+  },
+  metaChipTxt: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.65)",
+    fontWeight: "600",
+  },
 
-  scroll:       { flex: 1 },
-  content:      { padding: T.base, gap: 12 },
+  scroll: { flex: 1 },
+  content: { padding: T.base, gap: 12 },
 
-  card:         { backgroundColor: T.paper, borderRadius: T.radiusXl, padding: T.base, borderWidth: 1, borderColor: T.border },
-  sectionHead:  { fontSize: 13, fontWeight: "800", color: T.textDisabled, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: T.sm },
+  card: {
+    backgroundColor: T.paper,
+    borderRadius: T.radiusXl,
+    padding: T.base,
+    borderWidth: 1,
+    borderColor: T.border,
+  },
+  sectionHead: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: T.textDisabled,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginBottom: T.sm,
+  },
 
-  teacherRow:   { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  avatar:       { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: T.border },
-  avatarFallback: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
+  teacherRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: T.border,
+  },
+  avatarFallback: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   avatarInitials: { fontSize: 18, fontWeight: "800", color: "#fff" },
-  teacherName:  { fontSize: 15, fontWeight: "800", color: T.textPrimary, marginBottom: 4 },
-  starsRow:     { flexDirection: "row", alignItems: "center", gap: 2, marginBottom: 3 },
-  ratingTxt:    { fontSize: 11, color: T.textSecondary, marginLeft: 4, fontWeight: "600" },
-  expTxt:       { fontSize: 11, color: T.textSecondary },
-  callBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: `${T.primary}12`, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: `${T.primary}20` },
-  divider:      { height: 1, backgroundColor: T.border, marginVertical: 10 },
-  qualWrap:     { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  qualChip:     { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: T.muted, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99 },
-  qualTxt:      { fontSize: 11, color: T.textSecondary, fontWeight: "600" },
+  teacherName: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: T.textPrimary,
+    marginBottom: 4,
+  },
+  starsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    marginBottom: 3,
+  },
+  ratingTxt: {
+    fontSize: 11,
+    color: T.textSecondary,
+    marginLeft: 4,
+    fontWeight: "600",
+  },
+  expTxt: { fontSize: 11, color: T.textSecondary },
+  callBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: `${T.primary}12`,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: `${T.primary}20`,
+  },
+  divider: { height: 1, backgroundColor: T.border, marginVertical: 10 },
+  qualWrap: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  qualChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: T.muted,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 99,
+  },
+  qualTxt: { fontSize: 11, color: T.textSecondary, fontWeight: "600" },
 
-  infoRow:      { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: T.border },
-  infoIconWrap: { width: 24, height: 24, borderRadius: 12, backgroundColor: `${T.primary}10`, alignItems: "center", justifyContent: "center" },
-  infoLabel:    { flex: 1, fontSize: 13, color: T.textSecondary, fontWeight: "600" },
-  infoValue:    { fontSize: 13, color: T.textPrimary, fontWeight: "700", textAlign: "right", maxWidth: "55%" },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  infoIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: `${T.primary}10`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: T.textSecondary,
+    fontWeight: "600",
+  },
+  infoValue: {
+    fontSize: 13,
+    color: T.textPrimary,
+    fontWeight: "700",
+    textAlign: "right",
+    maxWidth: "55%",
+  },
 
-  feeRow:       { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
-  feeAmount:    { fontSize: 24, fontWeight: "800", color: T.textPrimary, letterSpacing: -0.5 },
-  feeCycle:     { fontSize: 11, color: T.textSecondary, fontWeight: "600", marginTop: 1 },
-  feeBadge:     { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, borderWidth: 1 },
-  feeBadgeTxt:  { fontSize: 12, fontWeight: "800", letterSpacing: 0.3 },
+  feeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  feeAmount: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: T.textPrimary,
+    letterSpacing: -0.5,
+  },
+  feeCycle: {
+    fontSize: 11,
+    color: T.textSecondary,
+    fontWeight: "600",
+    marginTop: 1,
+  },
+  feeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 99,
+    borderWidth: 1,
+  },
+  feeBadgeTxt: { fontSize: 12, fontWeight: "800", letterSpacing: 0.3 },
 
-  actionsGrid:  { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  actionTile:   { width: "47%", backgroundColor: T.muted, borderRadius: T.radiusLg, padding: 14, alignItems: "center", gap: 8, borderWidth: 1, borderColor: T.border },
-  actionIcon:   { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
-  actionLabel:  { fontSize: 12, fontWeight: "700", textAlign: "center" },
+  actionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  actionTile: {
+    width: "47%",
+    backgroundColor: T.muted,
+    borderRadius: T.radiusLg,
+    padding: 14,
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: T.border,
+  },
+  actionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionLabel: { fontSize: 12, fontWeight: "700", textAlign: "center" },
 
-  fab:          { position: "absolute", alignSelf: "center" },
-  fabGrad:      { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 20, paddingVertical: 13, borderRadius: 99 },
-  fabTxt:       { color: "#fff", fontSize: 14, fontWeight: "700" },
+  fab: { position: "absolute", alignSelf: "center" },
+  fabGrad: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    borderRadius: 99,
+  },
+  fabTxt: { color: "#fff", fontSize: 14, fontWeight: "700" },
 });
 
 export default ClassDetailsScreen;
