@@ -16,6 +16,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { RouteProp } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { forgotPassword, resetPassword } from "../api/client";
@@ -23,7 +24,8 @@ import { useModal } from "../context/ModalContext";
 import { T } from "../constants/colors";
 
 type Nav = StackNavigationProp<RootStackParamList, "ForgotPassword">;
-interface Props { navigation: Nav }
+type Route = RouteProp<RootStackParamList, "ForgotPassword">;
+interface Props { navigation: Nav; route: Route }
 
 // ─── Floating-label input ─────────────────────────────────────────────────────
 
@@ -82,16 +84,18 @@ const FInput = ({
 
 type Step = "email" | "reset";
 
-const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
+const ForgotPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { showError } = useModal();
 
-  const [step, setStep] = useState<Step>("email");
+  const deepLinkToken = route?.params?.token;
+
+  const [step, setStep] = useState<Step>(deepLinkToken ? "reset" : "email");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
 
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(deepLinkToken ?? "");
   const [tokenError, setTokenError] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordError, setNewPasswordError] = useState("");
@@ -244,14 +248,16 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
                   <Ionicons name="checkmark-circle" size={15} color={T.success} />
                   <Text style={s.successBannerTxt}>Reset token sent! Check your email inbox (and spam folder).</Text>
                 </View>
-                <FInput
-                  label="Reset Token"
-                  value={token}
-                  onChange={v => { setToken(v); setTokenError(""); }}
-                  icon="key-outline"
-                  error={tokenError}
-                  placeholder="Paste the token from your email"
-                />
+                {!deepLinkToken && (
+                  <FInput
+                    label="Reset Token"
+                    value={token}
+                    onChange={v => { setToken(v); setTokenError(""); }}
+                    icon="key-outline"
+                    error={tokenError}
+                    placeholder="Paste the token from your email"
+                  />
+                )}
                 <FInput
                   label="New Password"
                   value={newPassword}
