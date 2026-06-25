@@ -27,7 +27,7 @@ import MyClassesScreen from "../screens/MyClassesScreen";
 import TimetableScreen from "../screens/TimetableScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import PaymentsScreen from "../screens/PaymentsScreen";
-import ParentDashboardScreen from "../screens/ParentDashboardScreen";
+import ParentTabNavigator from "./ParentTabNavigator";
 import RequestTutorScreen from "../screens/RequestTutorScreen";
 import RequestConfirmationScreen from "../screens/RequestConfirmationScreen";
 import { ModalProvider } from "../context/ModalContext";
@@ -211,7 +211,7 @@ const AppNavigator = () => {
           />
           <Stack.Screen
             name="ParentDashboard"
-            component={ParentDashboardScreen}
+            component={ParentTabNavigator}
             initialParams={savedParams ?? undefined}
           />
           <Stack.Screen name="TutorProfile" component={TutorProfileScreen} />

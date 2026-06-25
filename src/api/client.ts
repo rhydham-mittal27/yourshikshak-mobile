@@ -1006,6 +1006,79 @@ export const raiseParentConcern = (payload: {
 }): Promise<any> =>
   apiClient.post('/v1/parents/concern', payload) as any;
 
+// ─── Parent Sessions (Classes tab) ────────────────────────────────────────────
+
+export interface ParentSession {
+  _id: string;
+  sessionDate: string;
+  timeSlot: string;
+  sessionNumber: number;
+  status: 'SCHEDULED' | 'COMPLETED' | 'MISSED' | 'RESCHEDULED' | 'CANCELLED';
+  topicsCovered?: string[];
+  tutorNote?: string;
+  subject?: string;
+  duration?: number;
+}
+
+export interface ParentAttendanceMonth {
+  month: string; // "2025-06"
+  sessions: ParentSession[];
+  totalSessions: number;
+  attended: number;
+  verificationStatus: 'PENDING' | 'VERIFIED' | 'NOT_REQUIRED';
+}
+
+export const getParentSessions = (month?: string): Promise<{ data: ParentAttendanceMonth }> =>
+  apiClient.get(`/v1/parents/sessions${month ? `?month=${month}` : ''}`) as any;
+
+export const verifyParentAttendance = (payload: {
+  month: string;
+  verifiedSessions: string[];
+  flaggedSessions: Array<{ sessionId: string; reason: string }>;
+}): Promise<any> =>
+  apiClient.post('/v1/parents/attendance/verify', payload) as any;
+
+export const requestReschedule = (payload: {
+  sessionId: string;
+  preferredDate: string;
+  preferredTime: string;
+}): Promise<any> =>
+  apiClient.post('/v1/parents/reschedule', payload) as any;
+
+// ─── Parent Payments ──────────────────────────────────────────────────────────
+
+export interface ParentPayment {
+  _id: string;
+  amount: number;
+  dueDate: string;
+  paidDate?: string;
+  status: 'PAID' | 'PENDING' | 'OVERDUE';
+  month: string;
+  invoiceUrl?: string;
+  breakdown?: Array<{ label: string; amount: number }>;
+}
+
+export interface ParentPaymentSummary {
+  nextPayment?: ParentPayment;
+  history: ParentPayment[];
+  valueSummary?: {
+    classesCompleted: number;
+    subjectsActive: number;
+    amountSpent: number;
+    progressGain?: number;
+    progressSubject?: string;
+  };
+  referral?: {
+    code: string;
+    referredCount: number;
+    savedAmount: number;
+    rewardBalance: number;
+  };
+}
+
+export const getParentPayments = (): Promise<{ data: ParentPaymentSummary }> =>
+  apiClient.get('/v1/parents/payments') as any;
+
 // ─── Teacher Requests ─────────────────────────────────────────────────────────
 
 /** Alias so new code can reference OptionItem — same shape as Option */
