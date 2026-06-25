@@ -1291,6 +1291,55 @@ const ParentDashboardScreen = () => {
           ) : (
             /* ── Active KPI view ────────────────────────────────────────── */
             <>
+              {/* ── Progress Pulse Card (emotional hero) ── */}
+              {data?.latestTest && (
+                <View style={ppc.card}>
+                  <View style={ppc.leftBorder} />
+                  <View style={ppc.content}>
+                    <View style={ppc.topRow}>
+                      <View style={ppc.iconBox}>
+                        <Ionicons name="trending-up-outline" size={16} color={T.success} />
+                      </View>
+                      <Text style={ppc.label}>Latest Result</Text>
+                      <View style={ppc.trendBadge}>
+                        <Text style={ppc.trendTxt}>↑ Good</Text>
+                      </View>
+                    </View>
+                    <View style={ppc.scoreRow}>
+                      <Text style={ppc.scoreBig}>
+                        {data.latestTest.score}
+                        <Text style={ppc.scoreTotal}>/{data.latestTest.totalMarks}</Text>
+                      </Text>
+                      <View style={ppc.scoreRight}>
+                        <Text style={ppc.scorePct}>
+                          {Math.round((data.latestTest.score / data.latestTest.totalMarks) * 100)}%
+                        </Text>
+                        <Text style={ppc.scoreSubject}>{data.latestTest.subject}</Text>
+                      </View>
+                    </View>
+                    <Text style={ppc.insight}>
+                      {data.latestTest.score / data.latestTest.totalMarks >= 0.8
+                        ? `${cls?.tutor?.name?.split(" ")[0] ?? "Your tutor"}'s sessions are showing results. Keep it up! 🎯`
+                        : `There's room to grow in ${data.latestTest.subject}. Your coordinator is watching closely.`}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* ── Contextual Banner (one at a time, highest priority) ── */}
+              {cls?.attendancePercentage != null && cls.attendancePercentage < 75 && (
+                <View style={cb.card}>
+                  <Ionicons name="warning-outline" size={16} color={T.warning} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={cb.title}>Attendance needs attention</Text>
+                    <Text style={cb.sub}>
+                      {cls.studentName}'s attendance is at {Math.round(cls.attendancePercentage)}% this month.
+                      Regular classes are key to progress.
+                    </Text>
+                  </View>
+                </View>
+              )}
+
               {/* KPI grid */}
               <View style={s.kpiGrid}>
                 <KpiCard
@@ -1403,36 +1452,28 @@ const ParentDashboardScreen = () => {
               <View style={qa.row}>
                 {[
                   {
+                    icon: "wallet-outline",
+                    color: T.success,
+                    label: "Pay Fees",
+                    onPress: () => showError("Coming Soon", "Online payment will be available soon."),
+                  },
+                  {
                     icon: "calendar-outline",
                     color: T.primary,
                     label: "Reschedule",
-                    onPress: () =>
-                      showError(
-                        "Coming Soon",
-                        "Reschedule will be available soon.",
-                      ),
-                  },
-                  {
-                    icon: "pause-circle-outline",
-                    color: T.warning,
-                    label: "Pause Class",
-                    onPress: () =>
-                      showError(
-                        "Coming Soon",
-                        "Pause class will be available soon.",
-                      ),
-                  },
-                  {
-                    icon: "alert-circle-outline",
-                    color: T.error,
-                    label: "Raise Concern",
-                    onPress: () => setShowConcern(true),
+                    onPress: () => showError("Coming Soon", "Reschedule will be available soon."),
                   },
                   {
                     icon: "add-circle-outline",
                     color: T.secondary,
-                    label: "Add Subject",
+                    label: "Extra Class",
                     onPress: () => navigation.navigate("RequestTutor"),
+                  },
+                  {
+                    icon: "alert-circle-outline",
+                    color: T.error,
+                    label: "Raise Issue",
+                    onPress: () => setShowConcern(true),
                   },
                 ].map((item) => (
                   <Pressable
@@ -1973,6 +2014,32 @@ const prog = StyleSheet.create({
     overflow: "hidden",
   },
   fill: { height: 6, borderRadius: 3 },
+});
+
+// Progress Pulse Card
+const ppc = StyleSheet.create({
+  card: { flexDirection: "row", backgroundColor: T.paper, borderRadius: T.radiusLg, borderWidth: 1, borderColor: `${T.success}30`, overflow: "hidden", marginBottom: 4 },
+  leftBorder: { width: 4, backgroundColor: T.success },
+  content: { flex: 1, padding: 14, gap: 8 },
+  topRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  iconBox: { width: 26, height: 26, borderRadius: T.radiusMd, backgroundColor: `${T.success}15`, alignItems: "center", justifyContent: "center" },
+  label: { flex: 1, fontSize: 11, fontWeight: "700", color: T.mutedFg, textTransform: "uppercase", letterSpacing: 0.4 },
+  trendBadge: { backgroundColor: `${T.success}15`, paddingHorizontal: 8, paddingVertical: 2, borderRadius: T.radiusFull },
+  trendTxt: { fontSize: 10, fontWeight: "800", color: T.success },
+  scoreRow: { flexDirection: "row", alignItems: "flex-end", gap: 12 },
+  scoreBig: { fontSize: 32, fontWeight: "800", color: T.textPrimary, lineHeight: 36 },
+  scoreTotal: { fontSize: 16, fontWeight: "600", color: T.mutedFg },
+  scoreRight: { paddingBottom: 2, gap: 1 },
+  scorePct: { fontSize: 18, fontWeight: "800", color: T.success },
+  scoreSubject: { fontSize: 11, color: T.mutedFg, fontWeight: "500" },
+  insight: { fontSize: 12, color: T.textSecondary, fontStyle: "italic", lineHeight: 17 },
+});
+
+// Contextual Banner
+const cb = StyleSheet.create({
+  card: { flexDirection: "row", alignItems: "flex-start", gap: 10, backgroundColor: `${T.warning}10`, borderRadius: T.radiusLg, padding: 14, borderWidth: 1, borderColor: `${T.warning}30`, marginBottom: 4 },
+  title: { fontSize: 13, fontWeight: "700", color: T.textPrimary, marginBottom: 2 },
+  sub: { fontSize: 12, color: T.textSecondary, lineHeight: 17 },
 });
 
 // Quick actions
