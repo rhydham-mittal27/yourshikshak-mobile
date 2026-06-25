@@ -13,10 +13,6 @@ import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
 import RoleSelectScreen from "../screens/RoleSelectScreen";
 import TutorCompleteProfileScreen from "../screens/TutorCompleteProfileScreen";
 import ParentCompleteProfileScreen from "../screens/ParentCompleteProfileScreen";
-import IntroScreen from "../screens/IntroScreen";
-import RegisterScreen from "../screens/RegisterScreen";
-import ParentRegisterScreen from "../screens/ParentRegisterScreen";
-import LoginScreen from "../screens/LoginScreen";
 import TutorDashboardScreen from "../screens/TutorDashboardScreen";
 import TutorProfileScreen from "../screens/TutorProfileScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
@@ -48,11 +44,6 @@ export type RootStackParamList = {
   RoleSelect: { name: string; email: string; phone: string; city: string; password: string };
   TutorCompleteProfile: { name: string; email: string; phone: string; city: string; password: string };
   ParentCompleteProfile: { name: string; email: string; phone: string; city: string; password: string };
-  Intro: undefined;
-  Register: undefined;
-  ParentRegister: undefined;
-  Login: { email?: string; teacherId?: string } | undefined;
-  RegisterSuccess: { teacherId: string; email: string };
   TutorDashboard: { userId: string; name: string; role: string };
   ParentDashboard: { userId: string; name: string; role: string };
   RequestTutor: { fromDashboard?: boolean } | undefined;
@@ -199,11 +190,6 @@ const AppNavigator = () => {
           <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
           <Stack.Screen name="TutorCompleteProfile" component={TutorCompleteProfileScreen} />
           <Stack.Screen name="ParentCompleteProfile" component={ParentCompleteProfileScreen} />
-          {/* ── Legacy screens (kept for deep links / existing users navigating back) ── */}
-          <Stack.Screen name="Intro" component={IntroScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="ParentRegister" component={ParentRegisterScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen
             name="TutorDashboard"
             component={TutorDashboardScreen}

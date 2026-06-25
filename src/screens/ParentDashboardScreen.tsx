@@ -1014,7 +1014,7 @@ const ParentDashboardScreen = () => {
       onConfirm: async () => {
         await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
         setAuthToken(null);
-        navigation.reset({ index: 0, routes: [{ name: "Intro" }] });
+        navigation.reset({ index: 0, routes: [{ name: "Auth" }] });
       },
     });
   };

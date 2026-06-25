@@ -179,7 +179,7 @@ export default function SettingsScreen({ navigation }: Props) {
           onClose={() => setDeleteModalVisible(false)}
           onDeleted={() => {
             setDeleteModalVisible(false);
-            navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+            navigation.reset({ index: 0, routes: [{ name: "Auth" }] });
           }}
         />
       )}
