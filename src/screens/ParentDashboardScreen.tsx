@@ -37,14 +37,18 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import {
   getParentDashboard,
+  getParentPayments,
   raiseParentConcern,
+  requestReschedule,
   setAuthToken,
   AUTH_STORAGE_KEY,
   ParentDashboardData,
+  ParentPaymentSummary,
   ParentTutorRequest,
 } from "../api/client";
 import { T } from "../constants/colors";
 import { useModal } from "../context/ModalContext";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 const SCREEN_W = Dimensions.get("window").width;
 const SIDEBAR_W = SCREEN_W * 0.72;
@@ -505,6 +509,236 @@ const ConcernSheet = ({
   );
 };
 
+// ─── Pay Fees Sheet ───────────────────────────────────────────────────────────
+
+const PayFeesSheet = ({
+  visible,
+  onClose,
+  payment,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  payment: ParentPaymentSummary["nextPayment"] | null;
+}) => (
+  <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <View style={am.overlay}>
+      <Pressable style={{ flex: 1 }} onPress={onClose} />
+      <View style={am.sheet}>
+        <View style={am.handle} />
+        <View style={am.header}>
+          <View style={[am.headerIcon, { backgroundColor: `${T.success}12` }]}>
+            <Ionicons name="wallet-outline" size={20} color={T.success} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={am.headerTitle}>Fee Payment</Text>
+            <Text style={am.headerSub}>
+              {payment ? "Payment due for this cycle" : "All payments are up to date"}
+            </Text>
+          </View>
+          <Pressable onPress={onClose} hitSlop={12}>
+            <Ionicons name="close" size={20} color={T.mutedFg} />
+          </Pressable>
+        </View>
+
+        {payment ? (
+          <>
+            <View style={pfs.row}>
+              <Text style={pfs.rowLabel}>Amount Due</Text>
+              <Text style={[pfs.rowVal, { color: payment.status === "OVERDUE" ? T.error : T.textPrimary }]}>
+                ₹{payment.amount.toLocaleString("en-IN")}
+              </Text>
+            </View>
+            <View style={pfs.row}>
+              <Text style={pfs.rowLabel}>Status</Text>
+              <View style={[pfs.statusPill, { backgroundColor: payment.status === "OVERDUE" ? `${T.error}15` : `${T.warning}15` }]}>
+                <Text style={[pfs.statusTxt, { color: payment.status === "OVERDUE" ? T.error : T.warning }]}>
+                  {payment.status}
+                </Text>
+              </View>
+            </View>
+            {payment.dueDate && (
+              <View style={pfs.row}>
+                <Text style={pfs.rowLabel}>Due Date</Text>
+                <Text style={pfs.rowVal}>
+                  {new Date(payment.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                </Text>
+              </View>
+            )}
+            {payment.paymentId && (
+              <View style={pfs.row}>
+                <Text style={pfs.rowLabel}>Payment ID</Text>
+                <Text style={[pfs.rowVal, { color: T.primary, fontWeight: "600" }]}>{payment.paymentId}</Text>
+              </View>
+            )}
+            <View style={pfs.infoBanner}>
+              <Ionicons name="information-circle-outline" size={15} color={T.primary} />
+              <Text style={pfs.infoTxt}>
+                Please pay directly to your coordinator. Online payment coming soon.
+              </Text>
+            </View>
+          </>
+        ) : (
+          <View style={pfs.doneWrap}>
+            <View style={pfs.doneIcon}>
+              <Ionicons name="checkmark-circle" size={44} color={T.success} />
+            </View>
+            <Text style={pfs.doneTxt}>No payment due right now</Text>
+            <Text style={pfs.doneSub}>Your account is fully up to date.</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  </Modal>
+);
+
+const pfs = StyleSheet.create({
+  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: T.border },
+  rowLabel: { fontSize: 13, color: T.textSecondary, fontWeight: "500" },
+  rowVal: { fontSize: 14, color: T.textPrimary, fontWeight: "700" },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: T.radiusFull },
+  statusTxt: { fontSize: 12, fontWeight: "700" },
+  infoBanner: { flexDirection: "row", alignItems: "flex-start", gap: 8, backgroundColor: `${T.primary}0D`, borderRadius: T.radiusMd, padding: 12, marginTop: 16 },
+  infoTxt: { flex: 1, fontSize: 12, color: T.textSecondary, lineHeight: 17 },
+  doneWrap: { alignItems: "center", paddingVertical: 28, gap: 8 },
+  doneIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: `${T.success}12`, alignItems: "center", justifyContent: "center", marginBottom: 4 },
+  doneTxt: { fontSize: 16, fontWeight: "700", color: T.textPrimary },
+  doneSub: { fontSize: 13, color: T.mutedFg, textAlign: "center" },
+});
+
+// ─── Reschedule Sheet ─────────────────────────────────────────────────────────
+
+const RescheduleSheet = ({
+  visible,
+  onClose,
+  sessions,
+  submitting,
+  onSubmit,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  sessions: Array<{ _id: string; sessionDate: string; timeSlot: string; sessionNumber: number }>;
+  submitting: boolean;
+  onSubmit: (sessionId: string, preferredDate: string, preferredTime: string) => void;
+}) => {
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [preferredDate, setPreferredDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [kbHeight, setKbHeight] = useState(0);
+
+  useEffect(() => {
+    if (sessions.length > 0 && !selectedId) setSelectedId(sessions[0]._id);
+  }, [sessions]);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow", (e) => setKbHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide", () => setKbHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+
+  const canSubmit = !!selectedId && !!preferredDate;
+  const dateLabel = preferredDate
+    ? preferredDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+    : null;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={am.overlay}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+        <View style={[am.sheet, { marginBottom: kbHeight }]}>
+          <View style={am.handle} />
+
+          <View style={am.header}>
+            <View style={[am.headerIcon, { backgroundColor: `${T.primary}12` }]}>
+              <Ionicons name="calendar-outline" size={20} color={T.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={am.headerTitle}>Request Reschedule</Text>
+              <Text style={am.headerSub}>Pending admin / manager approval</Text>
+            </View>
+            <Pressable onPress={onClose} hitSlop={12}>
+              <Ionicons name="close" size={20} color={T.mutedFg} />
+            </Pressable>
+          </View>
+
+          <Text style={am.fieldLabel}>Select Session</Text>
+          <View style={rs.sessionList}>
+            {sessions.map((s) => {
+              const active = s._id === selectedId;
+              return (
+                <Pressable
+                  key={s._id}
+                  style={[rs.sessionPill, active && rs.sessionPillActive]}
+                  onPress={() => setSelectedId(s._id)}
+                >
+                  <Text style={[rs.sessionPillTxt, active && rs.sessionPillTxtActive]}>
+                    {new Date(s.sessionDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    {" · "}#{s.sessionNumber}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Text style={am.fieldLabel}>Preferred Date</Text>
+          <Pressable
+            style={[am.input, { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={{ fontSize: 15, color: dateLabel ? T.textPrimary : T.textDisabled }}>
+              {dateLabel ?? "Select a date"}
+            </Text>
+            <Ionicons name="calendar-outline" size={18} color={T.mutedFg} />
+          </Pressable>
+          {showDatePicker && (
+            <DateTimePicker
+              value={preferredDate ?? new Date()}
+              mode="date"
+              minimumDate={new Date()}
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              onChange={(_, date) => {
+                setShowDatePicker(Platform.OS === "ios");
+                if (date) setPreferredDate(date);
+              }}
+            />
+          )}
+
+          <View style={rs.noteBanner}>
+            <Ionicons name="time-outline" size={14} color={T.warning} />
+            <Text style={rs.noteTxt}>
+              Your request will be reviewed by the admin. The class will only be rescheduled once approved.
+            </Text>
+          </View>
+
+          <Pressable
+            style={[am.submitBtn, (!canSubmit || submitting) && { opacity: 0.5 }]}
+            onPress={() => onSubmit(selectedId, preferredDate!.toISOString().split("T")[0], "")}
+            disabled={!canSubmit || submitting}
+          >
+            {submitting ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Ionicons name="send-outline" size={16} color="#fff" />
+                <Text style={am.submitTxt}>Send Reschedule Request</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const rs = StyleSheet.create({
+  sessionList: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18 },
+  sessionPill: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: T.radiusFull, borderWidth: 1.5, borderColor: T.border, backgroundColor: T.muted },
+  sessionPillActive: { borderColor: T.primary, backgroundColor: `${T.primary}12` },
+  sessionPillTxt: { fontSize: 12, fontWeight: "600", color: T.mutedFg },
+  sessionPillTxtActive: { color: T.primary },
+  noteBanner: { flexDirection: "row", alignItems: "flex-start", gap: 8, backgroundColor: `${T.warning}0D`, borderRadius: T.radiusMd, padding: 12, marginBottom: 16 },
+  noteTxt: { flex: 1, fontSize: 12, color: T.textSecondary, lineHeight: 17 },
+});
+
 // ─── Sidebar (drawer) ─────────────────────────────────────────────────────────
 
 const Sidebar = ({
@@ -941,6 +1175,11 @@ const ParentDashboardScreen = () => {
   const [showConcern, setShowConcern] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [showPaySheet, setShowPaySheet] = useState(false);
+  const [paymentSummary, setPaymentSummary] = useState<ParentPaymentSummary | null>(null);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
+
   // Sidebar
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarAnim = useRef(new Animated.Value(-SIDEBAR_W)).current;
@@ -1007,6 +1246,34 @@ const ParentDashboardScreen = () => {
     await loadData();
   }, [loadData]);
 
+  const handlePayFees = async () => {
+    try {
+      const res = await getParentPayments();
+      setPaymentSummary(res.data);
+      const next = res.data.nextPayment;
+      if (next && (next.status === "PENDING" || next.status === "OVERDUE")) {
+        setShowPaySheet(true);
+      } else {
+        showSuccess("All Paid", "No payment is due right now. Your account is up to date.");
+      }
+    } catch {
+      setShowPaySheet(true); // show sheet even on error, it handles null gracefully
+    }
+  };
+
+  const handleRescheduleSubmit = async (sessionId: string, preferredDate: string, preferredTime: string) => {
+    setRescheduling(true);
+    try {
+      await requestReschedule({ sessionId, preferredDate, preferredTime });
+      setShowReschedule(false);
+      showSuccess("Request Sent", "Your reschedule request is pending admin approval. We'll notify you once confirmed.");
+    } catch (e: any) {
+      showError("Failed", e?.message || "Could not send reschedule request.");
+    } finally {
+      setRescheduling(false);
+    }
+  };
+
   const signOut = () => {
     showConfirm("Sign Out", "Are you sure you want to sign out?", {
       confirmLabel: "Sign Out",
@@ -1048,18 +1315,18 @@ const ParentDashboardScreen = () => {
   const attPct =
     cls?.attendancePercentage != null
       ? `${Math.round(cls.attendancePercentage)}%`
-      : "—";
+      : "0%";
   const sessionsDone =
-    cls?.completedSessions != null ? String(cls.completedSessions) : "—";
+    cls?.completedSessions != null ? String(cls.completedSessions) : "0";
   const nextClassStrip = nextSession
     ? new Date(nextSession.sessionDate).toLocaleDateString("en-IN", {
         day: "numeric",
         month: "short",
       })
-    : "—";
+    : "None";
   const testScore = data?.latestTest
     ? `${data.latestTest.score}/${data.latestTest.totalMarks}`
-    : "—";
+    : "N/A";
 
   return (
     <View style={s.root}>
@@ -1343,77 +1610,6 @@ const ParentDashboardScreen = () => {
                 </View>
               )}
 
-              {/* KPI grid */}
-              <View style={s.kpiGrid}>
-                <KpiCard
-                  delay={60}
-                  icon="calendar-outline"
-                  iconColor={T.primary}
-                  iconBg={`${T.primary}15`}
-                  label="Next Class"
-                  value={
-                    cls?.nextSessionDate ? fmtDate(cls.nextSessionDate) : "—"
-                  }
-                  sub={
-                    cls?.nextSessionTime ?? cls?.schedule?.timeSlot ?? undefined
-                  }
-                  subIcon="time-outline"
-                />
-                <KpiCard
-                  delay={120}
-                  icon="checkmark-circle-outline"
-                  iconColor={T.success}
-                  iconBg={`${T.success}15`}
-                  label="Attendance"
-                  value={attPct}
-                  sub={
-                    cls?.attendanceThisMonth != null &&
-                    cls?.totalSessionsThisMonth != null
-                      ? `${cls.attendanceThisMonth}/${cls.totalSessionsThisMonth} this month`
-                      : undefined
-                  }
-                  subIcon="bar-chart-outline"
-                  subColor={
-                    cls?.attendancePercentage != null
-                      ? cls.attendancePercentage >= 80
-                        ? T.success
-                        : T.warning
-                      : undefined
-                  }
-                />
-                <KpiCard
-                  delay={180}
-                  icon="document-text-outline"
-                  iconColor={T.secondary}
-                  iconBg={`${T.secondary}15`}
-                  label="Latest Test"
-                  value={testScore}
-                  sub={
-                    data?.latestTest
-                      ? `${data.latestTest.subject} · ${fmtDate(data.latestTest.date)}`
-                      : "No tests yet"
-                  }
-                  subIcon={data?.latestTest ? "trophy-outline" : undefined}
-                />
-                <KpiCard
-                  delay={240}
-                  icon="person-outline"
-                  iconColor="#7C3AED"
-                  iconBg="#7C3AED15"
-                  label="Teacher"
-                  value={cls?.tutor?.name ?? "—"}
-                  sub={
-                    cls?.tutor?.rating != null
-                      ? `★ ${cls.tutor.rating.toFixed(1)} rating`
-                      : undefined
-                  }
-                  subIcon={
-                    cls?.tutor?.rating != null ? "star-outline" : undefined
-                  }
-                  subColor="#F59E0B"
-                />
-              </View>
-
               {/* Attendance progress bar */}
               {cls?.attendancePercentage != null && (
                 <View style={prog.wrap}>
@@ -1458,13 +1654,13 @@ const ParentDashboardScreen = () => {
                     icon: "wallet-outline",
                     color: T.success,
                     label: "Pay Fees",
-                    onPress: () => showError("Coming Soon", "Online payment will be available soon."),
+                    onPress: handlePayFees,
                   },
                   {
                     icon: "calendar-outline",
                     color: T.primary,
                     label: "Reschedule",
-                    onPress: () => showError("Coming Soon", "Reschedule will be available soon."),
+                    onPress: () => setShowReschedule(true),
                   },
                   {
                     icon: "add-circle-outline",
@@ -1757,6 +1953,18 @@ const ParentDashboardScreen = () => {
         onClose={() => setShowConcern(false)}
         onSubmit={handleConcernSubmit}
         submitting={submitting}
+      />
+      <PayFeesSheet
+        visible={showPaySheet}
+        onClose={() => setShowPaySheet(false)}
+        payment={paymentSummary?.nextPayment ?? null}
+      />
+      <RescheduleSheet
+        visible={showReschedule}
+        onClose={() => setShowReschedule(false)}
+        sessions={(data?.upcomingSessions ?? []).filter((s) => s.status !== "COMPLETED")}
+        submitting={rescheduling}
+        onSubmit={handleRescheduleSubmit}
       />
     </View>
   );

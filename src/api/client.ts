@@ -4,8 +4,8 @@ import { installMockAdapter } from "./dummy";
 // Switch between real API and dummy data by changing BASE_URL:
 //   "static"                        → dummy data (no network calls)
 //   "https://api.yourshikshak.in/api" → live backend
-// const BASE_URL: string = "http://192.168.1.5:5000/api";
-const BASE_URL: string = "https://api.yourshikshak.in/api";
+const BASE_URL: string = "http://192.168.1.5:5000/api";
+// const BASE_URL: string = "https://api.yourshikshak.in/api";
 
 export const IS_STATIC = BASE_URL === "static";
 
