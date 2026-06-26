@@ -19,11 +19,12 @@ import { T } from "../constants/colors";
 import { RootStackParamList } from "./AppNavigator";
 
 import ParentDashboardScreen from "../screens/ParentDashboardScreen";
+import ParentProgressScreen from "../screens/ParentProgressScreen";
 import ParentClassesScreen from "../screens/ParentClassesScreen";
 import ParentPaymentsScreen from "../screens/ParentPaymentsScreen";
 import ParentNotificationsScreen from "../screens/ParentNotificationsScreen";
 
-type Tab = "home" | "classes" | "payments" | "notifications";
+type Tab = "home" | "progress" | "classes" | "payments" | "notifications";
 
 const TABS: Array<{
   id: Tab;
@@ -32,6 +33,7 @@ const TABS: Array<{
   iconActive: string;
 }> = [
   { id: "home",          label: "Home",          icon: "home-outline",          iconActive: "home" },
+  { id: "progress",      label: "Progress",      icon: "bar-chart-outline",     iconActive: "bar-chart" },
   { id: "classes",       label: "Classes",       icon: "calendar-outline",      iconActive: "calendar" },
   { id: "payments",      label: "Payments",      icon: "wallet-outline",        iconActive: "wallet" },
   { id: "notifications", label: "Alerts",        icon: "notifications-outline", iconActive: "notifications" },
@@ -59,7 +61,8 @@ const TabBar = ({
             onPress={() => onPress(tab.id)}
             hitSlop={4}
           >
-            <View style={[tb.iconWrap, isActive && tb.iconWrapActive]}>
+            {isActive && <View style={tb.activeIndicator} />}
+            <View style={tb.iconWrap}>
               <Ionicons
                 name={(isActive ? tab.iconActive : tab.icon) as any}
                 size={22}
@@ -79,34 +82,40 @@ const TabBar = ({
 const tb = StyleSheet.create({
   bar: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: T.paper,
     borderTopWidth: 1,
     borderTopColor: T.border,
     paddingTop: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
     elevation: 12,
   },
   item: {
     flex: 1,
     alignItems: "center",
     gap: 3,
+    paddingVertical: 4,
+  },
+  activeIndicator: {
+    position: "absolute",
+    top: -9,
+    width: 28,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: T.primary,
   },
   iconWrap: {
     width: 44,
     height: 32,
-    borderRadius: T.radiusMd,
     alignItems: "center",
     justifyContent: "center",
   },
-  iconWrapActive: {
-    backgroundColor: `${T.primary}12`,
-  },
+  iconWrapActive: {},
   label: {
     fontSize: 10,
-    fontWeight: "500",
+    fontWeight: "600",
     color: T.mutedFg,
     letterSpacing: 0.1,
   },
@@ -129,6 +138,8 @@ const ParentTabNavigator = () => {
     switch (activeTab) {
       case "home":
         return <ParentDashboardScreen />;
+      case "progress":
+        return <ParentProgressScreen {...screenProps} />;
       case "classes":
         return <ParentClassesScreen {...screenProps} />;
       case "payments":

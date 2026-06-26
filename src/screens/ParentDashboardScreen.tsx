@@ -1100,7 +1100,10 @@ const ParentDashboardScreen = () => {
                   style={s.logoImg}
                 />
               </View>
-              <Text style={s.brandName}>YourShikshak</Text>
+              <View style={{ justifyContent: "center" }}>
+                <Text style={s.brandName}>YourShikshak</Text>
+                <Text style={s.brandTagline}>Your Learning Partner</Text>
+              </View>
             </View>
             <Pressable onPress={openSidebar} style={s.avatarBtn} hitSlop={8}>
               <View style={s.avatarInner}>
@@ -1776,17 +1779,20 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 20,
   },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   logoRing: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 42,
+    height: 42,
+    borderRadius: 10,
     overflow: "hidden",
-    borderWidth: 1.2,
-    borderColor: "rgba(255,255,255,0.22)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.28)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  logoImg: { width: 32, height: 32 },
-  brandName: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  logoImg: { width: 42, height: 42 },
+  brandName: { color: "#fff", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
+  brandTagline: { color: "rgba(255,255,255,0.65)", fontSize: 10, fontWeight: "500", marginTop: 1, letterSpacing: 0.2 },
 
   avatarBtn: { width: 38, height: 38, borderRadius: 19, overflow: "hidden" },
   avatarInner: {
@@ -1822,7 +1828,7 @@ const s = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: T.radiusFull,
     backgroundColor: "rgba(255,255,255,0.1)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.15)",
@@ -2253,18 +2259,27 @@ const req = StyleSheet.create({
   stageLabel: { fontSize: 12, color: T.textSecondary, paddingTop: 2, flex: 1 },
 });
 
-// Bottom sheet modal (shared)
+// Bottom sheet modal (shared) — mirrors TutorDashboardScreen am styles exactly
 const am = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)" },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(2,8,23,0.75)",
+    justifyContent: "flex-end",
+  },
   sheet: {
     backgroundColor: T.paper,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 20,
+    borderTopLeftRadius: T.radiusXxl,
+    borderTopRightRadius: T.radiusXxl,
+    padding: 24,
     paddingBottom: 36,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 10,
   },
   handle: {
-    width: 36,
+    width: 40,
     height: 4,
     borderRadius: 2,
     backgroundColor: T.border,
@@ -2281,56 +2296,58 @@ const am = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
+    backgroundColor: `${T.primary}12`,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { fontSize: 16, fontWeight: "700", color: T.textPrimary },
-  headerSub: { fontSize: 12, color: T.textSecondary, marginTop: 1 },
+  headerTitle: { fontSize: 17, fontWeight: "700", color: T.textPrimary },
+  headerSub: { fontSize: 12, color: T.mutedFg, marginTop: 1 },
   fieldLabel: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
     color: T.textSecondary,
-    marginBottom: 6,
-    marginTop: 4,
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: T.muted,
-    borderRadius: T.radiusMd,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: T.textPrimary,
     borderWidth: 1,
     borderColor: T.border,
-    marginBottom: 4,
+    borderRadius: T.radiusMd,
+    padding: 13,
+    fontSize: 14,
+    color: T.textPrimary,
+    backgroundColor: T.muted,
+    minHeight: 72,
+    textAlignVertical: "top",
+    marginBottom: 18,
   },
   submitBtn: {
-    backgroundColor: T.primary,
-    borderRadius: T.radiusMd,
-    paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    marginTop: 16,
+    backgroundColor: T.primary,
+    borderRadius: T.radiusMd,
+    paddingVertical: 15,
+    marginTop: 0,
   },
   submitTxt: { fontSize: 15, fontWeight: "700", color: "#fff" },
-
-  // status row (unused here but kept for consistency)
-  statusRow: { flexDirection: "row", gap: 10, marginBottom: 8 },
+  statusRow: { flexDirection: "row", gap: 12, marginBottom: 24 },
   statusBtn: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 7,
     paddingVertical: 12,
     borderRadius: T.radiusMd,
     borderWidth: 1.5,
     borderColor: T.border,
+    backgroundColor: T.muted,
   },
-  statusBtnActive: { backgroundColor: `${T.success}08` },
-  statusBtnTxt: { fontSize: 13, fontWeight: "600" },
+  statusBtnActive: { backgroundColor: T.paper },
+  statusBtnTxt: { fontSize: 14, fontWeight: "700" },
 });
 
 // Sidebar drawer

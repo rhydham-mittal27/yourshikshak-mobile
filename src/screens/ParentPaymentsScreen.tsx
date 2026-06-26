@@ -31,10 +31,11 @@ import { T } from "../constants/colors";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+const fmtDate = (iso: string | undefined | null) =>
+  iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
-const fmtAmount = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+const fmtAmount = (n: number | undefined | null) =>
+  n == null ? "₹—" : `₹${n.toLocaleString("en-IN")}`;
 
 const daysUntil = (iso: string): number => {
   const diff = new Date(iso).getTime() - Date.now();
@@ -201,7 +202,7 @@ const PaymentRow = ({ payment }: { payment: ParentPayment }) => (
   <View style={ph.row}>
     <View style={ph.left}>
       <Text style={ph.month}>{payment.month}</Text>
-      <Text style={ph.date}>{fmtDate(payment.dueDate)}</Text>
+      <Text style={ph.date}>{payment.paymentId ?? fmtDate(payment.dueDate)}</Text>
     </View>
     <Text style={ph.amount}>{fmtAmount(payment.amount)}</Text>
     <StatusBadge status={payment.status} />
@@ -341,8 +342,11 @@ const ParentPaymentsScreen = ({ name }: { userId: string; name: string; role: st
   }, [loadData]);
 
   const vs = summary?.valueSummary;
-  const nextPay = summary?.nextPayment;
   const history = summary?.history ?? [];
+  const nextPay =
+    summary?.nextPayment ??
+    history.find((p) => p.status === 'PENDING' || p.status === 'OVERDUE') ??
+    null;
   const referral = summary?.referral;
 
   return (

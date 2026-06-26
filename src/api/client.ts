@@ -4,8 +4,8 @@ import { installMockAdapter } from "./dummy";
 // Switch between real API and dummy data by changing BASE_URL:
 //   "static"                        → dummy data (no network calls)
 //   "https://api.yourshikshak.in/api" → live backend
-const BASE_URL: string = "http://192.168.1.5:5000/api";
-// const BASE_URL: string = "https://api.yourshikshak.in/api";
+// const BASE_URL: string = "http://192.168.1.5:5000/api";
+const BASE_URL: string = "https://api.yourshikshak.in/api";
 
 export const IS_STATIC = BASE_URL === "static";
 
@@ -1049,6 +1049,7 @@ export const requestReschedule = (payload: {
 
 export interface ParentPayment {
   _id: string;
+  paymentId?: string;
   amount: number;
   dueDate: string;
   paidDate?: string;
@@ -1078,6 +1079,44 @@ export interface ParentPaymentSummary {
 
 export const getParentPayments = (): Promise<{ data: ParentPaymentSummary }> =>
   apiClient.get('/v1/parents/payments') as any;
+
+// ─── Parent Progress ──────────────────────────────────────────────────────────
+
+export interface ParentTestResult {
+  _id: string;
+  subject: string;
+  score: number;
+  totalMarks: number;
+  date: string;
+  type?: 'TUTOR_SET' | 'PLATFORM_STANDARD';
+  topics?: string[];
+  tutorRemark?: string;
+}
+
+export interface ParentSubjectProgress {
+  subject: string;
+  lastScore: number;
+  lastTotalMarks: number;
+  trend: 'UP' | 'DOWN' | 'STEADY';
+  strongTopics: string[];
+  weakTopics: string[];
+  lastRemark?: string;
+  tests: ParentTestResult[];
+}
+
+export interface ParentProgressData {
+  studentName: string;
+  overallTrend: 'IMPROVING' | 'STEADY' | 'NEEDS_ATTENTION';
+  trendSummary: string;
+  subjects: ParentSubjectProgress[];
+  allTests: ParentTestResult[];
+  aiInsight?: string;
+  attendanceRate?: number;
+  completedSessions?: number;
+}
+
+export const getParentProgress = (): Promise<{ data: ParentProgressData }> =>
+  apiClient.get('/v1/parents/progress') as any;
 
 // ─── Teacher Requests ─────────────────────────────────────────────────────────
 
