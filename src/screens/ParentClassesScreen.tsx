@@ -26,6 +26,7 @@ import {
   verifyParentAttendance,
   requestReschedule,
   ParentSession,
+  ParentActiveClass,
 } from "../api/client";
 import { T } from "../constants/colors";
 
@@ -42,7 +43,42 @@ const getDaysInMonth = (year: number, month: number) =>
 const getFirstDayOfMonth = (year: number, month: number) =>
   new Date(year, month, 1).getDay();
 
-const isoDate = (d: Date) => d.toISOString().split("T")[0];
+const isoDate = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+const DAY_JS_INDEX: Record<string, number> = {
+  SUNDAY: 0, MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3,
+  THURSDAY: 4, FRIDAY: 5, SATURDAY: 6,
+};
+
+/** Build synthetic SCHEDULED sessions from a weekly schedule when no backend sessions exist */
+const buildScheduledSessions = (
+  year: number,
+  month: number,
+  daysOfWeek: string[],
+  timeSlot: string,
+): ParentSession[] => {
+  const sessions: ParentSession[] = [];
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const indices = new Set(daysOfWeek.map((d) => DAY_JS_INDEX[d]).filter((n) => n != null));
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = new Date(year, month, day);
+    if (indices.has(d.getDay())) {
+      sessions.push({
+        _id: `synthetic-${isoDate(d)}`,
+        sessionDate: isoDate(d),
+        timeSlot,
+        sessionNumber: day,
+        status: "SCHEDULED",
+      });
+    }
+  }
+  return sessions;
+};
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -64,6 +100,7 @@ const Skeleton = ({ w, h, radius = 8 }: { w: number | string; h: number; radius?
 const STATUS_DOT: Record<string, string> = {
   COMPLETED:   T.success,
   SCHEDULED:   T.primary,
+  PLANNED:     T.primary,
   MISSED:      T.error,
   RESCHEDULED: T.warning,
   CANCELLED:   T.mutedFg,
@@ -72,6 +109,7 @@ const STATUS_DOT: Record<string, string> = {
 const STATUS_LABEL: Record<string, string> = {
   COMPLETED:   "Attended",
   SCHEDULED:   "Upcoming",
+  PLANNED:     "Upcoming",
   MISSED:      "Missed",
   RESCHEDULED: "Rescheduled",
   CANCELLED:   "Cancelled",
@@ -265,6 +303,68 @@ const rm = StyleSheet.create({
   btnTxt: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });
 
+// ─── Timetable Panel ──────────────────────────────────────────────────────────
+
+const DAY_ABBR: Record<string, string> = {
+  MONDAY: "Mon", TUESDAY: "Tue", WEDNESDAY: "Wed",
+  THURSDAY: "Thu", FRIDAY: "Fri", SATURDAY: "Sat", SUNDAY: "Sun",
+};
+const DAY_ORDER = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
+
+const TimetablePanel = ({ activeClass }: { activeClass: ParentActiveClass }) => {
+  const days = (activeClass.schedule?.daysOfWeek ?? [])
+    .slice()
+    .sort((a, b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b));
+  const timeSlot = activeClass.schedule?.timeSlot ?? activeClass.nextSessionTime ?? "—";
+  const subject  = activeClass.subject ?? "Class";
+
+  if (!days.length && !timeSlot) return null;
+
+  return (
+    <View style={tt.card}>
+      <View style={tt.header}>
+        <Ionicons name="time-outline" size={15} color={T.primary} />
+        <Text style={tt.title}>Weekly Timetable</Text>
+        <Text style={tt.subject}>{subject}</Text>
+      </View>
+      <View style={tt.row}>
+        {DAY_ORDER.map((d) => {
+          const active = days.includes(d);
+          return (
+            <View key={d} style={[tt.dayBox, active && tt.dayBoxActive]}>
+              <Text style={[tt.dayTxt, active && tt.dayTxtActive]}>{DAY_ABBR[d]}</Text>
+            </View>
+          );
+        })}
+      </View>
+      {timeSlot !== "—" && (
+        <View style={tt.timeRow}>
+          <Ionicons name="alarm-outline" size={13} color={T.mutedFg} />
+          <Text style={tt.timeTxt}>{timeSlot}</Text>
+        </View>
+      )}
+      {activeClass.classesPerMonth != null && (
+        <Text style={tt.freq}>{activeClass.classesPerMonth} sessions / month</Text>
+      )}
+    </View>
+  );
+};
+
+const tt = StyleSheet.create({
+  card: { backgroundColor: T.paper, borderRadius: T.radiusLg, padding: 16, borderWidth: 1, borderColor: T.border, gap: 12 },
+  header: { flexDirection: "row", alignItems: "center", gap: 6 },
+  title: { fontSize: 13, fontWeight: "700", color: T.textPrimary, flex: 1 },
+  subject: { fontSize: 11, color: T.primary, fontWeight: "600", backgroundColor: `${T.primary}10`, paddingHorizontal: 8, paddingVertical: 2, borderRadius: T.radiusFull },
+  row: { flexDirection: "row", gap: 6 },
+  dayBox: { flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: T.radiusMd, backgroundColor: T.muted },
+  dayBoxActive: { backgroundColor: T.primary },
+  dayTxt: { fontSize: 10, fontWeight: "700", color: T.mutedFg },
+  dayTxtActive: { color: "#fff" },
+  timeRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  timeTxt: { fontSize: 13, fontWeight: "600", color: T.textPrimary },
+  freq: { fontSize: 11, color: T.mutedFg },
+});
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 const ParentClassesScreen = ({ name }: { userId: string; name: string; role: string }) => {
@@ -282,14 +382,26 @@ const ParentClassesScreen = ({ name }: { userId: string; name: string; role: str
   const [verificationStatus, setVerificationStatus] = useState<"PENDING" | "VERIFIED" | "NOT_REQUIRED">("NOT_REQUIRED");
   const [attendancePct, setAttendancePct] = useState<number | null>(null);
   const [rescheduleCredits] = useState(2);
+  const [activeClass, setActiveClass] = useState<ParentActiveClass | null>(null);
 
   const monthKey = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, "0")}`;
 
   const loadSessions = useCallback(async () => {
     try {
-      const res = await getParentSessions(monthKey);
-      setSessions(res.data.sessions ?? []);
-      setVerificationStatus(res.data.verificationStatus ?? "NOT_REQUIRED");
+      const [sessRes, dashRes] = await Promise.allSettled([
+        getParentSessions(monthKey),
+        getParentDashboard(),
+      ]);
+      if (sessRes.status === "fulfilled") {
+        setSessions(sessRes.value.data.sessions ?? []);
+        setVerificationStatus(sessRes.value.data.verificationStatus ?? "NOT_REQUIRED");
+      }
+      if (dashRes.status === "fulfilled") {
+        const cls = dashRes.value.data.activeClass;
+        if (cls) setActiveClass(cls);
+        if (cls?.attendancePercentage != null) setAttendancePct(cls.attendancePercentage);
+      }
+      if (sessRes.status === "rejected") throw new Error("sessions failed");
     } catch {
       // Fallback: use dashboard sessions
       try {
@@ -302,9 +414,9 @@ const ParentClassesScreen = ({ name }: { userId: string; name: string; role: str
           status: (s.status as any) ?? "SCHEDULED",
         }));
         setSessions(mapped);
-        // Compute attendance %
         const cls = dash.data.activeClass;
         if (cls?.attendancePercentage != null) setAttendancePct(cls.attendancePercentage);
+        if (cls) setActiveClass(cls);
       } catch { /* silent */ }
     }
   }, [monthKey]);
@@ -323,8 +435,17 @@ const ParentClassesScreen = ({ name }: { userId: string; name: string; role: str
     setRefreshing(false);
   }, [loadSessions]);
 
+  // If no backend sessions but we have a schedule, generate planned ones
+  const displaySessions = React.useMemo(() => {
+    if (sessions.length > 0) return sessions;
+    const days = activeClass?.schedule?.daysOfWeek;
+    const slot = activeClass?.schedule?.timeSlot ?? activeClass?.nextSessionTime ?? "";
+    if (!days?.length) return [];
+    return buildScheduledSessions(viewDate.getFullYear(), viewDate.getMonth(), days, slot);
+  }, [sessions, activeClass, viewDate]);
+
   // Build a map: dateStr → session
-  const sessionMap = sessions.reduce<Record<string, ParentSession>>((acc, s) => {
+  const sessionMap = displaySessions.reduce<Record<string, ParentSession>>((acc, s) => {
     acc[s.sessionDate?.split("T")[0]] = s;
     return acc;
   }, {});
@@ -360,8 +481,8 @@ const ParentClassesScreen = ({ name }: { userId: string; name: string; role: str
     setSubmittingReschedule(false);
   };
 
-  const attendedCount  = sessions.filter((s) => s.status === "COMPLETED").length;
-  const totalCount     = sessions.filter((s) => s.status !== "CANCELLED").length;
+  const attendedCount  = displaySessions.filter((s) => s.status === "COMPLETED").length;
+  const totalCount     = displaySessions.filter((s) => s.status !== "CANCELLED").length;
   const consistencyPct = totalCount > 0 ? Math.round((attendedCount / totalCount) * 100) : (attendancePct ?? 0);
 
   return (
@@ -391,6 +512,9 @@ const ParentClassesScreen = ({ name }: { userId: string; name: string; role: str
         </LinearGradient>
 
         <View style={s.body}>
+          {/* ── Timetable ── */}
+          {activeClass && <TimetablePanel activeClass={activeClass} />}
+
           {/* ── Calendar ── */}
           <View style={cal.card}>
             {/* Month nav */}
@@ -533,15 +657,15 @@ const ParentClassesScreen = ({ name }: { userId: string; name: string; role: str
                 <Text style={s.summaryLbl}>Attended</Text>
               </View>
               <View style={s.summaryItem}>
-                <Text style={[s.summaryVal, { color: T.error }]}>{sessions.filter(s => s.status === "MISSED").length}</Text>
+                <Text style={[s.summaryVal, { color: T.error }]}>{displaySessions.filter(s => s.status === "MISSED").length}</Text>
                 <Text style={s.summaryLbl}>Missed</Text>
               </View>
               <View style={s.summaryItem}>
-                <Text style={[s.summaryVal, { color: T.warning }]}>{sessions.filter(s => s.status === "RESCHEDULED").length}</Text>
+                <Text style={[s.summaryVal, { color: T.warning }]}>{displaySessions.filter(s => s.status === "RESCHEDULED").length}</Text>
                 <Text style={s.summaryLbl}>Rescheduled</Text>
               </View>
               <View style={s.summaryItem}>
-                <Text style={[s.summaryVal, { color: T.primary }]}>{sessions.filter(s => s.status === "SCHEDULED").length}</Text>
+                <Text style={[s.summaryVal, { color: T.primary }]}>{displaySessions.filter(s => s.status === "SCHEDULED").length}</Text>
                 <Text style={s.summaryLbl}>Upcoming</Text>
               </View>
             </View>
