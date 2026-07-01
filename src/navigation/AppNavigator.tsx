@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
@@ -8,35 +8,41 @@ import {
   LinkingOptions,
 } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import AuthScreen from "../screens/AuthScreen";
-import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
-import RoleSelectScreen from "../screens/RoleSelectScreen";
-import TutorCompleteProfileScreen from "../screens/TutorCompleteProfileScreen";
-import ParentCompleteProfileScreen from "../screens/ParentCompleteProfileScreen";
-import TutorDashboardScreen from "../screens/TutorDashboardScreen";
-import TutorProfileScreen from "../screens/TutorProfileScreen";
-import NotificationsScreen from "../screens/NotificationsScreen";
-import ClassOpportunitiesScreen from "../screens/ClassOpportunitiesScreen";
-import MyDemosScreen from "../screens/MyDemosScreen";
-import EditProfileScreen from "../screens/EditProfileScreen";
-import MyClassesScreen from "../screens/MyClassesScreen";
-import TimetableScreen from "../screens/TimetableScreen";
-import SettingsScreen from "../screens/SettingsScreen";
-import PaymentsScreen from "../screens/PaymentsScreen";
+import AuthScreen from "../auth/AuthScreen";
+import ForgotPasswordScreen from "../auth/ForgotPasswordScreen";
+import RoleSelectScreen from "../auth/RoleSelectScreen";
+import TutorCompleteProfileScreen from "../tutor/screens/TutorCompleteProfileScreen";
+import ParentCompleteProfileScreen from "../parent/screens/ParentCompleteProfileScreen";
+import TutorDashboardScreen from "../tutor/screens/TutorDashboardScreen";
+import TutorProfileScreen from "../tutor/screens/TutorProfileScreen";
+import NotificationsScreen from "../tutor/screens/NotificationsScreen";
+import ClassOpportunitiesScreen from "../tutor/screens/ClassOpportunitiesScreen";
+import MyDemosScreen from "../tutor/screens/MyDemosScreen";
+import EditProfileScreen from "../tutor/screens/EditProfileScreen";
+import MyClassesScreen from "../tutor/screens/MyClassesScreen";
+import TimetableScreen from "../tutor/screens/TimetableScreen";
+import SettingsScreen from "../tutor/screens/SettingsScreen";
+import PaymentsScreen from "../tutor/screens/PaymentsScreen";
 import ParentTabNavigator from "./ParentTabNavigator";
-import RequestTutorScreen from "../screens/RequestTutorScreen";
-import RequestConfirmationScreen from "../screens/RequestConfirmationScreen";
+import RequestTutorScreen from "../tutor/screens/RequestTutorScreen";
+import RequestConfirmationScreen from "../tutor/screens/RequestConfirmationScreen";
 import { ModalProvider } from "../context/ModalContext";
-import AppSplashScreen from "../components/AppSplashScreen";
+import AppSplashScreen from "../shared/components/AppSplashScreen";
 import { setAuthToken, AUTH_STORAGE_KEY, expressInterest, getPendingCycleStarts, PendingCycleClass } from "../api/client";
 import { registerForPushNotifications } from "../services/pushNotifications";
-import CycleStartModal from "../components/classes/CycleStartModal";
-import ClassDetailsScreen from "../screens/ClassDetailsScreen";
-import RescheduleClassScreen from "../screens/RescheduleClassScreen";
-import PauseClassScreen from "../screens/PauseClassScreen";
-import ClassCalendarScreen from "../screens/ClassCalendarScreen";
-import GetStartedScreen from "../screens/GetStartedScreen";
-import FAQScreen from "../screens/FAQScreen";
+import CycleStartModal from "../tutor/components/classes/CycleStartModal";
+import ClassDetailsScreen from "../tutor/screens/ClassDetailsScreen";
+import RescheduleClassScreen from "../tutor/screens/RescheduleClassScreen";
+import PauseClassScreen from "../tutor/screens/PauseClassScreen";
+import ClassCalendarScreen from "../tutor/screens/ClassCalendarScreen";
+import GetStartedScreen from "../auth/GetStartedScreen";
+import FAQScreen from "../shared/screens/FAQScreen";
+import ParentSettingsScreen from "../parent/screens/ParentSettingsScreen";
+import ChildProfileScreen from "../parent/screens/ChildProfileScreen";
+import ChildEditProfileScreen from "../parent/screens/ChildEditProfileScreen";
+import ParentShiftRequestScreen from "../parent/screens/ParentShiftRequestScreen";
+import ParentRescheduleHistoryScreen from "../parent/screens/ParentRescheduleHistoryScreen";
+import TutorTestsScreen from "../tutor/screens/TutorTestsScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -52,7 +58,7 @@ export type RootStackParamList = {
   RescheduleClass: { classId: string; subject?: string };
   PauseClass: { classId: string; subject?: string };
   ClassCalendar: { classId?: string };
-  TutorProfile: undefined;
+  TutorProfile: { viewerRole?: string } | undefined;
   Notifications: undefined;
   ClassOpportunities: undefined;
   MyDemos: { highlightId?: string } | undefined;
@@ -60,6 +66,12 @@ export type RootStackParamList = {
   MyClasses: { highlightClassId?: string } | undefined;
   Timetable: undefined;
   Settings: undefined;
+  ParentSettings: undefined;
+  ChildProfile: undefined;
+  ChildEditProfile: undefined;
+  ParentShiftRequest: undefined;
+  ParentRescheduleHistory: undefined;
+  TutorTests: undefined;
   Payments: undefined;
   GetStarted: undefined;
   FAQ: undefined;
@@ -136,7 +148,7 @@ const AppNavigator = () => {
             }
             return;
           }
-          // Default tap or "View Details" — navigate to opportunities
+          // Default tap or "View Details" â€” navigate to opportunities
           navRef.current?.navigate("TutorDashboard", savedParams ?? {});
         }
 
@@ -184,7 +196,7 @@ const AppNavigator = () => {
             gestureEnabled: true,
           }}
         >
-          {/* ── New unified auth flow ── */}
+          {/* â”€â”€ New unified auth flow â”€â”€ */}
           <Stack.Screen name="Auth" component={AuthScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
@@ -217,6 +229,12 @@ const AppNavigator = () => {
           <Stack.Screen name="ClassDetails" component={ClassDetailsScreen} />
           <Stack.Screen name="RescheduleClass" component={RescheduleClassScreen} />
           <Stack.Screen name="PauseClass" component={PauseClassScreen} />
+          <Stack.Screen name="ParentSettings" component={ParentSettingsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ChildProfile" component={ChildProfileScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ChildEditProfile" component={ChildEditProfileScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ParentShiftRequest" component={ParentShiftRequestScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ParentRescheduleHistory" component={ParentRescheduleHistoryScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="TutorTests" component={TutorTestsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ClassCalendar" component={ClassCalendarScreen} />
           <Stack.Screen name="GetStarted" component={GetStartedScreen} />
           <Stack.Screen name="FAQ" component={FAQScreen} />
@@ -227,3 +245,4 @@ const AppNavigator = () => {
 };
 
 export default AppNavigator;
+

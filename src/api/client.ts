@@ -4,8 +4,8 @@ import { installMockAdapter } from "./dummy";
 // Switch between real API and dummy data by changing BASE_URL:
 //   "static"                        → dummy data (no network calls)
 //   "https://api.yourshikshak.in/api" → live backend
-const BASE_URL: string = "http://192.168.1.5:5000/api";
-// const BASE_URL: string = "https://api.yourshikshak.in/api";
+// const BASE_URL: string = "http://192.168.1.5:5000/api";
+const BASE_URL: string = "https://api.yourshikshak.in/api"; // production
 
 export const IS_STATIC = BASE_URL === "static";
 
@@ -990,6 +990,31 @@ export interface ParentDashboardData {
 export const getParentDashboard = (): Promise<{ data: ParentDashboardData }> =>
   apiClient.get('/v1/parents/dashboard') as any;
 
+export interface ChildProfileData {
+  primaryStudentName: string;
+  notes: string;
+  parentName: string;
+  parentEmail: string;
+  parentPhone: string;
+  parentCity: string;
+  activeClass: {
+    studentName: string;
+    grade: string;
+    board: string;
+    mode: string;
+    schedule?: { daysOfWeek?: string[]; timeSlot?: string };
+  } | null;
+}
+
+export const getChildProfile = (): Promise<{ data: ChildProfileData }> =>
+  apiClient.get('/v1/parents/child-profile') as any;
+
+export const updateChildProfile = (payload: {
+  primaryStudentName?: string;
+  notes?: string;
+}): Promise<{ data: { updated: boolean } }> =>
+  apiClient.patch('/v1/parents/child-profile', payload) as any;
+
 export const submitTutorRequest = (payload: {
   subject: string;
   grade: string;
@@ -1045,6 +1070,26 @@ export const requestReschedule = (payload: {
 }): Promise<any> =>
   apiClient.post('/v1/parents/reschedule', payload) as any;
 
+export interface ParentRescheduleHistoryItem {
+  requestId: string;
+  classId: string;
+  studentName?: string;
+  className?: string;
+  subject?: string;
+  fromDate: string;
+  toDate: string;
+  timeSlot?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requestedAt: string;
+  rejectionReason?: string;
+}
+
+export const getParentRescheduleHistory = (): Promise<{ data: ParentRescheduleHistoryItem[] }> =>
+  apiClient.get('/v1/parents/reschedule-history') as any;
+
+export const requestTutorChange = (payload: { reason: string }): Promise<{ data: { requested: boolean } }> =>
+  apiClient.post('/v1/parents/request-tutor-change', payload) as any;
+
 // ─── Parent Payments ──────────────────────────────────────────────────────────
 
 export interface ParentPayment {
@@ -1091,6 +1136,15 @@ export interface ParentTestResult {
   type?: 'TUTOR_SET' | 'PLATFORM_STANDARD';
   topics?: string[];
   tutorRemark?: string;
+  // enriched fields
+  testType?: string;
+  cycleNumber?: number;
+  topicName?: string;
+  status?: string;
+  coveredChapterLabels?: string[];
+  reportStrengths?: string;
+  reportAreasOfImprovement?: string;
+  reportRecommendations?: string;
 }
 
 export interface ParentSubjectProgress {
@@ -1102,6 +1156,10 @@ export interface ParentSubjectProgress {
   weakTopics: string[];
   lastRemark?: string;
   tests: ParentTestResult[];
+  // syllabus coverage
+  totalChapters?: number;
+  coveredChapters?: number;
+  chapterCoverage?: Array<{ label: string; covered: boolean }>;
 }
 
 export interface ParentProgressData {
@@ -1113,10 +1171,39 @@ export interface ParentProgressData {
   aiInsight?: string;
   attendanceRate?: number;
   completedSessions?: number;
+  totalTestsTaken?: number;
+  currentCycle?: number;
 }
 
 export const getParentProgress = (): Promise<{ data: ParentProgressData }> =>
   apiClient.get('/v1/parents/progress') as any;
+
+export const getParentTutorProfile = (): Promise<{ data: TutorProfile }> =>
+  apiClient.get('/v1/parents/tutor-profile') as any;
+
+export const getAIStudyTips = (payload: {
+  topic: string;
+  subject: string;
+  studentName?: string;
+}): Promise<{ data: { tips: string[] } }> =>
+  apiClient.post('/v1/parents/ai/study-tips', payload) as any;
+
+export const askParentAI = (payload: {
+  question: string;
+  context?: {
+    studentName?: string;
+    subjects?: string;
+    trend?: string;
+    attendanceRate?: string;
+    currentCycle?: string;
+    testHistory?: string;
+    syllabusCoverage?: string;
+    weakTopics?: string;
+    strongTopics?: string;
+    tutorRemarks?: string;
+  };
+}): Promise<{ data: { answer: string } }> =>
+  apiClient.post('/v1/parents/ai/ask', payload) as any;
 
 // ─── Teacher Requests ─────────────────────────────────────────────────────────
 
@@ -1159,5 +1246,182 @@ export const submitTeacherRequest = (
 /** GET /api/v1/teacher-requests/my */
 export const getMyTeacherRequests = (): Promise<{ data: TeacherRequestResult[] }> =>
   apiClient.get('/v1/teacher-requests/my') as any;
+
+// ─── Tickets ──────────────────────────────────────────────────────────────────
+
+export interface Ticket {
+  _id: string;
+  ticketNumber: string;
+  type: 'CONCERN' | 'COMPLAINT' | 'QUERY' | 'TECHNICAL' | 'OTHER';
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  subject: string;
+  description?: string;
+  raisedByName?: string;
+  studentName?: string;
+  assignedToName?: string;
+  resolutionNote?: string;
+  resolvedAt?: string;
+  createdAt: string;
+  comments: Array<{
+    _id: string;
+    authorName: string;
+    authorRole: string;
+    message: string;
+    createdAt: string;
+  }>;
+}
+
+export const createParentTicket = (payload: {
+  subject: string;
+  description: string;
+  type?: string;
+  priority?: string;
+  finalClassId?: string;
+}): Promise<{ data: Ticket }> =>
+  apiClient.post('/v1/tickets', payload) as any;
+
+export const getMyTickets = (): Promise<{ data: Ticket[] }> =>
+  apiClient.get('/v1/tickets/my') as any;
+
+export const getTicket = (id: string): Promise<{ data: Ticket }> =>
+  apiClient.get(`/v1/tickets/${id}`) as any;
+
+export const addTicketComment = (id: string, message: string): Promise<{ data: Ticket }> =>
+  apiClient.post(`/v1/tickets/${id}/comments`, { message }) as any;
+
+// Staff (coordinator / admin)
+export const listTickets = (params?: {
+  status?: string;
+  priority?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ data: Ticket[]; pagination: { total: number; page: number; limit: number } }> =>
+  apiClient.get('/v1/tickets', { params }) as any;
+
+export const getTicketStats = (): Promise<{ data: { open: number; inProgress: number; resolved: number; total: number } }> =>
+  apiClient.get('/v1/tickets/stats') as any;
+
+export const updateTicketStatus = (id: string, payload: {
+  status?: string;
+  priority?: string;
+  resolutionNote?: string;
+  assignedTo?: string;
+}): Promise<{ data: Ticket }> =>
+  apiClient.patch(`/v1/tickets/${id}/status`, payload) as any;
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+export interface TestDoc {
+  _id: string;
+  finalClass: string | { _id: string; studentName: string; className?: string; grade?: string; board?: string; subject: any[] };
+  tutor: string | { name: string };
+  testDate: string;
+  testTime: string;
+  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'REPORT_SUBMITTED';
+  cycleNumber: number;
+  testType?: string;
+  topicName?: string;
+  testSyllabus?: string;
+  totalMarks?: number;
+  obtainedMarks?: number;
+  durationMinutes?: number;
+  coveredChapters?: string[];
+  questionAnalysis?: Array<{ topic: string; totalQuestions: number; correctedQuestions: number }>;
+  report?: {
+    feedback: string;
+    strengths: string;
+    areasOfImprovement: string;
+    studentPerformance: string;
+    recommendations: string;
+  };
+  notes?: string;
+  createdAt: string;
+}
+
+export interface TestCompliance {
+  classId: string;
+  className: string;
+  studentName: string;
+  grade: string;
+  board: string;
+  currentCycle: number;
+  required: number;
+  scheduled: number;
+  compliant: boolean;
+}
+
+export interface SyllabusCoverage {
+  classId: string;
+  testsPerCycleRequired: number;
+  currentCycle: number;
+  totalChapters: number;
+  coveredChapters: number;
+  subjects: Array<{ subjectId: string; label: string; total: number; covered: number }>;
+  chapters: Array<{ _id: string; label: string; value: string; sortOrder: number; subjectId: string; covered: boolean; coveredInCycles: number[] }>;
+  cycleTestCounts: Record<number, number>;
+}
+
+export const getTutorTests = (params?: { status?: string; page?: number; limit?: number }): Promise<{ data: TestDoc[]; pagination?: any }> =>
+  apiClient.get('/tests', { params: { limit: 100, ...params } }) as any;
+
+export const getClassTestList = (classId: string): Promise<{ data: TestDoc[] }> =>
+  apiClient.get(`/tests/class/${classId}`) as any;
+
+export const scheduleTest = (payload: {
+  finalClassId: string;
+  testDate: string;
+  testTime: string;
+  testType?: string;
+  topicName?: string;
+  testSyllabus?: string;
+  totalMarks?: number;
+  durationMinutes?: number;
+  coveredChapters?: string[];
+  notes?: string;
+}): Promise<{ data: TestDoc }> =>
+  apiClient.post('/tests', payload) as any;
+
+export const submitTestReport = (testId: string, payload: {
+  report: { feedback: string; strengths: string; areasOfImprovement: string; studentPerformance: string; recommendations: string };
+  totalMarks?: number;
+  obtainedMarks?: number;
+  coveredChapters?: string[];
+  questionAnalysis?: Array<{ topic: string; totalQuestions: number; correctedQuestions: number }>;
+}): Promise<{ data: TestDoc }> =>
+  apiClient.patch(`/tests/${testId}/report`, payload) as any;
+
+export const updateTestStatus = (testId: string, status: string): Promise<{ data: TestDoc }> =>
+  apiClient.patch(`/tests/${testId}/status`, { status }) as any;
+
+export const getTutorCompliance = (): Promise<{ data: TestCompliance[] }> =>
+  apiClient.get('/tests/tutor/compliance') as any;
+
+export const getSyllabusCoverage = (classId: string): Promise<{ data: SyllabusCoverage }> =>
+  apiClient.get(`/tests/class/${classId}/coverage`) as any;
+
+// ─── Parent Shift Requests ────────────────────────────────────────────────────
+
+export interface ParentShiftRequest {
+  _id: string;
+  finalClass: string;
+  cycleNumber: number;
+  effectiveDate: string;
+  shiftDays: number;
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectionReason?: string;
+  createdAt: string;
+}
+
+export const createParentShiftRequest = (payload: {
+  effectiveDate: string;
+  shiftDays: number;
+  reason: string;
+}): Promise<{ data: ParentShiftRequest }> =>
+  apiClient.post('/v1/parents/shift-request', payload) as any;
+
+export const getParentShiftRequests = (): Promise<{ data: ParentShiftRequest[] }> =>
+  apiClient.get('/v1/parents/shift-requests') as any;
 
 export default apiClient;
