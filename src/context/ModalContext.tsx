@@ -1,5 +1,5 @@
-/**
- * ModalContext.tsx — YourShikshak
+﻿/**
+ * ModalContext.tsx â€” YourShikshak
  *
  * Global modal state. Wrap the app in <ModalProvider> once; call
  * useModal() anywhere to show branded alerts without prop-drilling.
@@ -20,9 +20,9 @@ import AppModal, {
   ModalButton,
   ModalConfig,
   ModalVariant,
-} from "../components/AppModal";
+} from "../shared/components/AppModal";
 
-// ─── Context type ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Context type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface ShowConfirmOpts {
   onConfirm?: () => void;
@@ -48,7 +48,7 @@ interface ModalContextValue {
 
 const ModalContext = createContext<ModalContextValue | null>(null);
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Provider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -151,10 +151,11 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const useModal = (): ModalContextValue => {
   const ctx = useContext(ModalContext);
   if (!ctx) throw new Error("useModal must be used inside <ModalProvider>");
   return ctx;
 };
+
