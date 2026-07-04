@@ -294,7 +294,7 @@ const ClassDetailsScreen = () => {
                   />
                 ))}
                 <Text style={cd.ratingTxt}>
-                  {cls.teacher.rating} Â· {cls.teacher.reviews} reviews
+                  {cls.teacher.rating} · {cls.teacher.reviews} reviews
                 </Text>
               </View>
               <Text style={cd.expTxt}>
@@ -350,7 +350,7 @@ const ClassDetailsScreen = () => {
           <View style={cd.feeRow}>
             <View>
               <Text style={cd.feeAmount}>
-                â‚¹{cls.fee.amount.toLocaleString("en-IN")}
+                ₹{cls.fee.amount.toLocaleString("en-IN")}
               </Text>
               <Text style={cd.feeCycle}>per {cls.fee.cycle}</Text>
             </View>
@@ -384,16 +384,6 @@ const ClassDetailsScreen = () => {
           <Text style={cd.sectionHead}>Actions</Text>
           <View style={cd.actionsGrid}>
             {[
-              {
-                icon: "calendar-outline",
-                label: "Reschedule",
-                color: T.primary,
-                onPress: () =>
-                  navigation.navigate("RescheduleClass", {
-                    classId: cls.id,
-                    subject: cls.subject,
-                  }),
-              },
               {
                 icon: "pause-circle-outline",
                 label: "Pause Class",

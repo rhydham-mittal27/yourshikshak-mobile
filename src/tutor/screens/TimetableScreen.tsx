@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { RootStackParamList } from "../../navigation/AppNavigator";
-import { ClassSessionItem, FinalClass, getTutorSessions, rescheduleSession } from "../../api/client";
+import { ClassSessionItem, FinalClass, getTutorSessions, requestTutorReschedule } from "../../api/client";
 import { T } from "../../constants/colors";
 
 type Nav = StackNavigationProp<RootStackParamList, "Timetable">;
@@ -89,9 +89,9 @@ function parseTime(timeSlot?: string): number {
 
 function subjectLabel(cls?: FinalClass): string {
   const raw = cls?.subject?.[0];
-  if (!raw) return "â€”";
+  if (!raw) return —”";
   if (typeof raw === "string") return raw;
-  return raw.label ?? raw.name ?? raw.value ?? "â€”";
+  return raw.label ?? raw.name ?? raw.value ?? —”";
 }
 
 function formatDate(d: Date): string {
@@ -230,8 +230,8 @@ export default function TimetableScreen({ navigation }: Props) {
     ? (() => {
         const [f, l] = [weekDays[0], weekDays[6]];
         if (f.getMonth() === l.getMonth()) return `${MONTH_NAMES[f.getMonth()]} ${f.getFullYear()}`;
-        if (f.getFullYear() === l.getFullYear()) return `${MONTH_SHORT[f.getMonth()]} â€“ ${MONTH_SHORT[l.getMonth()]} ${f.getFullYear()}`;
-        return `${MONTH_SHORT[f.getMonth()]} ${f.getFullYear()} â€“ ${MONTH_SHORT[l.getMonth()]} ${l.getFullYear()}`;
+        if (f.getFullYear() === l.getFullYear()) return `${MONTH_SHORT[f.getMonth()]} "“ ${MONTH_SHORT[l.getMonth()]} ${f.getFullYear()}`;
+        return `${MONTH_SHORT[f.getMonth()]} ${f.getFullYear()} "“ ${MONTH_SHORT[l.getMonth()]} ${l.getFullYear()}`;
       })()
     : `${MONTH_NAMES[monthDate.getMonth()]} ${monthDate.getFullYear()}`;
 
@@ -299,7 +299,7 @@ export default function TimetableScreen({ navigation }: Props) {
         </View>
         {daySessions.length > 0 && (
           <View style={s.countChip}>
-            <Text style={s.countChipTxt}>{daySessions.length} class{daySessions.length > 1 ? "es" : ""}</Text>
+            <Text style={s.countChipTxt}>{daySessions.length} class{daySessions.length > 1 ? "es" : —}</Text>
           </View>
         )}
       </View>
@@ -308,7 +308,7 @@ export default function TimetableScreen({ navigation }: Props) {
       {loading ? (
         <View style={s.center}>
           <ActivityIndicator color={C.accent} size="large" />
-          <Text style={s.loadingTxt}>Loading sessionsâ€¦</Text>
+          <Text style={s.loadingTxt}>Loading sessions…</Text>
         </View>
       ) : error ? (
         <View style={s.center}>
@@ -335,7 +335,7 @@ export default function TimetableScreen({ navigation }: Props) {
             daySessions.map((session, index) => (
               <Pressable
                 key={session._id}
-                onPress={() => navigation.navigate("MyClasses", { highlightClassId: String(session.finalClass?._id ?? "") })}
+                onPress={() => navigation.navigate("MyClasses", { highlightClassId: String(session.finalClass?._id ?? —) })}
                 style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}
               >
                 <SessionCard session={session} index={index} onReschedule={() => setRescheduleTarget(session)} />
@@ -456,7 +456,7 @@ function SessionCard({ session, index, onReschedule }: {
   const mode        = cls?.mode ?? "OFFLINE";
   const modeColor   = MODE_COLOR[mode] ?? T.primary;
   const statusConf  = STATUS_CONFIG[session.status] ?? STATUS_CONFIG.PLANNED;
-  const startTime   = session.timeSlot?.split("(")[0]?.trim() ?? "â€”";
+  const startTime   = session.timeSlot?.split("(")[0]?.trim() ?? —”";
   const duration    = session.timeSlot?.match(/\(([^)]+)\)/)?.[1];
   const canReschedule = session.status === "PLANNED" && new Date(session.sessionDate) > new Date();
 
@@ -499,7 +499,7 @@ function SessionCard({ session, index, onReschedule }: {
           {(cls?.grade || cls?.board) ? (
             <View style={cc.metaRow}>
               <Ionicons name="school-outline" size={13} color={C.textMuted} />
-              <Text style={cc.metaTxt}>{[cls?.grade, cls?.board].filter(Boolean).join(" Â· ")}</Text>
+              <Text style={cc.metaTxt}>{[cls?.grade, cls?.board].filter(Boolean).join(" · ")}</Text>
             </View>
           ) : null}
         </View>
@@ -629,6 +629,7 @@ function RescheduleModal({ session, onClose, onSuccess }: {
   const [calMonth, setCalMonth] = useState(new Date(session.sessionDate));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState<string | null>(null);
+  const [submitted, setSubmitted]   = useState(false);
 
   const subject   = subjectLabel(session.finalClass);
   const mode      = session.finalClass?.mode ?? "OFFLINE";
@@ -640,10 +641,10 @@ function RescheduleModal({ session, onClose, onSuccess }: {
   const handleConfirm = async () => {
     setSubmitting(true); setError(null);
     try {
-      const res: any = await rescheduleSession(session._id, date.toISOString());
-      onSuccess({ ...session, sessionDate: res.data?.sessionDate ?? date.toISOString() });
+      await requestTutorReschedule(session._id, date.toISOString());
+      setSubmitted(true);
     } catch (e: any) {
-      setError(e?.message ?? "Failed to reschedule");
+      setError(e?.message ?? "Failed to submit reschedule request");
     } finally {
       setSubmitting(false);
     }
@@ -665,7 +666,7 @@ function RescheduleModal({ session, onClose, onSuccess }: {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={rm.title}>Reschedule Session</Text>
-              <Text style={rm.sub} numberOfLines={1}>{subject} Â· {session.finalClass?.studentName ?? ""}</Text>
+              <Text style={rm.sub} numberOfLines={1}>{subject} · {session.finalClass?.studentName ?? —}</Text>
             </View>
             <Pressable onPress={onClose} hitSlop={10} style={rm.closeBtn}>
               <Ionicons name="close" size={17} color={C.textMuted} />
@@ -696,26 +697,40 @@ function RescheduleModal({ session, onClose, onSuccess }: {
             onMonthChange={(d) => setCalMonth(d)}
           />
 
-          {error ? <Text style={rm.errTxt}>{error}</Text> : null}
+          {submitted ? (
+            <View style={{ alignItems: "center", paddingVertical: 16, gap: 6 }}>
+              <Ionicons name="checkmark-circle" size={40} color={T.success} />
+              <Text style={{ fontWeight: "800", fontSize: 15, color: T.textPrimary }}>Request Sent</Text>
+              <Text style={{ fontSize: 12, color: T.textSecondary, textAlign: "center", lineHeight: 18 }}>
+                Pending coordinator approval. The session will only move once approved.
+              </Text>
+            </View>
+          ) : (
+            <>
+              {error ? <Text style={rm.errTxt}>{error}</Text> : null}
+            </>
+          )}
 
           {/* Actions */}
           <View style={rm.actions}>
             <Pressable style={rm.cancelBtn} onPress={onClose}>
-              <Text style={rm.cancelTxt}>Cancel</Text>
+              <Text style={rm.cancelTxt}>{submitted ? "Close" : "Cancel"}</Text>
             </Pressable>
-            <Pressable
-              style={[rm.confirmBtn, { backgroundColor: modeColor }, submitting && { opacity: 0.6 }]}
-              onPress={handleConfirm}
-              disabled={submitting}
-            >
-              {submitting
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <>
-                    <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
-                    <Text style={rm.confirmTxt}>Confirm</Text>
-                  </>
-              }
-            </Pressable>
+            {!submitted && (
+              <Pressable
+                style={[rm.confirmBtn, { backgroundColor: modeColor }, submitting && { opacity: 0.6 }]}
+                onPress={handleConfirm}
+                disabled={submitting}
+              >
+                {submitting
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <>
+                      <Ionicons name="send-outline" size={16} color="#fff" />
+                      <Text style={rm.confirmTxt}>Send Request</Text>
+                    </>
+                }
+              </Pressable>
+            )}
           </View>
         </Animated.View>
       </Pressable>
@@ -733,7 +748,7 @@ function EmptyState({ isToday }: { isToday: boolean }) {
       </View>
       <Text style={es.title}>{isToday ? "Nothing today" : "No classes"}</Text>
       <Text style={es.sub}>
-        {isToday ? "You have a free day â€” enjoy the break!" : "No sessions scheduled for this day."}
+        {isToday ? "You have a free day "” enjoy the break!" : "No sessions scheduled for this day."}
       </Text>
     </View>
   );

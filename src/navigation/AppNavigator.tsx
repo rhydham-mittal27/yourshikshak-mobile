@@ -32,7 +32,6 @@ import { setAuthToken, AUTH_STORAGE_KEY, expressInterest, getPendingCycleStarts,
 import { registerForPushNotifications } from "../services/pushNotifications";
 import CycleStartModal from "../tutor/components/classes/CycleStartModal";
 import ClassDetailsScreen from "../tutor/screens/ClassDetailsScreen";
-import RescheduleClassScreen from "../tutor/screens/RescheduleClassScreen";
 import PauseClassScreen from "../tutor/screens/PauseClassScreen";
 import ClassCalendarScreen from "../tutor/screens/ClassCalendarScreen";
 import GetStartedScreen from "../auth/GetStartedScreen";
@@ -55,7 +54,6 @@ export type RootStackParamList = {
   RequestTutor: { fromDashboard?: boolean } | undefined;
   RequestConfirmation: { requestId: string; subject: string; grade: string };
   ClassDetails: { classId: string };
-  RescheduleClass: { classId: string; subject?: string };
   PauseClass: { classId: string; subject?: string };
   ClassCalendar: { classId?: string };
   TutorProfile: { viewerRole?: string } | undefined;
@@ -148,7 +146,7 @@ const AppNavigator = () => {
             }
             return;
           }
-          // Default tap or "View Details" â€” navigate to opportunities
+          // Default tap or "View Details" "” navigate to opportunities
           navRef.current?.navigate("TutorDashboard", savedParams ?? {});
         }
 
@@ -227,7 +225,6 @@ const AppNavigator = () => {
           <Stack.Screen name="RequestTutor" component={RequestTutorScreen} />
           <Stack.Screen name="RequestConfirmation" component={RequestConfirmationScreen} />
           <Stack.Screen name="ClassDetails" component={ClassDetailsScreen} />
-          <Stack.Screen name="RescheduleClass" component={RescheduleClassScreen} />
           <Stack.Screen name="PauseClass" component={PauseClassScreen} />
           <Stack.Screen name="ParentSettings" component={ParentSettingsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ChildProfile" component={ChildProfileScreen} options={{ headerShown: false }} />

@@ -377,7 +377,7 @@ export const getMyDemos = async (
   pagination: { total: number; page: number; limit: number; pages: number };
 }> =>
   apiClient.get(
-    `/demos/tutor/my-demos?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`,
+    `/demos/tutor/my-demos?page=${page}&limit=${limit}${status ? `&status=${status}` : —}`,
   ) as any;
 
 export const submitDemoResult = async (
@@ -621,7 +621,7 @@ export const getTodayClasses = async (
     markedClassIds = new Set(
       attList.map((att: any) => {
         if (typeof att.finalClass === "string") return att.finalClass;
-        return att.finalClass?.id ?? att.finalClass?._id ?? "";
+        return att.finalClass?.id ?? att.finalClass?._id ?? —;
       }),
     );
   } catch (_) {
@@ -882,6 +882,9 @@ export const rescheduleSession = async (
   newTimeSlot?: string,
 ): Promise<any> =>
   apiClient.patch(`/class-sessions/${sessionId}/reschedule`, { newDate, newTimeSlot });
+
+export const requestTutorReschedule = (sessionId: string, newDate: string): Promise<any> =>
+  apiClient.post(`/class-sessions/${sessionId}/reschedule-request`, { newDate });
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
 
